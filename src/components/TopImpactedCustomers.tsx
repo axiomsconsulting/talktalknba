@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Crown, Sparkles, RefreshCcw, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Crown, Sparkles, RefreshCcw, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProvenanceTag } from "@/components/ProvenanceTag";
 
