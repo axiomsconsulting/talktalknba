@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Brain, Workflow, Sparkles } from "lucide-react";
+import { LayoutDashboard, Brain, Workflow, Sparkles, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -20,6 +20,12 @@ const NAV_ITEMS = [
     label: "NBA Strategy",
     sub: "Architecture & treatments",
     icon: Workflow,
+  },
+  {
+    to: "/data",
+    label: "Data Library",
+    sub: "Uploads & mapping",
+    icon: Database,
   },
 ] as const;
 

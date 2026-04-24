@@ -162,26 +162,33 @@ export const treatmentMatrix: Array<{
 
 export function formatGbp(value: number, opts?: { compact?: boolean }): string {
   if (opts?.compact) {
+    // Round to integer millions/thousands first to avoid SSR/client hydration
+    // mismatches from locale-specific fractional rounding.
+    const abs = Math.abs(value);
+    let rounded = value;
+    if (abs >= 1_000_000) rounded = Math.round(value / 100_000) * 100_000;
+    else if (abs >= 1_000) rounded = Math.round(value / 100) * 100;
+    else rounded = Math.round(value);
     return new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: "GBP",
       notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(value);
+      maximumFractionDigits: 0,
+    }).format(rounded);
   }
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(Math.round(value));
 }
 
 export function formatNumber(value: number, opts?: { compact?: boolean }): string {
   if (opts?.compact) {
     return new Intl.NumberFormat("en-GB", {
       notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(value);
+      maximumFractionDigits: 0,
+    }).format(Math.round(value));
   }
   return new Intl.NumberFormat("en-GB").format(Math.round(value));
 }
