@@ -548,6 +548,23 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
           </div>
         </div>
       </div>
+
+      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary mb-1.5">
+          <Crosshair className="size-3.5" /> Why this operating point is the best
+        </div>
+        <p className="text-[12.5px] text-foreground/90 leading-relaxed">
+          Every threshold trades wasted contact (FPR) against missed saves (1 − TPR). The lime dot is the threshold the trainer
+          picked by maximising <strong className="font-semibold">F1-score</strong>, the balance point between precision (don&apos;t
+          waste agent time) and recall (don&apos;t miss churners). Visually it sits where the curve has bent furthest into the
+          top-left corner — moving <em>up</em> from here would only catch a few extra churners while flagging many more loyal
+          customers; moving <em>down</em> would save a handful of agent calls but let real churners walk away. At{" "}
+          <span className="font-mono">FPR {pct(fpr)} · TPR {pct(recall)}</span> we catch{" "}
+          <strong>{pct(recall)}</strong> of all customers who would have churned while only mistakenly flagging{" "}
+          <strong>{pct(fpr)}</strong> of those who would have stayed — the highest expected retention margin given current
+          contact-centre capacity.
+        </p>
+      </div>
     </section>
   );
 }
