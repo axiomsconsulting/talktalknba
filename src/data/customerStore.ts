@@ -1,7 +1,11 @@
 // In-memory store for parsed customer datasets, swappable from the upload page.
-// Defaults to mock personas + generated fixtures; can be overridden at runtime
-// via setActive(). Optional enrichment (calls / cease / usage) is layered on
-// top via applyEnrichment() and re-runs the SHAP + NBA derivation.
+// Hydrates from the `active_data_sources` table on boot so the active selection
+// survives reloads and follows the workspace, not the browser tab.
+//
+// Each "active" source carries an `origin` flag — "upload" (file in the dataset
+// library) or "live" (live integration like Azure DevOps / Databricks / Drive).
+// The UI uses this to label the Active Source banner & Behavioural Enrichment
+// panel correctly.
 
 import { create } from "zustand";
 import { allCustomers as defaultCustomers, type Customer, deriveNbaTrigger } from "./customers";
@@ -10,17 +14,43 @@ import type {
   CeaseEnrichment,
   UsageEnrichment,
 } from "./customerMapping";
+import { supabase } from "@/integrations/supabase/client";
+
+export type SourceOrigin = "upload" | "live";
 
 export type EnrichmentSource = {
   filename: string;
   rowsAggregated: number;
   uploadedAt: string;
+  origin: SourceOrigin;
+  /** Human-readable source detail e.g. "Azure DevOps · cease.csv" */
+  detail?: string;
+};
+
+export type CustomerSource =
+  | { kind: "mock" }
+  | {
+      kind: "uploaded";
+      filename: string;
+      uploadedAt: string;
+      origin: SourceOrigin;
+      detail?: string;
+    };
+
+type PersistArgs = {
+  kind: "customer_info" | "calls" | "cease" | "usage";
+  origin: SourceOrigin;
+  label: string;
+  rows: number;
+  datasetId?: string | null;
+  connectionId?: string | null;
+  remoteName?: string | null;
 };
 
 type CustomerStore = {
+  hydrated: boolean;
   customers: Customer[];
-  source: { kind: "mock" } | { kind: "uploaded"; filename: string; uploadedAt: string };
-  // The raw enrichment maps so we can re-apply when the customer base changes.
+  source: CustomerSource;
   callsMap: Map<string, CallEnrichment>;
   ceaseMap: Map<string, CeaseEnrichment>;
   usageMap: Map<string, UsageEnrichment>;
@@ -28,26 +58,29 @@ type CustomerStore = {
   ceaseSource: EnrichmentSource | null;
   usageSource: EnrichmentSource | null;
 
-  setActive: (customers: Customer[], filename: string) => void;
+  hydrate: () => Promise<void>;
+
+  setActive: (customers: Customer[], filename: string, origin?: SourceOrigin, detail?: string) => void;
   reset: () => void;
 
   applyCalls: (m: Map<string, CallEnrichment>, src: EnrichmentSource) => void;
   applyCease: (m: Map<string, CeaseEnrichment>, src: EnrichmentSource) => void;
   applyUsage: (m: Map<string, UsageEnrichment>, src: EnrichmentSource) => void;
   clearEnrichment: (which: "calls" | "cease" | "usage") => void;
+
+  /** Persists the active selection to DB (idempotent, admin-only). */
+  persistActive: (args: PersistArgs) => Promise<void>;
 };
 
-/** Re-derives signals + SHAP-style contributions on top of a base customer list. */
 function enrichCustomers(
   base: Customer[],
   callsMap: Map<string, CallEnrichment>,
   ceaseMap: Map<string, CeaseEnrichment>,
-  usageMap: Map<string, UsageEnrichment>
+  usageMap: Map<string, UsageEnrichment>,
 ): Customer[] {
   if (callsMap.size === 0 && ceaseMap.size === 0 && usageMap.size === 0) return base;
 
   return base.map((c) => {
-    // Match enrichment by raw id portion of the customer id (TT-XXXXXXXX → XXXXXXXX prefix)
     const idTail = c.id.replace(/^TT-/, "").toLowerCase();
     const findKey = (m: Map<string, unknown>): unknown => {
       for (const [k, v] of m) {
@@ -88,7 +121,6 @@ function enrichCustomers(
       ...(ceaseRow && { ceaseInsight: ceaseRow.insight }),
     };
 
-    // Bump risk score with the enrichment signals
     let riskScore = c.riskScore;
     const newShap = [...c.shap];
     if (callsRow && callsRow.loyaltyCalls90d > 0) {
@@ -130,7 +162,6 @@ function enrichCustomers(
       riskScore = Math.min(0.98, riskScore + 0.08);
     }
 
-    // Re-derive NBA trigger with the new signals
     const nbaTrigger = deriveNbaTrigger({
       riskTier: c.riskTier,
       contractStatus: c.contractStatus,
@@ -160,6 +191,7 @@ function dedupeShap<T extends { feature: string }>(arr: T[]): T[] {
 }
 
 export const useCustomerStore = create<CustomerStore>((set, get) => ({
+  hydrated: false,
   customers: defaultCustomers,
   source: { kind: "mock" },
   callsMap: new Map(),
@@ -169,13 +201,78 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
   ceaseSource: null,
   usageSource: null,
 
-  setActive: (customers, filename) => {
+  hydrate: async () => {
+    if (get().hydrated) return;
+    set({ hydrated: true });
+    try {
+      const { data, error } = await supabase
+        .from("active_data_sources")
+        .select("kind, origin, label, rows_count, dataset_id, connection_id, remote_name");
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+
+      const ci = data.find((r) => r.kind === "customer_info");
+      if (ci) {
+        const detail =
+          ci.origin === "live"
+            ? `Live integration · ${ci.remote_name ?? ci.label}`
+            : `Stored upload · ${ci.label}`;
+        set((s) => ({
+          source: {
+            kind: "uploaded",
+            filename: ci.label,
+            uploadedAt: new Date().toISOString(),
+            origin: ci.origin as SourceOrigin,
+            detail,
+          },
+          // We don't have the parsed rows here; the data page re-activates from
+          // storage when the user visits. Keep the existing customers (mock or
+          // last-loaded) but expose the source name immediately.
+          customers: s.customers,
+        }));
+      }
+
+      const setEnrichSrc = (
+        kind: "calls" | "cease" | "usage",
+        row: typeof data[number] | undefined,
+      ) => {
+        if (!row) return null;
+        return {
+          filename: row.label,
+          rowsAggregated: row.rows_count ?? 0,
+          uploadedAt: new Date().toISOString(),
+          origin: row.origin as SourceOrigin,
+          detail:
+            row.origin === "live"
+              ? `Live integration · ${row.remote_name ?? row.label}`
+              : `Stored upload · ${row.label}`,
+        } as EnrichmentSource;
+      };
+
+      set({
+        callsSource: setEnrichSrc("calls", data.find((r) => r.kind === "calls")),
+        ceaseSource: setEnrichSrc("cease", data.find((r) => r.kind === "cease")),
+        usageSource: setEnrichSrc("usage", data.find((r) => r.kind === "usage")),
+      });
+    } catch (e) {
+      console.warn("[customerStore] hydrate failed", e);
+    }
+  },
+
+  setActive: (customers, filename, origin = "upload", detail) => {
     const { callsMap, ceaseMap, usageMap } = get();
     set({
       customers: enrichCustomers(customers, callsMap, ceaseMap, usageMap),
-      source: { kind: "uploaded", filename, uploadedAt: new Date().toISOString() },
+      source: {
+        kind: "uploaded",
+        filename,
+        uploadedAt: new Date().toISOString(),
+        origin,
+        detail: detail ?? (origin === "live" ? `Live integration · ${filename}` : `Stored upload · ${filename}`),
+      },
     });
   },
+
   reset: () =>
     set({
       customers: enrichCustomers(defaultCustomers, get().callsMap, get().ceaseMap, get().usageMap),
@@ -224,5 +321,24 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
       ...next,
       customers: enrichCustomers(base, next.callsMap, next.ceaseMap, next.usageMap),
     });
+    // Also clear the persisted record (best-effort, RLS-protected).
+    void supabase.from("active_data_sources").delete().eq("kind", which);
+  },
+
+  persistActive: async ({ kind, origin, label, rows, datasetId, connectionId, remoteName }) => {
+    const payload = {
+      kind,
+      origin,
+      label,
+      rows_count: rows,
+      dataset_id: datasetId ?? null,
+      connection_id: connectionId ?? null,
+      remote_name: remoteName ?? null,
+      activated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase
+      .from("active_data_sources")
+      .upsert(payload, { onConflict: "kind" });
+    if (error) console.warn("[customerStore] persistActive failed", error);
   },
 }));
