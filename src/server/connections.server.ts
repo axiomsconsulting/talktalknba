@@ -315,3 +315,68 @@ export function parseCsv(text: string): { headers: string[]; rows: string[][] } 
   const headers = rows.shift() ?? [];
   return { headers, rows };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Parquet decoding via hyparquet (pure-JS, runs inside the Worker). */
+/* ------------------------------------------------------------------ */
+
+export type ParquetParsed = {
+  headers: string[];
+  rows: unknown[][];
+  totalRows: number;
+};
+
+/**
+ * Decode a parquet file from a Uint8Array buffer.
+ * `rowLimit` caps how many rows we materialise in JS (defaults to 50k —
+ * enough for snapshots, prevents OOM on very large parquet files).
+ */
+export async function parseParquet(
+  bytes: Uint8Array,
+  rowLimit = 50_000,
+): Promise<ParquetParsed> {
+  const { parquetMetadataAsync, parquetReadObjects } = await import("hyparquet");
+  const { compressors } = await import("hyparquet-compressors");
+
+  const ab = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+
+  const file = {
+    byteLength: ab.byteLength,
+    async slice(start: number, end?: number) {
+      return ab.slice(start, end ?? ab.byteLength);
+    },
+  };
+
+  const metadata = await parquetMetadataAsync(file);
+  const totalRows = Number(metadata.num_rows ?? 0);
+  const headers = (metadata.schema ?? [])
+    .filter((s) => s.name && (s as { num_children?: number }).num_children == null)
+    .map((s) => s.name as string);
+
+  const objects = (await parquetReadObjects({
+    file,
+    metadata,
+    compressors,
+    rowStart: 0,
+    rowEnd: Math.min(totalRows, rowLimit),
+  })) as Record<string, unknown>[];
+
+  // Re-derive header order from the first row when schema scan missed leaves.
+  const cols = headers.length
+    ? headers
+    : objects[0]
+      ? Object.keys(objects[0])
+      : [];
+  const rows = objects.map((obj) =>
+    cols.map((c) => {
+      const v = obj[c];
+      if (typeof v === "bigint") return v.toString();
+      return v;
+    }),
+  );
+  return { headers: cols, rows, totalRows };
+}
+
