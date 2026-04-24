@@ -805,12 +805,14 @@ function AzurePanel({
   onSave,
   onIngest,
   onPull,
+  pullJob,
 }: {
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
   onIngest: () => void;
   onPull: () => void;
+  pullJob: PullJob | null;
 }) {
   const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
   const initialFiles = cfg.files ?? {
