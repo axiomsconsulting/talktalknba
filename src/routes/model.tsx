@@ -376,6 +376,8 @@ function ModelPage() {
 
         <SegmentBreakdown />
 
+        <ExternalTrainingKit />
+
         <Glossary />
       </div>
     </AppShell>
