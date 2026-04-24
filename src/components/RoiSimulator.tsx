@@ -114,7 +114,7 @@ export function RoiSimulator() {
           </div>
           <h2 className="mt-1 text-lg font-semibold text-foreground">NBA Scenario Simulator</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Adjust the levers to see how spend, success rate, and channel cost change net ROI per decile.
+            Move the three retention levers below to see what each scenario delivers in net retained revenue.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 p-1 rounded-lg bg-muted border border-border">
@@ -128,12 +128,24 @@ export function RoiSimulator() {
                   ? "bg-card text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
+              title={v.description}
             >
               {v.label}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Hero KPI strip — at-a-glance answers for a scenario discussion */}
+      <HeroKpiStrip
+        net={totals.totalTargetedNet}
+        savedCustomers={totals.totalSaved}
+        contacted={totals.totalContacted}
+        budget={budget}
+        callCost={callCost}
+        uplift={totals.totalTargetedNet - totals.totalRandomNet}
+        viewLabel={VIEWS.find((v) => v.id === view)?.label ?? ""}
+      />
 
       <div className="grid lg:grid-cols-[1fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-border">
         {/* Sliders */}
