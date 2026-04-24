@@ -140,9 +140,9 @@ function BrandingPage() {
             <CardDescription>Logo, name and tagline shown in the navigation and login screen.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-start gap-4">
               <div
-                className="size-16 rounded-xl border border-border flex items-center justify-center bg-talktalk-lime overflow-hidden"
+                className="size-16 rounded-xl border border-border flex items-center justify-center bg-talktalk-lime overflow-hidden shrink-0"
                 style={{ backgroundColor: form.accent_color }}
               >
                 {form.logo_url ? (
@@ -151,21 +151,48 @@ function BrandingPage() {
                   <span className="text-xs text-talktalk-ink/60">No logo</span>
                 )}
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <input
-                  ref={fileRef}
+                  ref={logoFileRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+                  onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "logo")}
                 />
-                <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={busy}>
+                <Button variant="outline" onClick={() => logoFileRef.current?.click()} disabled={busy}>
                   <Upload className="size-4" />
                   Upload logo
                 </Button>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">PNG or SVG, max 2MB.</p>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">PNG or SVG, max 2MB. Shown in nav and login.</p>
               </div>
             </div>
+
+            <div className="flex items-start gap-4 pt-3 border-t border-border">
+              <div className="size-16 rounded-xl border border-border flex items-center justify-center bg-card overflow-hidden shrink-0">
+                {form.favicon_url ? (
+                  <img src={form.favicon_url} alt="Favicon preview" className="max-h-10 max-w-10" />
+                ) : (
+                  <span className="text-[10px] text-muted-foreground text-center px-1">No favicon</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <input
+                  ref={faviconFileRef}
+                  type="file"
+                  accept="image/png,image/x-icon,image/svg+xml,image/vnd.microsoft.icon"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0], "favicon")}
+                />
+                <Button variant="outline" onClick={() => faviconFileRef.current?.click()} disabled={busy}>
+                  <Upload className="size-4" />
+                  Upload favicon
+                </Button>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  ICO, PNG (32×32 or 64×64) or SVG. Shown in the browser tab.
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="name">App name</Label>
               <Input id="name" value={form.app_name} onChange={(e) => update("app_name", e.target.value)} />
