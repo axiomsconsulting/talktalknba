@@ -70,51 +70,61 @@
   --color-primary-deep: var(--primary-deep);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-sunken: var(--surface-sunken);
+  --color-talktalk-lime: var(--talktalk-lime);
+  --color-talktalk-lime-deep: var(--talktalk-lime-deep);
+  --color-talktalk-ink: var(--talktalk-ink);
 }
 
 :root {
   --radius: 0.625rem;
 
-  /* Base — clean enterprise white with subtle cool tint */
-  --background: oklch(0.99 0.003 320);
-  --foreground: oklch(0.18 0.025 285);
+  /* Base — clean white sheets, near-black ink (TalkTalk signature is bright,
+     but enterprise UI surfaces stay quiet so the lime + coral reads as accent). */
+  --background: oklch(0.99 0.003 120);
+  --foreground: oklch(0.16 0.02 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.025 285);
+  --card-foreground: oklch(0.16 0.02 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.025 285);
+  --popover-foreground: oklch(0.16 0.02 250);
 
-  /* TalkTalk-inspired magenta as primary brand */
-  --primary: oklch(0.58 0.24 350);
-  --primary-foreground: oklch(0.99 0.003 320);
-  --primary-glow: oklch(0.68 0.22 345);
-  --primary-deep: oklch(0.42 0.22 350);
+  /* TalkTalk coral / magenta-red — the headline shout colour (#FF3963-ish) */
+  --primary: oklch(0.66 0.24 13);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-glow: oklch(0.74 0.21 14);
+  --primary-deep: oklch(0.5 0.22 15);
 
-  /* Deep navy as secondary anchor (charts, headers) */
-  --secondary: oklch(0.96 0.012 285);
-  --secondary-foreground: oklch(0.22 0.04 270);
+  /* Deep navy as secondary anchor (CTA buttons on the .co.uk site) */
+  --secondary: oklch(0.96 0.008 250);
+  --secondary-foreground: oklch(0.18 0.04 250);
 
-  --muted: oklch(0.965 0.008 300);
-  --muted-foreground: oklch(0.5 0.02 285);
-  --accent: oklch(0.95 0.025 340);
-  --accent-foreground: oklch(0.35 0.18 350);
+  --muted: oklch(0.965 0.006 250);
+  --muted-foreground: oklch(0.5 0.02 250);
+  --accent: oklch(0.95 0.025 13);
+  --accent-foreground: oklch(0.4 0.2 14);
 
   --destructive: oklch(0.6 0.24 25);
   --destructive-foreground: oklch(0.99 0 0);
   --success: oklch(0.62 0.16 155);
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.75 0.16 70);
-  --warning-foreground: oklch(0.18 0.025 285);
+  --warning-foreground: oklch(0.18 0.025 250);
 
-  --border: oklch(0.92 0.01 300);
-  --input: oklch(0.92 0.01 300);
-  --ring: oklch(0.58 0.24 350);
+  --border: oklch(0.92 0.008 250);
+  --input: oklch(0.92 0.008 250);
+  --ring: oklch(0.66 0.24 13);
 
-  /* Chart palette — magenta family + complementary tones */
-  --chart-1: oklch(0.58 0.24 350); /* magenta */
-  --chart-2: oklch(0.42 0.18 270); /* indigo */
-  --chart-3: oklch(0.68 0.18 200); /* teal */
-  --chart-4: oklch(0.75 0.16 70);  /* amber */
-  --chart-5: oklch(0.55 0.2 320);  /* purple */
+  /* TalkTalk electric lime — the brand backdrop colour (#D6FF1F-ish). Used
+     for hero gradients, pill highlights, and the sidebar header glow. */
+  --talktalk-lime: oklch(0.95 0.22 124);
+  --talktalk-lime-deep: oklch(0.86 0.22 130);
+  --talktalk-ink: oklch(0.18 0.03 250);
+
+  /* Chart palette — coral primary + supporting lime/navy/teal/amber */
+  --chart-1: oklch(0.66 0.24 13);     /* coral */
+  --chart-2: oklch(0.28 0.06 250);    /* navy */
+  --chart-3: oklch(0.86 0.22 130);    /* lime */
+  --chart-4: oklch(0.68 0.18 200);    /* teal */
+  --chart-5: oklch(0.75 0.16 70);     /* amber */
 
   /* Risk tier semantics */
   --risk-high: oklch(0.6 0.24 25);
@@ -123,27 +133,28 @@
 
   /* Surfaces & gradients */
   --surface-elevated: oklch(1 0 0);
-  --surface-sunken: oklch(0.97 0.008 320);
-  --gradient-primary: linear-gradient(135deg, oklch(0.58 0.24 350), oklch(0.45 0.22 320));
-  --gradient-hero: linear-gradient(135deg, oklch(0.58 0.24 350) 0%, oklch(0.42 0.22 350) 50%, oklch(0.28 0.12 280) 100%);
-  --gradient-subtle: linear-gradient(180deg, oklch(0.99 0.005 320), oklch(0.96 0.015 340));
+  --surface-sunken: oklch(0.97 0.008 250);
+  --gradient-primary: linear-gradient(135deg, oklch(0.66 0.24 13), oklch(0.5 0.22 15));
+  --gradient-hero: linear-gradient(135deg, oklch(0.95 0.22 124) 0%, oklch(0.92 0.18 110) 50%, oklch(0.88 0.15 100) 100%);
+  --gradient-subtle: linear-gradient(180deg, oklch(0.99 0.003 120), oklch(0.97 0.06 122));
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 oklch(0.18 0.025 285 / 0.05);
-  --shadow-md: 0 4px 12px -2px oklch(0.18 0.025 285 / 0.08);
-  --shadow-lg: 0 12px 32px -8px oklch(0.18 0.025 285 / 0.12);
-  --shadow-glow: 0 0 32px -4px oklch(0.58 0.24 350 / 0.35);
+  --shadow-sm: 0 1px 2px 0 oklch(0.16 0.02 250 / 0.05);
+  --shadow-md: 0 4px 12px -2px oklch(0.16 0.02 250 / 0.08);
+  --shadow-lg: 0 12px 32px -8px oklch(0.16 0.02 250 / 0.12);
+  --shadow-glow: 0 0 32px -4px oklch(0.66 0.24 13 / 0.35);
 
   --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  --sidebar: oklch(0.22 0.04 285);
-  --sidebar-foreground: oklch(0.95 0.01 320);
-  --sidebar-primary: oklch(0.58 0.24 350);
-  --sidebar-primary-foreground: oklch(0.99 0.003 320);
-  --sidebar-accent: oklch(0.28 0.045 285);
-  --sidebar-accent-foreground: oklch(0.99 0.003 320);
-  --sidebar-border: oklch(0.32 0.04 285);
-  --sidebar-ring: oklch(0.58 0.24 350);
+  /* Sidebar — dark TalkTalk navy/ink with lime accent stripe */
+  --sidebar: oklch(0.18 0.03 250);
+  --sidebar-foreground: oklch(0.96 0.008 250);
+  --sidebar-primary: oklch(0.66 0.24 13);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.24 0.04 250);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(0.28 0.04 250);
+  --sidebar-ring: oklch(0.66 0.24 13);
 }
 
 .dark {

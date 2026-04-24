@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StrategyRouteImport } from './routes/strategy'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const StrategyRoute = StrategyRouteImport.update({
   id: '/strategy',
   path: '/strategy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplainabilityRoute = ExplainabilityRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/data' | '/explainability' | '/strategy'
+  fullPaths: '/' | '/data' | '/explainability' | '/products' | '/strategy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/data' | '/explainability' | '/strategy'
-  id: '__root__' | '/' | '/data' | '/explainability' | '/strategy'
+  to: '/' | '/data' | '/explainability' | '/products' | '/strategy'
+  id: '__root__' | '/' | '/data' | '/explainability' | '/products' | '/strategy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DataRoute: typeof DataRoute
   ExplainabilityRoute: typeof ExplainabilityRoute
+  ProductsRoute: typeof ProductsRoute
   StrategyRoute: typeof StrategyRoute
 }
 
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/strategy'
       fullPath: '/strategy'
       preLoaderRoute: typeof StrategyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explainability': {
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DataRoute: DataRoute,
   ExplainabilityRoute: ExplainabilityRoute,
+  ProductsRoute: ProductsRoute,
   StrategyRoute: StrategyRoute,
 }
 export const routeTree = rootRouteImport

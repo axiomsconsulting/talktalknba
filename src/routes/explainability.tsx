@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Brain, Search, Sparkles, ArrowRight, Zap } from "lucide-react";
+import { Brain, Search, Sparkles, ArrowRight, Zap, TrendingUp, TrendingDown, MessageCircleQuestion } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -14,7 +14,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { featureImportance, featureLabels } from "@/data/nba";
-import { personas, type Customer, NBA_TRIGGERS } from "@/data/customers";
+import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
 import { cn } from "@/lib/utils";
 
@@ -363,13 +363,16 @@ function CustomerDetail({ customer }: { customer: Customer }) {
         )}
       </div>
 
-      <div className="p-5 sm:p-7">
+      {/* Why this customer — plain-English drill-down of top + and − drivers */}
+      <WhyThisCustomerPanel shap={customer.shap} />
+
+      <div className="p-5 sm:p-7 border-t border-border">
         <div className="flex items-center gap-2 mb-1">
           <Zap className="size-4 text-primary" />
           <h4 className="text-sm font-semibold text-foreground">SHAP value waterfall</h4>
         </div>
         <p className="text-xs text-muted-foreground mb-5">
-          Each bar shows how that feature pushed the customer's score up (magenta) or down (teal)
+          Each bar shows how that feature pushed the customer's score up (coral) or down (teal)
           from the base rate of {(baseScore * 100).toFixed(0)}%.
         </p>
 
@@ -531,6 +534,164 @@ function WaterfallStep({
       >
         {labelText}
       </div>
+    </div>
+  );
+}
+
+// Plain-English explanations for each SHAP feature, separated for the case
+// where the feature is pushing risk up vs. pulling it down. Keeps the panel
+// readable for a Head of Finance who isn't reading the model card.
+const PLAIN_ENGLISH: Record<string, { up: string; down: string }> = {
+  tenure_days: {
+    up: "Short tenure — customers under ~2 years churn at 2-3× the long-tenure rate.",
+    down: "Long-tenure customer — every additional year roughly halves the propensity to leave.",
+  },
+  loyalty_calls: {
+    up: "Recent calls into the loyalty / save desk are the single strongest behavioural signal of intent to leave.",
+    down: "No retention contact in months — happy enough not to call.",
+  },
+  ooc_days: {
+    up: "Out of contract — there is no early-termination fee in the way of a switch.",
+    down: "Comfortably mid-contract — switching cost stays high.",
+  },
+  total_talk_time: {
+    up: "Long inbound support time means unresolved friction; complaint volume correlates strongly with churn.",
+    down: "Quiet account — customer is not engaging support.",
+  },
+  total_hold_time: {
+    up: "Extended hold time signals frustration even if the call resolved — a high-impact churn precursor.",
+    down: "Calls have been answered quickly when made — friction is low.",
+  },
+  avg_download_mbs: {
+    up: "Heavy bandwidth use on a basic package — the line throttles and the experience suffers.",
+    down: "Plenty of headroom on the package; service experience is comfortable.",
+  },
+  contract_dd_cancels: {
+    up: "Past direct-debit cancellations indicate billing friction or affordability strain.",
+    down: "Clean payment history — no historic billing breakage.",
+  },
+  speed_deficit: {
+    up: "Delivered line speed is well below what was sold — root-cause issue, not a price one.",
+    down: "Line is hitting or beating the sold speed — no engineering issue.",
+  },
+  dd_cancel_60_day: {
+    up: "Direct debit cancelled in the last 60 days — strongest near-term churn precursor in the model.",
+    down: "No recent payment events.",
+  },
+};
+
+function explanationFor(s: SHAPContribution): string {
+  const entry = PLAIN_ENGLISH[s.feature];
+  if (!entry) return s.detail;
+  return s.impact > 0 ? entry.up : entry.down;
+}
+
+function WhyThisCustomerPanel({ shap }: { shap: SHAPContribution[] }) {
+  // Top 3 positive (push risk UP) and top 3 negative (pull risk DOWN) drivers.
+  const positives = [...shap]
+    .filter((s) => s.impact > 0)
+    .sort((a, b) => b.impact - a.impact)
+    .slice(0, 3);
+  const negatives = [...shap]
+    .filter((s) => s.impact < 0)
+    .sort((a, b) => a.impact - b.impact)
+    .slice(0, 3);
+
+  return (
+    <div className="p-5 sm:p-7 border-t border-border bg-gradient-to-b from-muted/40 to-transparent">
+      <div className="flex items-center gap-2 mb-1">
+        <MessageCircleQuestion className="size-4 text-primary" />
+        <h4 className="text-sm font-semibold text-foreground">Why this customer</h4>
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        The top features moving this customer's score, translated into plain English. Read this
+        before opening the SHAP waterfall below.
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <DriverList
+          title="Pushing risk UP"
+          accent="up"
+          drivers={positives}
+          empty="Nothing material is increasing this customer's churn probability."
+        />
+        <DriverList
+          title="Pulling risk DOWN"
+          accent="down"
+          drivers={negatives}
+          empty="Nothing material is protecting this customer from churn."
+        />
+      </div>
+    </div>
+  );
+}
+
+function DriverList({
+  title,
+  accent,
+  drivers,
+  empty,
+}: {
+  title: string;
+  accent: "up" | "down";
+  drivers: SHAPContribution[];
+  empty: string;
+}) {
+  const isUp = accent === "up";
+  const Icon = isUp ? TrendingUp : TrendingDown;
+  const accentColor = isUp ? "var(--risk-high)" : "var(--success)";
+
+  return (
+    <div
+      className="rounded-lg border bg-card p-4"
+      style={{ borderColor: `${accentColor}33` }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className="inline-flex items-center justify-center size-6 rounded-md"
+          style={{ background: `${accentColor}1a`, color: accentColor }}
+        >
+          <Icon className="size-3.5" />
+        </span>
+        <span
+          className="text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: accentColor }}
+        >
+          {title}
+        </span>
+      </div>
+
+      {drivers.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">{empty}</p>
+      ) : (
+        <ol className="space-y-3">
+          {drivers.map((d, i) => {
+            const sign = d.impact > 0 ? "+" : "−";
+            return (
+              <li key={d.feature} className="flex gap-3">
+                <span className="text-[10px] font-mono text-muted-foreground pt-0.5 shrink-0 w-4">
+                  {i + 1}.
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground truncate">{d.label}</span>
+                    <span
+                      className="text-[11px] font-semibold tabular-nums shrink-0"
+                      style={{ color: accentColor }}
+                    >
+                      {sign}
+                      {(Math.abs(d.impact) * 100).toFixed(1)} ppt
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-muted-foreground leading-snug mt-0.5">
+                    {explanationFor(d)}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }

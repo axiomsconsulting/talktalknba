@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Brain, Workflow, Sparkles, Database } from "lucide-react";
+import { LayoutDashboard, Brain, Workflow, Database, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import talktalkLogo from "@/assets/talktalk-logo.svg";
 
 const NAV_ITEMS = [
   {
@@ -22,6 +23,12 @@ const NAV_ITEMS = [
     icon: Workflow,
   },
   {
+    to: "/products",
+    label: "Product Catalogue",
+    sub: "Pricing & SKUs",
+    icon: PackageOpen,
+  },
+  {
     to: "/data",
     label: "Data Library",
     sub: "Uploads & mapping",
@@ -37,12 +44,12 @@ export function AppSidebar() {
     <aside className="hidden md:flex md:w-72 lg:w-80 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
       <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center shadow-[var(--shadow-glow)]">
-            <Sparkles className="size-5 text-primary-foreground" />
+          <div className="rounded-lg bg-talktalk-lime p-2 shadow-[var(--shadow-glow)]">
+            <img src={talktalkLogo} alt="TalkTalk" className="h-5 w-auto" />
           </div>
           <div>
-            <div className="text-sm font-semibold tracking-tight text-sidebar-foreground">TalkTalk NBA</div>
-            <div className="text-xs text-sidebar-foreground/60">Retention Decisioning</div>
+            <div className="text-sm font-semibold tracking-tight text-sidebar-foreground">NBA Decisioning</div>
+            <div className="text-xs text-sidebar-foreground/60">Churn prevention console</div>
           </div>
         </div>
       </div>
