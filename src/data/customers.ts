@@ -14,6 +14,24 @@ export type SHAPContribution = {
   detail: string;
 };
 
+export type BehavioralSignals = {
+  // Calls (from calls.csv)
+  loyaltyCalls90d: number;
+  totalHoldSeconds: number;
+  totalTalkSeconds: number;
+  // Contract / network (from customer_info.parquet)
+  oocDays: number;
+  soldSpeedMbps: number;
+  lineSpeedMbps: number;
+  technology: string;
+  // Usage (from usage.parquet)
+  monthlyDownloadGb: number;
+  monthlyUploadGb: number;
+  // Cease intent (from cease.csv) — derived insight if present
+  ceaseInsight?: "CompetitorDeals" | "HomeMove" | "Bereavement" | "Other" | "VagueReason";
+  preferredChannel?: string;
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -28,7 +46,19 @@ export type Customer = {
   shap: SHAPContribution[];
   // Optional persona narrative
   persona?: string;
+  // Live behavioural signals surfaced in the explainability profile
+  signals?: BehavioralSignals;
+  // The Next Best Action this customer should receive
+  nbaTrigger?: NbaTriggerKey;
 };
+
+export type NbaTriggerKey =
+  | "loyalty_save_desk"
+  | "free_tech_upgrade"
+  | "rightsize_email"
+  | "competitor_match"
+  | "suppress"
+  | "nurture";
 
 const PACKAGES = [
   "Fibre 35 (FTTC-OR)",
@@ -63,6 +93,19 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 38.0,
     contractStatus: "Out of contract",
     region: "South East",
+    nbaTrigger: "loyalty_save_desk",
+    signals: {
+      loyaltyCalls90d: 2,
+      totalHoldSeconds: 2820, // 47 min
+      totalTalkSeconds: 1860,
+      oocDays: 182,
+      soldSpeedMbps: 67,
+      lineSpeedMbps: 64,
+      technology: "FTTC",
+      monthlyDownloadGb: 240,
+      monthlyUploadGb: 18,
+      preferredChannel: "Outbound Call",
+    },
     shap: [
       { feature: "ooc_days", label: "Days Out of Contract", impact: 0.22, detail: "182 days since contract end — well above the 60-day inflection point." },
       { feature: "loyalty_calls", label: "Loyalty Calls", impact: 0.18, detail: "2 inbound calls to retentions in the last 60 days." },
@@ -82,6 +125,19 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 32.0,
     contractStatus: "In contract",
     region: "Greater London",
+    nbaTrigger: "loyalty_save_desk",
+    signals: {
+      loyaltyCalls90d: 3,
+      totalHoldSeconds: 1560,
+      totalTalkSeconds: 6720, // 112 min
+      oocDays: -218,
+      soldSpeedMbps: 67,
+      lineSpeedMbps: 41,
+      technology: "FTTC",
+      monthlyDownloadGb: 180,
+      monthlyUploadGb: 12,
+      preferredChannel: "Outbound Call",
+    },
     shap: [
       { feature: "tenure_days", label: "Customer Tenure", impact: 0.28, detail: "Only 142 days tenure — early-life churn risk." },
       { feature: "loyalty_calls", label: "Loyalty Calls", impact: 0.22, detail: "3 loyalty calls in 90 days — actively shopping." },
@@ -100,6 +156,19 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 35.0,
     contractStatus: "Rolling",
     region: "West Midlands",
+    nbaTrigger: "rightsize_email",
+    signals: {
+      loyaltyCalls90d: 0,
+      totalHoldSeconds: 240,
+      totalTalkSeconds: 540,
+      oocDays: 92,
+      soldSpeedMbps: 67,
+      lineSpeedMbps: 63,
+      technology: "FTTC",
+      monthlyDownloadGb: 1850,
+      monthlyUploadGb: 120,
+      preferredChannel: "Email + In-app",
+    },
     shap: [
       { feature: "avg_download_mbs", label: "Avg Download Speed", impact: 0.18, detail: "Sustained throughput at 95% of cap — capacity-bound." },
       { feature: "ooc_days", label: "Days Out of Contract", impact: 0.12, detail: "On rolling monthly terms for 3 months." },
@@ -118,6 +187,19 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 36.0,
     contractStatus: "In contract",
     region: "Yorkshire & Humber",
+    nbaTrigger: "suppress",
+    signals: {
+      loyaltyCalls90d: 0,
+      totalHoldSeconds: 0,
+      totalTalkSeconds: 0,
+      oocDays: -420,
+      soldSpeedMbps: 67,
+      lineSpeedMbps: 65,
+      technology: "FTTC",
+      monthlyDownloadGb: 95,
+      monthlyUploadGb: 6,
+      preferredChannel: "Suppress",
+    },
     shap: [
       { feature: "tenure_days", label: "Customer Tenure", impact: -0.32, detail: "12.7 years tenure — strongest retention signal in the model." },
       { feature: "loyalty_calls", label: "Loyalty Calls", impact: -0.10, detail: "No loyalty contact in 24 months." },
@@ -136,6 +218,19 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 47.0,
     contractStatus: "In contract",
     region: "North West",
+    nbaTrigger: "rightsize_email",
+    signals: {
+      loyaltyCalls90d: 1,
+      totalHoldSeconds: 540,
+      totalTalkSeconds: 360,
+      oocDays: -160,
+      soldSpeedMbps: 150,
+      lineSpeedMbps: 144,
+      technology: "FTTP",
+      monthlyDownloadGb: 70,
+      monthlyUploadGb: 8,
+      preferredChannel: "Email + In-app",
+    },
     shap: [
       { feature: "avg_download_mbs", label: "Avg Download Speed", impact: 0.08, detail: "Using 22% of available bandwidth — over-spec'd." },
       { feature: "tenure_days", label: "Customer Tenure", impact: -0.10, detail: "2.7 years — moderate stickiness." },
@@ -154,6 +249,20 @@ const PERSONAS: Customer[] = [
     monthlyArpu: 22.0,
     contractStatus: "Out of contract",
     region: "Wales",
+    nbaTrigger: "free_tech_upgrade",
+    signals: {
+      loyaltyCalls90d: 1,
+      totalHoldSeconds: 1320,
+      totalTalkSeconds: 980,
+      oocDays: 411,
+      soldSpeedMbps: 17,
+      lineSpeedMbps: 6,
+      technology: "ADSL",
+      monthlyDownloadGb: 28,
+      monthlyUploadGb: 3,
+      ceaseInsight: "CompetitorDeals",
+      preferredChannel: "Outbound Call",
+    },
     shap: [
       { feature: "ooc_days", label: "Days Out of Contract", impact: 0.20, detail: "OOC for 411 days — sustained exposure." },
       { feature: "speed_deficit", label: "Speed Deficit", impact: 0.16, detail: "ADSL line delivering 6 Mbps in an FTTC-enabled exchange." },
@@ -236,6 +345,34 @@ function generateCustomers(): Customer[] {
     const contractStatus: Customer["contractStatus"] =
       seg.tier === "High" && rand() > 0.4 ? "Out of contract" : rand() > 0.7 ? "Rolling" : "In contract";
 
+    // Behavioural signals tuned to the segment
+    const techPool = ["FTTC", "FTTC", "FTTP", "ADSL", "GFAST"];
+    const technology = techPool[Math.floor(rand() * techPool.length)];
+    const soldSpeedMbps = pkg.includes("ADSL") ? 17 : pkg.includes("Fibre 35") ? 38 : pkg.includes("Fibre 65") || pkg.includes("Faster") ? 67 : pkg.includes("Fibre 150") ? 150 : pkg.includes("Fibre 500") ? 500 : 900;
+    const speedDeficit = seg.tier === "High" ? 0.25 + rand() * 0.4 : seg.tier === "Medium" ? rand() * 0.2 : rand() * 0.05;
+    const lineSpeedMbps = Math.max(2, Math.round(soldSpeedMbps * (1 - speedDeficit)));
+    const oocDays = contractStatus === "Out of contract" ? Math.round(60 + rand() * 600) : contractStatus === "Rolling" ? Math.round(rand() * 90) : -Math.round(60 + rand() * 540);
+    const loyaltyCalls90d = seg.tier === "High" ? 1 + Math.floor(rand() * 3) : seg.tier === "Medium" ? Math.floor(rand() * 2) : 0;
+    const totalHoldSeconds = seg.tier === "High" ? Math.round(600 + rand() * 2400) : seg.tier === "Medium" ? Math.round(rand() * 800) : 0;
+    const totalTalkSeconds = seg.tier === "High" ? Math.round(900 + rand() * 4200) : seg.tier === "Medium" ? Math.round(rand() * 1200) : Math.round(rand() * 200);
+    const monthlyDownloadGb = pkg.includes("ADSL") ? Math.round(20 + rand() * 80) : seg.tier === "Medium" ? Math.round(400 + rand() * 1800) : Math.round(60 + rand() * 400);
+    const monthlyUploadGb = Math.round(monthlyDownloadGb * (0.04 + rand() * 0.06));
+    const ceaseInsight: BehavioralSignals["ceaseInsight"] | undefined =
+      seg.tier === "High" && rand() > 0.55 ? (rand() > 0.5 ? "CompetitorDeals" : "VagueReason") : undefined;
+
+    const signals: BehavioralSignals = {
+      loyaltyCalls90d,
+      totalHoldSeconds,
+      totalTalkSeconds,
+      oocDays,
+      soldSpeedMbps,
+      lineSpeedMbps,
+      technology,
+      monthlyDownloadGb,
+      monthlyUploadGb,
+      ceaseInsight,
+    };
+
     customers.push({
       id,
       name: `${first} ${last}`,
@@ -247,10 +384,89 @@ function generateCustomers(): Customer[] {
       contractStatus,
       region,
       shap: generateShap(seg.tier, rand),
+      signals,
+      nbaTrigger: deriveNbaTrigger({ riskTier: seg.tier, contractStatus, signals, package: pkg }),
     });
   }
   return customers;
 }
+
+// Decide which Next Best Action a customer should receive based on their
+// behavioural signals. The rules mirror the four NBA triggers documented on
+// the Strategy page so the explainability and strategy views stay in sync.
+export function deriveNbaTrigger(input: {
+  riskTier: RiskTier;
+  contractStatus: Customer["contractStatus"];
+  signals?: Partial<BehavioralSignals>;
+  package: string;
+}): NbaTriggerKey {
+  const { riskTier, contractStatus, signals = {}, package: pkg } = input;
+  const speedDeficit =
+    signals.soldSpeedMbps && signals.lineSpeedMbps
+      ? (signals.soldSpeedMbps - signals.lineSpeedMbps) / signals.soldSpeedMbps
+      : 0;
+  const isHeavyUser =
+    (signals.monthlyDownloadGb ?? 0) > 800 &&
+    /Fibre 35|Fibre 65|ADSL|Essentials/i.test(pkg);
+
+  if (riskTier === "Low") return "suppress";
+  if (signals.ceaseInsight === "CompetitorDeals") return "competitor_match";
+  if ((signals.loyaltyCalls90d ?? 0) >= 2 || (signals.totalHoldSeconds ?? 0) > 1800) {
+    return "loyalty_save_desk";
+  }
+  if (speedDeficit > 0.25 || /ADSL|Fibre 35/i.test(pkg)) return "free_tech_upgrade";
+  if (isHeavyUser) return "rightsize_email";
+  if (riskTier === "High" && contractStatus === "Out of contract") return "loyalty_save_desk";
+  return "nurture";
+}
+
+export const NBA_TRIGGERS: Record<
+  NbaTriggerKey,
+  { label: string; description: string; channel: string; offer: string }
+> = {
+  loyalty_save_desk: {
+    label: "Specialist Save Desk",
+    description:
+      "Multiple loyalty calls or extended hold time → friction + active shopping. Route to a specialist save agent with a pre-approved discount.",
+    channel: "Outbound Call",
+    offer: "20% loyalty discount + 24-month re-contract",
+  },
+  free_tech_upgrade: {
+    label: "Free Tech Upgrade",
+    description:
+      "Speed deficit or legacy technology → fix the root cause rather than discounting. Move them to a faster line at the same price.",
+    channel: "Outbound Call + Engineer Visit",
+    offer: "FTTC → G.Fast / FTTP migration, no install fee",
+  },
+  rightsize_email: {
+    label: "Right-size Upgrade Email",
+    description:
+      "Heavy usage on a basic package → throttling and poor performance. Trigger an automated upgrade campaign tailored to their use case.",
+    channel: "Email + In-app",
+    offer: "Premium fibre package, 6-month price hold",
+  },
+  competitor_match: {
+    label: "Competitor-match Save Offer",
+    description:
+      "Cease intent matches Competitor Deals patterns → price is the primary lever. Trigger highest-tier retention offer immediately via preferred channel.",
+    channel: "Customer's preferred channel",
+    offer: "Top-tier price match (£/month off)",
+  },
+  suppress: {
+    label: "Do Not Disturb",
+    description:
+      "Long-tenure low-risk customer. Outbound contact would erode satisfaction and induce churn — hold in nurture sequences only.",
+    channel: "Suppress",
+    offer: "Annual thank-you only",
+  },
+  nurture: {
+    label: "Personalised Nurture",
+    description:
+      "Mid-risk customer without a single dominant trigger. Send a personalised retention email with usage insights.",
+    channel: "Email",
+    offer: "Account review + bill explainer",
+  },
+};
 
 export const personas: Customer[] = PERSONAS;
 export const generatedCustomers: Customer[] = generateCustomers();

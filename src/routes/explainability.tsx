@@ -14,7 +14,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { featureImportance, featureLabels } from "@/data/nba";
-import { personas, type Customer } from "@/data/customers";
+import { personas, type Customer, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
 import { cn } from "@/lib/utils";
 
@@ -320,6 +320,47 @@ function CustomerDetail({ customer }: { customer: Customer }) {
           <Pill label="Contract" value={customer.contractStatus} />
           <Pill label="ARPU" value={`£${customer.monthlyArpu}/mo`} />
         </div>
+
+        {customer.signals && (
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <Pill
+              label="Loyalty calls (90d)"
+              value={`${customer.signals.loyaltyCalls90d}`}
+              tone={customer.signals.loyaltyCalls90d >= 2 ? "warn" : undefined}
+            />
+            <Pill
+              label="Total hold"
+              value={`${Math.round(customer.signals.totalHoldSeconds / 60)} min`}
+              tone={customer.signals.totalHoldSeconds > 1800 ? "warn" : undefined}
+            />
+            <Pill
+              label="OOC days"
+              value={`${customer.signals.oocDays}`}
+              tone={customer.signals.oocDays > 60 ? "warn" : undefined}
+            />
+            <Pill
+              label="Line vs sold"
+              value={
+                customer.signals.soldSpeedMbps > 0
+                  ? `${customer.signals.lineSpeedMbps}/${customer.signals.soldSpeedMbps} Mbps`
+                  : "—"
+              }
+              tone={
+                customer.signals.soldSpeedMbps > 0 &&
+                (customer.signals.soldSpeedMbps - customer.signals.lineSpeedMbps) /
+                  customer.signals.soldSpeedMbps >
+                  0.25
+                  ? "warn"
+                  : undefined
+              }
+            />
+            <Pill
+              label="Usage / mo"
+              value={`${customer.signals.monthlyDownloadGb} GB`}
+              tone={customer.signals.monthlyDownloadGb > 800 ? "warn" : undefined}
+            />
+          </div>
+        )}
       </div>
 
       <div className="p-5 sm:p-7">
@@ -374,34 +415,51 @@ function CustomerDetail({ customer }: { customer: Customer }) {
             <ArrowRight className="size-3.5" />
             Recommended Next Best Action
           </div>
-          <div className="mt-2 text-sm text-foreground leading-relaxed">
-            {recommendAction(customer)}
-          </div>
+          {(() => {
+            const triggerKey = customer.nbaTrigger ?? "nurture";
+            const t = NBA_TRIGGERS[triggerKey];
+            return (
+              <div className="mt-2 space-y-2">
+                <div className="text-sm font-semibold text-foreground">{t.label}</div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.description}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-card border border-border text-muted-foreground">
+                    {t.channel}
+                  </span>
+                  <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-primary/10 border border-primary/20 text-primary">
+                    {t.offer}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
   );
 }
 
-function recommendAction(c: Customer): string {
-  if (c.riskTier === "High" && c.contractStatus === "Out of contract")
-    return "Proactive save call from a senior agent within 48h. Authorised to offer 20% loyalty discount and a 24-month re-contract.";
-  if (c.riskTier === "High")
-    return "Triage to retention squad. Lead with a service-quality fix (engineer dispatch / speed review), then pivot to value reinforcement.";
-  if (c.riskTier === "Medium" && c.package.includes("Fibre 65"))
-    return "Email-led upgrade campaign to Fibre 150 / Full Fibre. Include speed comparison and price hold for 12 months.";
-  if (c.riskTier === "Medium")
-    return "Personalised retention email — annual account review with usage insights and bill explainer.";
-  return "Suppress from outbound. Maintain in nurture sequences only — outbound contact would erode satisfaction.";
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value, tone }: { label: string; value: string; tone?: "warn" }) {
   return (
-    <div className="rounded-lg bg-card border border-border px-3 py-2">
+    <div
+      className={cn(
+        "rounded-lg border px-3 py-2",
+        tone === "warn"
+          ? "bg-[var(--risk-high)]/5 border-[var(--risk-high)]/30"
+          : "bg-card border-border"
+      )}
+    >
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-      <div className="text-sm font-medium text-foreground mt-0.5 truncate">{value}</div>
+      <div
+        className={cn(
+          "text-sm font-medium mt-0.5 truncate",
+          tone === "warn" ? "text-[var(--risk-high)]" : "text-foreground"
+        )}
+      >
+        {value}
+      </div>
     </div>
   );
 }
