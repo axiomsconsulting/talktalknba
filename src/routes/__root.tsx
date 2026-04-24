@@ -1,6 +1,11 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
+import { AuthProvider } from "@/data/auth";
+import { AuthGate } from "@/components/AuthGate";
+import { useBrandingStore, applyBrandingToDocument } from "@/data/brandingStore";
 
 function NotFoundComponent() {
   return (
@@ -71,6 +76,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function BrandingHydrator() {
+  const { settings, load } = useBrandingStore();
+  useEffect(() => {
+    void load();
+  }, [load]);
+  useEffect(() => {
+    applyBrandingToDocument(settings);
+  }, [settings]);
+  return null;
+}
+
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <BrandingHydrator />
+      <AuthGate>
+        <Outlet />
+      </AuthGate>
+      <Toaster richColors position="top-right" />
+    </AuthProvider>
+  );
 }
