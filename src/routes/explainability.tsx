@@ -363,13 +363,16 @@ function CustomerDetail({ customer }: { customer: Customer }) {
         )}
       </div>
 
-      <div className="p-5 sm:p-7">
+      {/* Why this customer — plain-English drill-down of top + and − drivers */}
+      <WhyThisCustomerPanel shap={customer.shap} />
+
+      <div className="p-5 sm:p-7 border-t border-border">
         <div className="flex items-center gap-2 mb-1">
           <Zap className="size-4 text-primary" />
           <h4 className="text-sm font-semibold text-foreground">SHAP value waterfall</h4>
         </div>
         <p className="text-xs text-muted-foreground mb-5">
-          Each bar shows how that feature pushed the customer's score up (magenta) or down (teal)
+          Each bar shows how that feature pushed the customer's score up (coral) or down (teal)
           from the base rate of {(baseScore * 100).toFixed(0)}%.
         </p>
 
