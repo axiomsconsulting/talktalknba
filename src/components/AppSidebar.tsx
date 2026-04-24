@@ -74,8 +74,12 @@ function UserMenu() {
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-[oklch(1_0_0_/_0.6)] backdrop-blur-md pl-1 pr-3 py-1 hover:bg-foreground/5 transition-colors"
       >
-        <span className="size-7 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">
-          {initials}
+        <span className="size-7 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center overflow-hidden">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="size-full object-cover" />
+          ) : (
+            initials
+          )}
         </span>
         <span className="hidden sm:inline text-[12.5px] font-medium text-foreground max-w-[120px] truncate">
           {profile.display_name ?? profile.email}
@@ -87,6 +91,14 @@ function UserMenu() {
             <div className="text-sm font-medium truncate">{profile.display_name ?? "User"}</div>
             <div className="text-[11px] text-muted-foreground truncate">{profile.email}</div>
           </div>
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-foreground/80 hover:bg-foreground/5"
+          >
+            <UserIcon className="size-4" />
+            Your profile
+          </Link>
           {isApproverOrAdmin && (
             <Link
               to="/admin/users"

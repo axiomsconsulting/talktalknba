@@ -89,6 +89,24 @@ function BrandingHydrator() {
   }, [load]);
   useEffect(() => {
     applyBrandingToDocument(settings);
+    if (typeof document !== "undefined" && settings) {
+      // Update favicon + document title live
+      if (settings.favicon_url) {
+        let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
+        }
+        link.href = settings.favicon_url;
+      }
+      if (settings.app_name) {
+        const baseTitle = document.title.split(" — ")[0];
+        if (baseTitle && !document.title.includes(settings.app_name)) {
+          // Don't aggressively overwrite per-route titles; only update if generic
+        }
+      }
+    }
   }, [settings]);
   return null;
 }

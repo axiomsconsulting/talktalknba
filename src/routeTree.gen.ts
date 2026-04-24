@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as NbaRulesRouteImport } from './routes/nba-rules'
 import { Route as ModelRouteImport } from './routes/model'
@@ -29,6 +30,11 @@ const StrategyRoute = StrategyRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/model'
     | '/nba-rules'
     | '/products'
+    | '/profile'
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/model'
     | '/nba-rules'
     | '/products'
+    | '/profile'
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/model'
     | '/nba-rules'
     | '/products'
+    | '/profile'
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   ModelRoute: typeof ModelRoute
   NbaRulesRoute: typeof NbaRulesRoute
   ProductsRoute: typeof ProductsRoute
+  ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StrategyRoute: typeof StrategyRoute
   AdminBrandingRoute: typeof AdminBrandingRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   ModelRoute: ModelRoute,
   NbaRulesRoute: NbaRulesRoute,
   ProductsRoute: ProductsRoute,
+  ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StrategyRoute: StrategyRoute,
   AdminBrandingRoute: AdminBrandingRoute,
