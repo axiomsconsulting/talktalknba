@@ -763,18 +763,25 @@ function GDrivePanel({
         </div>
 
         <div className="rounded-md border border-border/60 bg-muted/40 p-3">
-          <div className="text-xs font-medium text-muted-foreground mb-2">Expected subfolders</div>
+          <div className="text-xs font-medium text-muted-foreground mb-2">
+            Expected file names (single shared folder — no subfolders)
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {FIXED_SUBFOLDERS.map((s) => (
               <div key={s.key} className="flex items-center gap-2 text-xs">
                 <Folder className="size-3 text-muted-foreground" />
-                <span className="font-mono">{s.label}</span>
+                <span className="font-mono">{String(s.key)}*</span>
               </div>
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            CSV / Parquet / .duckdb files supported. The poller hashes each file and only re-imports
-            when content changes.
+            Drop all CSV / Parquet / .duckdb / model artefact files into the same shared folder.
+            Files are classified by name (e.g. <span className="font-mono">customer_info.parquet</span>,{" "}
+            <span className="font-mono">loyalty_calls.csv</span>,{" "}
+            <span className="font-mono">cease_2024.parquet</span>,{" "}
+            <span className="font-mono">usage_speedtest.parquet</span>,{" "}
+            <span className="font-mono">model_metrics.json</span>). The poller hashes each file and
+            only re-imports when content changes.
           </p>
         </div>
 
