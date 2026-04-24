@@ -26,7 +26,8 @@ function BrandingPage() {
   const [form, setForm] = useState<AppSettings | null>(null);
   const [busy, setBusy] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const faviconFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void load();
