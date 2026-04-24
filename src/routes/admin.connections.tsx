@@ -187,9 +187,15 @@ function ConnectionsAdminPage() {
   const upsert = async (kind: ConnectionKind, patch: Partial<Connection>) => {
     setBusy(kind);
     const existing = conns?.find((c) => c.kind === kind);
+    const defaultName =
+      kind === "databricks"
+        ? "Databricks"
+        : kind === "gdrive"
+          ? "Google Drive"
+          : "Azure DevOps";
     const payload = {
       kind,
-      name: patch.name ?? existing?.name ?? (kind === "databricks" ? "Databricks" : "Google Drive"),
+      name: patch.name ?? existing?.name ?? defaultName,
       config: (patch.config ?? existing?.config ?? {}) as never,
       schedule_cron: patch.schedule_cron ?? existing?.schedule_cron ?? null,
       enabled: patch.enabled ?? existing?.enabled ?? true,
@@ -202,7 +208,7 @@ function ConnectionsAdminPage() {
       toast.error(`Save failed: ${error.message}`);
       return;
     }
-    toast.success(`${kind === "databricks" ? "Databricks" : "Google Drive"} connection saved`);
+    toast.success(`${defaultName} connection saved`);
     await reload();
   };
 
