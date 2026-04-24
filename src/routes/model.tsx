@@ -42,7 +42,7 @@ export const Route = createFileRoute("/model")({
       {
         name: "description",
         content:
-          "Random Forest churn classifier validation: accuracy, precision, recall, F1, ROC-AUC, confusion matrix, and hyperparameters.",
+          "Churn classifier validation (RandomForest or XGBoost — selected at training time): accuracy, precision, recall, F1, ROC-AUC, confusion matrix, and hyperparameters.",
       },
     ],
   }),
@@ -151,10 +151,14 @@ function ModelPage() {
                   : undefined
               }
             />
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              <Cpu className="size-3" />
+              {(isLive && liveStats?.model_type) ? liveStats.model_type : stats.model_type}
+            </span>
           </span>
         }
         title="Model Evaluation Metrics"
-        description="Held-out test performance for the production churn classifier. Numbers are computed on the test split and refreshed with every model retrain."
+        description="Held-out test performance for the production churn classifier. The offline trainer compares RandomForest and XGBoost and exports whichever scores the higher ROC-AUC — the badge above shows which one is currently active."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
@@ -350,10 +354,13 @@ function ModelPage() {
             </header>
 
             <dl className="space-y-0 font-mono text-[12px]">
-              <Row k="model_type" v={stats.model_type} />
-              <Row k="n_estimators" v={String(h.n_estimators)} />
-              <Row k="max_depth" v={String(h.max_depth)} />
-              <Row k="random_state" v={String(h.random_state)} />
+              <Row k="model_type" v={(isLive && liveStats?.model_type) ? liveStats.model_type : stats.model_type} />
+              {h.n_estimators != null && <Row k="n_estimators" v={String(h.n_estimators)} />}
+              {h.max_depth != null && <Row k="max_depth" v={String(h.max_depth)} />}
+              {(h as { learning_rate?: number }).learning_rate != null && (
+                <Row k="learning_rate" v={String((h as { learning_rate?: number }).learning_rate)} />
+              )}
+              {h.random_state != null && <Row k="random_state" v={String(h.random_state)} />}
               <div className="my-3 border-t border-dashed border-border" />
               <Row k="train_size" v={num(s.train_size)} />
               <Row k="test_size" v={num(s.test_size)} />
@@ -418,11 +425,11 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
   const data = buildRocCurve(auc);
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-sm)]">
-      <header className="flex flex-wrap items-end justify-between gap-3 mb-5">
+      <header className="flex flex-wrap items-end justify-between gap-3 mb-3">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-foreground">ROC Curve</h2>
-          <p className="text-[12.5px] text-muted-foreground mt-0.5">
-            Trade-off between true-positive rate and false-positive rate across all decision thresholds.
+          <p className="text-[12.5px] text-muted-foreground mt-0.5 max-w-3xl">
+            Each point on the curve is a different decision threshold. Sliding the threshold down moves us right along the curve — we catch more real churners (TPR ↑) but also flag more loyal customers as risky (FPR ↑). The dashed diagonal is a coin flip; the further the curve bows toward the top-left, the better the model is at separating churners from stayers.
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5">
@@ -541,6 +548,23 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
           </div>
         </div>
       </div>
+
+      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary mb-1.5">
+          <Crosshair className="size-3.5" /> Why this operating point is the best
+        </div>
+        <p className="text-[12.5px] text-foreground/90 leading-relaxed">
+          Every threshold trades wasted contact (FPR) against missed saves (1 − TPR). The lime dot is the threshold the trainer
+          picked by maximising <strong className="font-semibold">F1-score</strong>, the balance point between precision (don&apos;t
+          waste agent time) and recall (don&apos;t miss churners). Visually it sits where the curve has bent furthest into the
+          top-left corner — moving <em>up</em> from here would only catch a few extra churners while flagging many more loyal
+          customers; moving <em>down</em> would save a handful of agent calls but let real churners walk away. At{" "}
+          <span className="font-mono">FPR {pct(fpr)} · TPR {pct(recall)}</span> we catch{" "}
+          <strong>{pct(recall)}</strong> of all customers who would have churned while only mistakenly flagging{" "}
+          <strong>{pct(fpr)}</strong> of those who would have stayed — the highest expected retention margin given current
+          contact-centre capacity.
+        </p>
+      </div>
     </section>
   );
 }
@@ -598,34 +622,35 @@ function SegmentBreakdown() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-3 gap-3">
         {SEGMENT_GROUPS.map((group) => (
-          <div key={group.title} className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          <div key={group.title} className="rounded-xl border border-border bg-background/40 p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 truncate">
               {group.title}
             </div>
-            <div className="h-[200px]">
+            <div className="h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={group.rows}
                   layout="vertical"
-                  margin={{ top: 4, right: 8, bottom: 4, left: 4 }}
-                  barCategoryGap="22%"
+                  margin={{ top: 2, right: 4, bottom: 2, left: 0 }}
+                  barCategoryGap="18%"
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis
                     type="number"
                     domain={[0, 1]}
                     tickFormatter={(v) => `${Math.round(v * 100)}%`}
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 9 }}
                     stroke="var(--muted-foreground)"
                   />
                   <YAxis
                     type="category"
                     dataKey="segment"
-                    width={130}
-                    tick={{ fontSize: 11 }}
+                    width={78}
+                    tick={{ fontSize: 9 }}
                     stroke="var(--muted-foreground)"
+                    interval={0}
                   />
                   <RTooltip
                     cursor={{ fill: "var(--muted)" }}
@@ -633,7 +658,7 @@ function SegmentBreakdown() {
                       background: "var(--popover)",
                       border: "1px solid var(--border)",
                       borderRadius: 8,
-                      fontSize: 12,
+                      fontSize: 11,
                     }}
                     formatter={(value: number, name) => [
                       `${(Number(value) * 100).toFixed(1)}%`,
@@ -641,24 +666,24 @@ function SegmentBreakdown() {
                     ]}
                   />
                   <Legend
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: 11 }}
+                    iconSize={6}
+                    wrapperStyle={{ fontSize: 10 }}
                     formatter={(v) => (v === "precision" ? "Precision" : "Recall")}
                   />
-                  <Bar dataKey="precision" fill="var(--primary)" radius={[0, 3, 3, 0]} />
+                  <Bar dataKey="precision" fill="var(--primary)" radius={[0, 2, 2, 0]} />
                   <Bar
                     dataKey="recall"
                     fill="var(--talktalk-lime, var(--primary))"
-                    radius={[0, 3, 3, 0]}
+                    radius={[0, 2, 2, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 space-y-1 text-[11px] text-muted-foreground">
+            <div className="mt-2 space-y-0.5 text-[10px] text-muted-foreground">
               {group.rows.map((r) => (
-                <div key={r.segment} className="flex justify-between">
+                <div key={r.segment} className="flex justify-between gap-2">
                   <span className="truncate">{r.segment}</span>
-                  <span className="tabular-nums">{num(r.volume)} customers</span>
+                  <span className="tabular-nums shrink-0">{num(r.volume)}</span>
                 </div>
               ))}
             </div>
