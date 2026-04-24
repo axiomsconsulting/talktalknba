@@ -462,29 +462,113 @@ function SliderControl({
   );
 }
 
-function Stat({
-  label,
-  value,
-  emphasis,
-  muted,
+/* ----------------------------------------------------------------- */
+/*  Hero KPI strip — at-a-glance answers for a scenario discussion.   */
+/* ----------------------------------------------------------------- */
+
+function HeroKpiStrip({
+  net,
+  savedCustomers,
+  contacted,
+  budget,
+  callCost,
+  uplift,
+  viewLabel,
 }: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-  muted?: boolean;
+  net: number;
+  savedCustomers: number;
+  contacted: number;
+  budget: number;
+  callCost: number;
+  uplift: number;
+  viewLabel: string;
 }) {
+  const totalCampaignCost = contacted * callCost + savedCustomers * budget;
+  const costPerSave = savedCustomers > 0 ? totalCampaignCost / savedCustomers : 0;
+  const upliftPositive = uplift >= 0;
+
+  const items: Array<{
+    label: string;
+    value: string;
+    sub: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: "primary" | "neutral" | "success";
+    title: string;
+  }> = [
+    {
+      label: viewLabel,
+      value: formatGbp(net, { compact: true }),
+      sub: `vs random: ${upliftPositive ? "+" : ""}${formatGbp(uplift, { compact: true })}`,
+      icon: BadgePoundSterling,
+      tone: "primary",
+      title:
+        "The bottom-line for the chosen sliders. Calculated as revenue from saved customers minus retention spend (call cost + per-saved budget).",
+    },
+    {
+      label: "Customers we save",
+      value: formatNumber(savedCustomers, { compact: true }),
+      sub: `out of ${formatNumber(contacted, { compact: true })} contacted`,
+      icon: Users,
+      tone: "neutral",
+      title:
+        "Saved = at-risk customers who accept the intervention, given the chosen success rate.",
+    },
+    {
+      label: "Cost per saved customer",
+      value: formatGbp(costPerSave, { compact: true }),
+      sub: `${formatGbp(totalCampaignCost, { compact: true })} total spend`,
+      icon: Coins,
+      tone: "neutral",
+      title:
+        "All-in cost (calls + per-saved budget) divided by customers saved. Compare to ARPU to sanity-check the deal.",
+    },
+    {
+      label: "Uplift from the model",
+      value: `${upliftPositive ? "+" : ""}${formatGbp(uplift, { compact: true })}`,
+      sub: "vs targeting the same volume randomly",
+      icon: upliftPositive ? TrendingUp : Sparkles,
+      tone: upliftPositive ? "success" : "neutral",
+      title:
+        "Net retained revenue from model-led targeting minus the same-cohort-size random campaign. This is the model's contribution to the P&L.",
+    },
+  ];
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "font-semibold tabular-nums",
-          emphasis && "text-primary text-base",
-          muted && "text-muted-foreground"
-        )}
-      >
-        {value}
-      </span>
+    <div className="px-5 sm:px-7 py-4 border-b border-border bg-[var(--surface-sunken)]/50">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {items.map((it) => {
+          const Icon = it.icon;
+          const toneClass =
+            it.tone === "primary"
+              ? "border-primary/30 bg-primary/5"
+              : it.tone === "success"
+                ? "border-[var(--success)]/30 bg-[var(--success)]/5"
+                : "border-border bg-card";
+          const valueClass =
+            it.tone === "primary"
+              ? "text-primary"
+              : it.tone === "success"
+                ? "text-[var(--success)]"
+                : "text-foreground";
+          return (
+            <div
+              key={it.label}
+              className={cn("rounded-lg border p-3", toneClass)}
+              title={it.title}
+            >
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Icon className="size-3.5" />
+                <span className="truncate">{it.label}</span>
+              </div>
+              <div className={cn("mt-1.5 text-2xl font-semibold tabular-nums", valueClass)}>
+                {it.value}
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">{it.sub}</div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
