@@ -405,7 +405,7 @@ function CustomerDetail({ customer, rules }: { customer: Customer; rules: import
       </div>
 
       {/* Why this customer — plain-English drill-down of top + and − drivers */}
-      <WhyThisCustomerPanel shap={customer.shap} />
+      <WhyThisCustomerPanel shap={orderedShap} />
 
       <div className="p-5 sm:p-7 border-t border-border">
         <div className="flex items-center gap-2 mb-1">
