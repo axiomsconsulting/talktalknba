@@ -36,7 +36,7 @@ export const Route = createFileRoute("/admin/connections")({
   component: ConnectionsAdminPage,
 });
 
-type ConnectionKind = "databricks" | "gdrive";
+type ConnectionKind = "databricks" | "gdrive" | "azure_repo";
 type RunStatus = "pending" | "running" | "success" | "error";
 
 type DatabricksQuery = { kind: string; sql: string };
