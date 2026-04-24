@@ -33,6 +33,7 @@ import { Route as ApiAdminConnectionsPullStatusRouteImport } from './routes/api.
 import { Route as ApiAdminConnectionsPullAzureRouteImport } from './routes/api.admin.connections.pull-azure'
 import { Route as ApiAdminConnectionsPreviewAzureRouteImport } from './routes/api.admin.connections.preview-azure'
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
+import { Route as ApiAdminConnectionsCancelPullRouteImport } from './routes/api.admin.connections.cancel-pull'
 
 const StrategyRoute = StrategyRouteImport.update({
   id: '/strategy',
@@ -161,6 +162,12 @@ const ApiAdminConnectionsIngestRoute =
     path: '/api/admin/connections/ingest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminConnectionsCancelPullRoute =
+  ApiAdminConnectionsCancelPullRouteImport.update({
+    id: '/api/admin/connections/cancel-pull',
+    path: '/api/admin/connections/cancel-pull',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -202,6 +210,7 @@ export interface FileRoutesByTo {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -229,6 +238,7 @@ export interface FileRoutesById {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -336,6 +349,7 @@ export interface RootRouteChildren {
   AdminBrandingRoute: typeof AdminBrandingRoute
   AdminConnectionsRoute: typeof AdminConnectionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  ApiAdminConnectionsCancelPullRoute: typeof ApiAdminConnectionsCancelPullRoute
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
   ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
   ApiAdminConnectionsPullAzureRoute: typeof ApiAdminConnectionsPullAzureRoute
@@ -519,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/cancel-pull': {
+      id: '/api/admin/connections/cancel-pull'
+      path: '/api/admin/connections/cancel-pull'
+      fullPath: '/api/admin/connections/cancel-pull'
+      preLoaderRoute: typeof ApiAdminConnectionsCancelPullRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -536,6 +557,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBrandingRoute: AdminBrandingRoute,
   AdminConnectionsRoute: AdminConnectionsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  ApiAdminConnectionsCancelPullRoute: ApiAdminConnectionsCancelPullRoute,
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
   ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
   ApiAdminConnectionsPullAzureRoute: ApiAdminConnectionsPullAzureRoute,

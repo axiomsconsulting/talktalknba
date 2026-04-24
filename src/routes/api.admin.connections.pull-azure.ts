@@ -87,13 +87,24 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
         if (jobErr) return jsonError(500, jobErr.message);
 
         // Kick the worker once now so the user sees progress without waiting
-        // for the next cron tick (best-effort, ignore failures).
+        // for the next cron tick. We deliberately AWAIT the fetch (not just
+        // fire-and-forget — Cloudflare-style serverless runtimes terminate
+        // background promises once the response is returned). The worker only
+        // processes ONE file per call, so this stays well under the per-request
+        // CPU budget; the worker self-chains for the remaining files.
         try {
           const origin = new URL(request.url).origin;
-          void fetch(`${origin}/api/public/hooks/pull-azure-worker`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: "{}",
+          await Promise.race([
+            fetch(`${origin}/api/public/hooks/pull-azure-worker`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: "{}",
+            }),
+            // Hard cap so a slow worker tick can never block the user-visible
+            // POST. Cron will pick up the job on the next 30-second tick.
+            new Promise((resolve) => setTimeout(resolve, 25_000)),
+          ]).catch(() => {
+            /* cron will pick it up */
           });
         } catch {
           /* cron will pick it up */

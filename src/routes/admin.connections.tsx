@@ -16,6 +16,7 @@ import {
   Plug,
   GitBranch,
   Download,
+  StopCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -104,7 +105,7 @@ type ModelRun = {
 
 type PullJob = {
   id: string;
-  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error";
+  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error" | "cancelled";
   files_total: number;
   files_done: number;
   current_kind: string | null;
@@ -307,6 +308,20 @@ function ConnectionsAdminPage() {
     }
   };
 
+  const cancelPull = async () => {
+    if (!pullJob) return;
+    setBusy("azure_repo-cancel");
+    try {
+      await callServer(`/api/admin/connections/cancel-pull`, { jobId: pullJob.id });
+      toast.success("Pull cancelled");
+      await refreshPullJob(pullJob.id);
+    } catch (e) {
+      toast.error(`Cancel failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const trigger = async () => {
     setBusy("retrain");
     try {
@@ -359,6 +374,7 @@ function ConnectionsAdminPage() {
             onSave={(patch) => upsert("azure_repo", patch)}
             onIngest={() => ingest("azure_repo")}
             onPull={pullAzure}
+            onCancel={cancelPull}
             pullJob={pullJob}
           />
         </TabsContent>
@@ -805,6 +821,7 @@ function AzurePanel({
   onSave,
   onIngest,
   onPull,
+  onCancel,
   pullJob,
 }: {
   conn?: Connection;
@@ -812,6 +829,7 @@ function AzurePanel({
   onSave: (patch: Partial<Connection>) => void;
   onIngest: () => void;
   onPull: () => void;
+  onCancel: () => void;
   pullJob: PullJob | null;
 }) {
   const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
@@ -1156,6 +1174,20 @@ function AzurePanel({
             )}
             {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
           </Button>
+          {isPullActive(pullJob) ? (
+            <Button
+              variant="destructive"
+              onClick={onCancel}
+              disabled={busy === "azure_repo-cancel"}
+            >
+              {busy === "azure_repo-cancel" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <StopCircle className="size-4" />
+              )}
+              Stop pull
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -1195,6 +1227,7 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
   if (!job) return null;
   const active = isPullActive(job);
   const failed = job.status === "error";
+  const cancelled = job.status === "cancelled";
   const done = job.status === "done";
 
   // Per-file percentage = bytes_done / bytes_total (only meaningful while parsing/uploading)
@@ -1218,16 +1251,26 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
     overall > 0 && active && overall < 100 ? Math.round((elapsedMs / overall) * (100 - overall)) : null;
 
   const summary = job.summary ?? {};
-  const summaryEntries = Object.entries(summary);
+  const summaryEntries = Object.entries(summary).filter(([k]) => !k.startsWith("_"));
+
+  // Build a friendly real-time status line
+  const fileNum = job.files_done + (active ? 1 : 0);
+  const liveLine = active
+    ? `Step ${fileNum}/${job.files_total} · ${job.status} ${job.current_kind ?? ""}${
+        job.current_file ? ` · ${job.current_file.split("/").pop()}` : ""
+      }`
+    : null;
 
   return (
     <div
       className={`mt-3 rounded-lg border ${
         failed
           ? "border-destructive/30 bg-destructive/5"
-          : done
-            ? "border-success/30 bg-success/5"
-            : "border-primary/30 bg-primary/5"
+          : cancelled
+            ? "border-amber-500/30 bg-amber-500/5"
+            : done
+              ? "border-success/30 bg-success/5"
+              : "border-primary/30 bg-primary/5"
       } p-4 space-y-3`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1238,11 +1281,11 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
           <div className="text-sm font-medium mt-0.5">
             {failed
               ? `Failed: ${job.error ?? "unknown error"}`
-              : done
-                ? `Completed — ${job.files_done}/${job.files_total} files`
-                : `${job.status} · ${job.current_kind ?? ""} ${
-                    job.current_file ? `· ${job.current_file.split("/").pop()}` : ""
-                  }`}
+              : cancelled
+                ? `Cancelled — ${job.files_done}/${job.files_total} files completed`
+                : done
+                  ? `Completed — ${job.files_done}/${job.files_total} files`
+                  : liveLine}
           </div>
         </div>
         <div className="text-right text-xs text-muted-foreground tabular-nums">
@@ -1257,7 +1300,7 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full transition-all ${
-              failed ? "bg-destructive" : done ? "bg-success" : "bg-primary"
+              failed ? "bg-destructive" : cancelled ? "bg-amber-500" : done ? "bg-success" : "bg-primary"
             }`}
             style={{ width: `${overall}%` }}
           />

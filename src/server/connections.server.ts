@@ -230,8 +230,15 @@ export async function azureListRepoItems(cfg: AzureRepoConfig) {
   return json.value ?? [];
 }
 
-/** Download a single file as raw bytes (Uint8Array). */
-export async function azureDownloadFile(cfg: AzureRepoConfig, path: string) {
+/** Download a single file as raw bytes (Uint8Array). Optional Range header
+ *  fetches only the first N bytes — used by previews to avoid pulling
+ *  multi-MB parquet/CSV files end-to-end. Azure DevOps honours standard
+ *  HTTP `Range` requests on repo items. */
+export async function azureDownloadFile(
+  cfg: AzureRepoConfig,
+  path: string,
+  opts?: { rangeBytes?: number },
+) {
   const params = new URLSearchParams({
     path,
     "api-version": "7.1",
@@ -243,7 +250,16 @@ export async function azureDownloadFile(cfg: AzureRepoConfig, path: string) {
     params.set("versionDescriptor.version", cfg.branch);
   }
   const url = `${azureBase(cfg)}/items?${params.toString()}`;
-  const res = await fetch(url, { headers: azureHeaders(cfg) });
+  const headers = { ...azureHeaders(cfg) } as Record<string, string>;
+  if (opts?.rangeBytes && opts.rangeBytes > 0) {
+    headers["Range"] = `bytes=0-${opts.rangeBytes - 1}`;
+  }
+  const res = await fetch(url, { headers });
+  // 200 (full), 206 (partial) and 416 (range not satisfiable) are all OK; on
+  // 416 we fall back to a plain GET so previews never break.
+  if (res.status === 416 && opts?.rangeBytes) {
+    return azureDownloadFile(cfg, path);
+  }
   if (!res.ok) {
     const text = await res.text();
     throw jsonError(res.status, `Azure download failed (${path}): ${text.slice(0, 300)}`);
