@@ -283,11 +283,14 @@ function ConnectionsAdminPage() {
       <PageHeader
         eyebrow="Admin"
         title="Live data connections"
-        description="Configure where the platform pulls customer, usage, calls, cease and model artefact data from. Both connectors are optional — without them, the dashboard shows the bundled sample data."
+        description="Configure where the platform pulls customer, usage, calls, cease and model artefact data from. All connectors are optional — without them, the dashboard shows the bundled sample data."
       />
 
-      <Tabs defaultValue="databricks" className="mt-6">
+      <Tabs defaultValue="azure_repo" className="mt-6">
         <TabsList>
+          <TabsTrigger value="azure_repo" className="gap-2">
+            <GitBranch className="size-4" /> Azure DevOps
+          </TabsTrigger>
           <TabsTrigger value="databricks" className="gap-2">
             <Database className="size-4" /> Databricks
           </TabsTrigger>
@@ -298,6 +301,16 @@ function ConnectionsAdminPage() {
             <Cpu className="size-4" /> Status & runs
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="azure_repo" className="mt-4">
+          <AzurePanel
+            conn={azr}
+            busy={busy}
+            onSave={(patch) => upsert("azure_repo", patch)}
+            onIngest={() => ingest("azure_repo")}
+            onPull={pullAzure}
+          />
+        </TabsContent>
 
         <TabsContent value="databricks" className="mt-4">
           <DatabricksPanel
