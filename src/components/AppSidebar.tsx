@@ -14,6 +14,7 @@ import {
   User as UserIcon,
   Shield,
   Palette,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import talktalkLogo from "@/assets/talktalk-logo.svg";
