@@ -4,6 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
 import { RoiSimulator } from "@/components/RoiSimulator";
+import { SensitivityPanel } from "@/components/SensitivityPanel";
+import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
 import {
   ResponsiveContainer,
@@ -57,6 +59,7 @@ function RoiPage() {
         eyebrow="Finance · Executive Summary"
         title="Retention Prioritisation Dashboard"
         description="Live commercial view of the TalkTalk NBA churn-prevention model. KPIs reflect the trained scoring run on 3.5M customers; the simulator below lets Finance stress-test spend and conversion assumptions."
+        actions={<ExportPdfButton />}
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
@@ -102,6 +105,9 @@ function RoiPage() {
 
         {/* Simulator */}
         <RoiSimulator />
+
+        {/* Sensitivity analysis */}
+        <SensitivityPanel />
 
         {/* Risk distribution */}
         <div className="grid lg:grid-cols-3 gap-5">
