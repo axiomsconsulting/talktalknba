@@ -345,6 +345,34 @@ function generateCustomers(): Customer[] {
     const contractStatus: Customer["contractStatus"] =
       seg.tier === "High" && rand() > 0.4 ? "Out of contract" : rand() > 0.7 ? "Rolling" : "In contract";
 
+    // Behavioural signals tuned to the segment
+    const techPool = ["FTTC", "FTTC", "FTTP", "ADSL", "GFAST"];
+    const technology = techPool[Math.floor(rand() * techPool.length)];
+    const soldSpeedMbps = pkg.includes("ADSL") ? 17 : pkg.includes("Fibre 35") ? 38 : pkg.includes("Fibre 65") || pkg.includes("Faster") ? 67 : pkg.includes("Fibre 150") ? 150 : pkg.includes("Fibre 500") ? 500 : 900;
+    const speedDeficit = seg.tier === "High" ? 0.25 + rand() * 0.4 : seg.tier === "Medium" ? rand() * 0.2 : rand() * 0.05;
+    const lineSpeedMbps = Math.max(2, Math.round(soldSpeedMbps * (1 - speedDeficit)));
+    const oocDays = contractStatus === "Out of contract" ? Math.round(60 + rand() * 600) : contractStatus === "Rolling" ? Math.round(rand() * 90) : -Math.round(60 + rand() * 540);
+    const loyaltyCalls90d = seg.tier === "High" ? 1 + Math.floor(rand() * 3) : seg.tier === "Medium" ? Math.floor(rand() * 2) : 0;
+    const totalHoldSeconds = seg.tier === "High" ? Math.round(600 + rand() * 2400) : seg.tier === "Medium" ? Math.round(rand() * 800) : 0;
+    const totalTalkSeconds = seg.tier === "High" ? Math.round(900 + rand() * 4200) : seg.tier === "Medium" ? Math.round(rand() * 1200) : Math.round(rand() * 200);
+    const monthlyDownloadGb = pkg.includes("ADSL") ? Math.round(20 + rand() * 80) : seg.tier === "Medium" ? Math.round(400 + rand() * 1800) : Math.round(60 + rand() * 400);
+    const monthlyUploadGb = Math.round(monthlyDownloadGb * (0.04 + rand() * 0.06));
+    const ceaseInsight: BehavioralSignals["ceaseInsight"] | undefined =
+      seg.tier === "High" && rand() > 0.55 ? (rand() > 0.5 ? "CompetitorDeals" : "VagueReason") : undefined;
+
+    const signals: BehavioralSignals = {
+      loyaltyCalls90d,
+      totalHoldSeconds,
+      totalTalkSeconds,
+      oocDays,
+      soldSpeedMbps,
+      lineSpeedMbps,
+      technology,
+      monthlyDownloadGb,
+      monthlyUploadGb,
+      ceaseInsight,
+    };
+
     customers.push({
       id,
       name: `${first} ${last}`,
@@ -356,6 +384,8 @@ function generateCustomers(): Customer[] {
       contractStatus,
       region,
       shap: generateShap(seg.tier, rand),
+      signals,
+      nbaTrigger: deriveNbaTrigger({ riskTier: seg.tier, contractStatus, signals, package: pkg }),
     });
   }
   return customers;
