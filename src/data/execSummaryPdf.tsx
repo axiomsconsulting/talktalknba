@@ -223,6 +223,43 @@ function ExecSummaryDocument({ inputs }: { inputs: SummaryInputs }) {
           </View>
         </View>
 
+        {/* Dilution + LTV-budget callout */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>REVENUE DILUTION & LTV BUDGET</Text>
+          <View style={styles.kpiRow}>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Gross retained · contract horizon</Text>
+              <Text style={styles.kpiValue}>
+                {formatGbp(totals.totalSaved * (roiParams.averageAnnualArpuGbp / 12) * 24, { compact: true })}
+              </Text>
+              <Text style={styles.kpiSub}>saved customers × ARPU × 24mo</Text>
+            </View>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Revenue dilution</Text>
+              <Text style={[styles.kpiValue, { color: COLORS.danger }]}>
+                −{formatGbp(totals.totalSaved * inputs.budget * 12, { compact: true })}
+              </Text>
+              <Text style={styles.kpiSub}>£{inputs.budget}/mo discount × 12mo × saves</Text>
+            </View>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Avg saved-customer LTV</Text>
+              <Text style={styles.kpiValue}>
+                {formatGbp((roiParams.averageAnnualArpuGbp / 12) * 27, { compact: true })}
+              </Text>
+              <Text style={styles.kpiSub}>tenure-based churn-adjusted horizon</Text>
+            </View>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>% of LTV used as budget</Text>
+              <Text style={[styles.kpiValue, { color: COLORS.primary }]}>
+                {totals.totalSaved > 0
+                  ? (((inputs.budget * 12) / ((roiParams.averageAnnualArpuGbp / 12) * 27)) * 100).toFixed(1) + "%"
+                  : "—"}
+              </Text>
+              <Text style={styles.kpiSub}>discount + cost-to-serve / LTV</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Top drivers */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>TOP CHURN DRIVERS · GLOBAL FEATURE IMPORTANCE</Text>
