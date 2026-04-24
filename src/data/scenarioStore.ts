@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 
-export type RoiViewMode = "lift" | "gross" | "compare";
+export type RoiViewMode = "lift" | "gross";
 
 type ScenarioState = {
   budget: number;
@@ -20,7 +20,7 @@ export const useScenarioStore = create<ScenarioState>((set) => ({
   budget: 20,
   successRate: 0.18,
   callCost: 4,
-  view: "compare",
+  view: "gross",
   setBudget: (v) => set({ budget: v }),
   setSuccessRate: (v) => set({ successRate: v }),
   setCallCost: (v) => set({ callCost: v }),
