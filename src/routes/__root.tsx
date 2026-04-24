@@ -7,6 +7,7 @@ import { AuthProvider } from "@/data/auth";
 import { AuthGate } from "@/components/AuthGate";
 import { useBrandingStore, applyBrandingToDocument } from "@/data/brandingStore";
 import { useLiveDataStore } from "@/data/liveDataStore";
+import { useCustomerStore } from "@/data/customerStore";
 
 function NotFoundComponent() {
   return (
@@ -114,9 +115,11 @@ function BrandingHydrator() {
 
 function LiveDataHydrator() {
   const load = useLiveDataStore((s) => s.load);
+  const hydrateCustomers = useCustomerStore((s) => s.hydrate);
   useEffect(() => {
     void load();
-  }, [load]);
+    void hydrateCustomers();
+  }, [load, hydrateCustomers]);
   return null;
 }
 
