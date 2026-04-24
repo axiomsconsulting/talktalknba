@@ -429,7 +429,7 @@ function CustomerDetail({ customer, rules }: { customer: Customer; rules: import
             isBase
             maxAbs={maxAbs}
           />
-          {customer.shap.map((s) => (
+          {orderedShap.map((s) => (
             <WaterfallStep
               key={s.feature}
               label={s.label}
