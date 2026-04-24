@@ -51,10 +51,10 @@ function BrandingPage() {
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
     setForm((f) => (f ? { ...f, [key]: value } : f));
 
-  const onUpload = async (file: File) => {
+  const onUpload = async (file: File, kind: LogoKind) => {
     setBusy(true);
     const ext = file.name.split(".").pop() ?? "png";
-    const path = `logo-${Date.now()}.${ext}`;
+    const path = `${kind}-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("branding").upload(path, file, {
       cacheControl: "3600",
       upsert: false,
@@ -65,9 +65,9 @@ function BrandingPage() {
       return;
     }
     const { data } = supabase.storage.from("branding").getPublicUrl(path);
-    update("logo_url", data.publicUrl);
+    update(kind === "logo" ? "logo_url" : "favicon_url", data.publicUrl);
     setBusy(false);
-    toast.success("Logo uploaded — don't forget to save.");
+    toast.success(`${kind === "logo" ? "Logo" : "Favicon"} uploaded — don't forget to save.`);
   };
 
   const onSave = async () => {
