@@ -23,6 +23,12 @@ const NAV_ITEMS = [
     icon: Workflow,
   },
   {
+    to: "/products",
+    label: "Product Catalogue",
+    sub: "Pricing & SKUs",
+    icon: PackageOpen,
+  },
+  {
     to: "/data",
     label: "Data Library",
     sub: "Uploads & mapping",
