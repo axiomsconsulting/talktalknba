@@ -14,7 +14,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { featureImportance, featureLabels } from "@/data/nba";
-import { personas, type Customer } from "@/data/customers";
+import { personas, type Customer, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
 import { cn } from "@/lib/utils";
 
