@@ -20,12 +20,19 @@ import {
   DEFAULT_MAPPING,
   detectColumns,
   mapCustomers,
+  smartMapping,
+  detectKindFromColumns,
+  aggregateCalls,
+  aggregateCease,
+  aggregateUsage,
   type FieldMapping,
+  type FileKind,
   type RawCustomerRow,
 } from "@/data/customerMapping";
 import { useCustomerStore } from "@/data/customerStore";
 import { allCustomers as defaultCustomers } from "@/data/customers";
 import { cn } from "@/lib/utils";
+
 
 type DatasetRow = {
   id: string;
