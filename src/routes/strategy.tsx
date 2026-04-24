@@ -304,3 +304,43 @@ function StrategyPage() {
     </AppShell>
   );
 }
+
+function TriggerCard({
+  icon: Icon,
+  source,
+  signal,
+  trigger,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  source: string;
+  signal: string;
+  trigger: (typeof NBA_TRIGGERS)[keyof typeof NBA_TRIGGERS];
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-[var(--surface-sunken)]/40 p-5 hover:border-primary/40 hover:shadow-[var(--shadow-md)] transition-all">
+      <div className="flex items-start gap-3">
+        <div className="size-10 rounded-lg bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center shadow-[var(--shadow-glow)] shrink-0">
+          <Icon className="size-5 text-primary-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            Source · {source}
+          </div>
+          <h3 className="text-sm font-semibold text-foreground mt-0.5">{trigger.label}</h3>
+          <div className="mt-2 text-[11px] font-medium text-primary">Signal</div>
+          <div className="text-xs text-foreground leading-relaxed">{signal}</div>
+          <div className="mt-2.5 text-[11px] font-medium text-primary">NBA rule</div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{trigger.description}</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-card border border-border text-muted-foreground">
+              {trigger.channel}
+            </span>
+            <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-primary/5 border border-primary/20 text-primary">
+              {trigger.offer}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
