@@ -179,6 +179,20 @@ export async function driveListFolder(folderId: string): Promise<DriveFile[]> {
   return out;
 }
 
+/** Download a Google Drive file's bytes via alt=media (raw blob). */
+export async function driveDownloadFile(fileId: string): Promise<Uint8Array> {
+  const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
+  const res = await fetch(
+    `${GATEWAY_URLS.drive}/files/${encodeURIComponent(fileId)}?alt=media`,
+    { headers },
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw jsonError(res.status, `Drive download failed: ${text.slice(0, 300)}`);
+  }
+  return new Uint8Array(await res.arrayBuffer());
+}
+
 /** Classify a Drive file name into a dataset kind based on filename keywords.
  *  All files live in a single shared folder (no subfolders), so we infer the
  *  dataset from the name. Returns null when the file doesn't match any kind. */
