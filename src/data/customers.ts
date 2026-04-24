@@ -394,7 +394,10 @@ function generateCustomers(): Customer[] {
 // Decide which Next Best Action a customer should receive based on their
 // behavioural signals. The rules mirror the four NBA triggers documented on
 // the Strategy page so the explainability and strategy views stay in sync.
-export function deriveNbaTrigger(input: {
+// NOTE: declared as `const` rather than `function` so module-init code that
+// runs at the top of this file (generateCustomers) can rely on it being
+// initialised before use under Vite's ESM dev runtime.
+export const deriveNbaTrigger = (input: {
   riskTier: RiskTier;
   contractStatus: Customer["contractStatus"];
   signals?: Partial<BehavioralSignals>;
