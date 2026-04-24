@@ -22,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminConnectionsRouteImport } from './routes/admin.connections'
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
+import { Route as ApiPublicIngestArtefactsRouteImport } from './routes/api.public.ingest.artefacts'
+import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public.hooks.poll-drive'
+import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
+import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.admin.connections.retrain'
+import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
 
 const StrategyRoute = StrategyRouteImport.update({
   id: '/strategy',
@@ -88,6 +93,34 @@ const AdminBrandingRoute = AdminBrandingRouteImport.update({
   path: '/admin/branding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestArtefactsRoute =
+  ApiPublicIngestArtefactsRouteImport.update({
+    id: '/api/public/ingest/artefacts',
+    path: '/api/public/ingest/artefacts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPollDriveRoute = ApiPublicHooksPollDriveRouteImport.update({
+  id: '/api/public/hooks/poll-drive',
+  path: '/api/public/hooks/poll-drive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminConnectionsTestRoute = ApiAdminConnectionsTestRouteImport.update({
+  id: '/api/admin/connections/test',
+  path: '/api/admin/connections/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminConnectionsRetrainRoute =
+  ApiAdminConnectionsRetrainRouteImport.update({
+    id: '/api/admin/connections/retrain',
+    path: '/api/admin/connections/retrain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminConnectionsIngestRoute =
+  ApiAdminConnectionsIngestRouteImport.update({
+    id: '/api/admin/connections/ingest',
+    path: '/api/admin/connections/ingest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +136,11 @@ export interface FileRoutesByFullPath {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
+  '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +156,11 @@ export interface FileRoutesByTo {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
+  '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +177,11 @@ export interface FileRoutesById {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
+  '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +199,11 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/ingest'
+    | '/api/admin/connections/retrain'
+    | '/api/admin/connections/test'
+    | '/api/public/hooks/poll-drive'
+    | '/api/public/ingest/artefacts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +219,11 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/ingest'
+    | '/api/admin/connections/retrain'
+    | '/api/admin/connections/test'
+    | '/api/public/hooks/poll-drive'
+    | '/api/public/ingest/artefacts'
   id:
     | '__root__'
     | '/'
@@ -181,6 +239,11 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/admin/connections/ingest'
+    | '/api/admin/connections/retrain'
+    | '/api/admin/connections/test'
+    | '/api/public/hooks/poll-drive'
+    | '/api/public/ingest/artefacts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +260,11 @@ export interface RootRouteChildren {
   AdminBrandingRoute: typeof AdminBrandingRoute
   AdminConnectionsRoute: typeof AdminConnectionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
+  ApiAdminConnectionsRetrainRoute: typeof ApiAdminConnectionsRetrainRoute
+  ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
+  ApiPublicHooksPollDriveRoute: typeof ApiPublicHooksPollDriveRoute
+  ApiPublicIngestArtefactsRoute: typeof ApiPublicIngestArtefactsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +360,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBrandingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest/artefacts': {
+      id: '/api/public/ingest/artefacts'
+      path: '/api/public/ingest/artefacts'
+      fullPath: '/api/public/ingest/artefacts'
+      preLoaderRoute: typeof ApiPublicIngestArtefactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/poll-drive': {
+      id: '/api/public/hooks/poll-drive'
+      path: '/api/public/hooks/poll-drive'
+      fullPath: '/api/public/hooks/poll-drive'
+      preLoaderRoute: typeof ApiPublicHooksPollDriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/connections/test': {
+      id: '/api/admin/connections/test'
+      path: '/api/admin/connections/test'
+      fullPath: '/api/admin/connections/test'
+      preLoaderRoute: typeof ApiAdminConnectionsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/connections/retrain': {
+      id: '/api/admin/connections/retrain'
+      path: '/api/admin/connections/retrain'
+      fullPath: '/api/admin/connections/retrain'
+      preLoaderRoute: typeof ApiAdminConnectionsRetrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/connections/ingest': {
+      id: '/api/admin/connections/ingest'
+      path: '/api/admin/connections/ingest'
+      fullPath: '/api/admin/connections/ingest'
+      preLoaderRoute: typeof ApiAdminConnectionsIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +412,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBrandingRoute: AdminBrandingRoute,
   AdminConnectionsRoute: AdminConnectionsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
+  ApiAdminConnectionsRetrainRoute: ApiAdminConnectionsRetrainRoute,
+  ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
+  ApiPublicHooksPollDriveRoute: ApiPublicHooksPollDriveRoute,
+  ApiPublicIngestArtefactsRoute: ApiPublicIngestArtefactsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

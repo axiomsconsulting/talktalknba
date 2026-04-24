@@ -57,8 +57,8 @@ export const Route = createFileRoute("/api/public/ingest/artefacts")({
             .from("model_runs")
             .update({
               status,
-              metrics: body.metrics ?? null,
-              artefact_paths: body.artefact_paths ?? null,
+              metrics: (body.metrics ?? null) as never,
+              artefact_paths: (body.artefact_paths ?? null) as never,
               error: body.error ?? null,
               databricks_run_id: body.databricks_run_id ?? null,
               finished_at,
@@ -69,12 +69,12 @@ export const Route = createFileRoute("/api/public/ingest/artefacts")({
           const { error } = await supabaseAdmin.from("model_runs").insert({
             status,
             triggered_by: "external",
-            metrics: body.metrics ?? null,
-            artefact_paths: body.artefact_paths ?? null,
+            metrics: (body.metrics ?? null) as never,
+            artefact_paths: (body.artefact_paths ?? null) as never,
             error: body.error ?? null,
             databricks_run_id: body.databricks_run_id ?? null,
             finished_at,
-          });
+          } as never);
           if (error) return jerr(500, error.message);
         }
 
