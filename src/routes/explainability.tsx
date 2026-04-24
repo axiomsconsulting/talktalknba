@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Brain, Search, Sparkles, ArrowRight, Zap } from "lucide-react";
+import { Brain, Search, Sparkles, ArrowRight, Zap, TrendingUp, TrendingDown, MessageCircleQuestion } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -14,7 +14,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { featureImportance, featureLabels } from "@/data/nba";
-import { personas, type Customer, NBA_TRIGGERS } from "@/data/customers";
+import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
 import { cn } from "@/lib/utils";
 
