@@ -249,16 +249,25 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
         filename: staged.file.name,
         rowsAggregated: staged.rows.length,
         uploadedAt: new Date().toISOString(),
+        origin: "upload" as const,
+        detail: `Stored upload · ${staged.file.name}`,
       };
+      const persist = useCustomerStore.getState().persistActive;
       if (activateAfterUpload && staged.kind === "customer_info") {
         const mapped = mapCustomers(staged.rows, mapping);
-        if (mapped.length > 0) setActive(mapped, staged.file.name);
+        if (mapped.length > 0) {
+          setActive(mapped, staged.file.name, "upload", `Stored upload · ${staged.file.name}`);
+          await persist({ kind: "customer_info", origin: "upload", label: staged.file.name, rows: mapped.length });
+        }
       } else if (staged.kind === "calls") {
         applyCalls(aggregateCalls(staged.rows), src);
+        await persist({ kind: "calls", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       } else if (staged.kind === "cease") {
         applyCease(aggregateCease(staged.rows), src);
+        await persist({ kind: "cease", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       } else if (staged.kind === "usage") {
         applyUsage(aggregateUsage(staged.rows), src);
+        await persist({ kind: "usage", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       }
 
       setStaged(null);
