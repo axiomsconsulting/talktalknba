@@ -102,8 +102,13 @@ export function TopImpactedCustomers() {
       {!empty && (
         <>
           {lastImport && (
-            <div className="px-5 sm:px-7 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/30">
-              Imported {new Date(lastImport).toLocaleString()} · {rows.length} customers
+            <div className="px-5 sm:px-7 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/30 flex items-center justify-between gap-3">
+              <span>
+                Imported {new Date(lastImport).toLocaleString()} · {rows.length} customers
+              </span>
+              <span>
+                Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+              </span>
             </div>
           )}
           <div className="overflow-x-auto">
@@ -111,7 +116,7 @@ export function TopImpactedCustomers() {
               <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 text-left">#</th>
-                  <th className="px-3 py-2 text-left">Customer</th>
+                  <th className="px-3 py-2 text-left w-[120px]">Customer</th>
                   <th className="px-3 py-2 text-right">Churn prob</th>
                   <th className="px-3 py-2 text-left">Top reasons</th>
                   <th className="px-3 py-2 text-left">Recommended NBA</th>
@@ -119,45 +124,77 @@ export function TopImpactedCustomers() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.rank}</td>
-                    <td className="px-3 py-2 font-mono text-[12px]">{r.customer_id}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      <span
-                        className={
-                          r.churn_prob >= 0.7
-                            ? "text-destructive font-semibold"
-                            : r.churn_prob >= 0.4
-                              ? "text-amber-600 font-medium"
-                              : "text-foreground"
-                        }
-                      >
-                        {(r.churn_prob * 100).toFixed(1)}%
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {(r.reason_codes ?? []).slice(0, 3).map((c, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary"
-                          >
-                            <Sparkles className="size-2.5" />
-                            {FEATURE_LABEL[c.feature] ?? c.feature}
-                          </span>
+                {pageRows.map((r) => {
+                  const id = r.customer_id ?? "";
+                  const chunk = Math.ceil(id.length / 3) || 1;
+                  const idLines = [
+                    id.slice(0, chunk),
+                    id.slice(chunk, chunk * 2),
+                    id.slice(chunk * 2),
+                  ].filter(Boolean);
+                  return (
+                    <tr key={r.id} className="border-t border-border hover:bg-muted/30 align-top">
+                      <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.rank}</td>
+                      <td className="px-3 py-2 font-mono text-[11px] leading-tight w-[120px] break-all">
+                        {idLines.map((line, i) => (
+                          <div key={i}>{line}</div>
                         ))}
-                        {(!r.reason_codes || r.reason_codes.length === 0) && (
-                          <span className="text-[11px] text-muted-foreground">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-[12px]">{r.recommended_nba ?? "—"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{gbp(r.expected_save_gbp)}</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        <span
+                          className={
+                            r.churn_prob >= 0.7
+                              ? "text-destructive font-semibold"
+                              : r.churn_prob >= 0.4
+                                ? "text-amber-600 font-medium"
+                                : "text-foreground"
+                          }
+                        >
+                          {(r.churn_prob * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {(r.reason_codes ?? []).slice(0, 3).map((c, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary"
+                            >
+                              <Sparkles className="size-2.5" />
+                              {FEATURE_LABEL[c.feature] ?? c.feature}
+                            </span>
+                          ))}
+                          {(!r.reason_codes || r.reason_codes.length === 0) && (
+                            <span className="text-[11px] text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-[12px]">{r.recommended_nba ?? "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{gbp(r.expected_save_gbp)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+          <div className="px-5 sm:px-7 py-3 border-t border-border bg-muted/20 flex items-center justify-between gap-3">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="size-3" /> Prev
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next <ChevronRight className="size-3" />
+            </button>
           </div>
         </>
       )}
