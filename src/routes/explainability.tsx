@@ -237,7 +237,7 @@ function ExplainabilityPage() {
                   No customers match "{query}".
                 </div>
               )}
-              {filteredCustomers.map((c) => (
+              {visibleCustomers.map((c) => (
                 <CustomerRow
                   key={c.id}
                   customer={c}
@@ -246,6 +246,33 @@ function ExplainabilityPage() {
                 />
               ))}
             </div>
+            {filteredCustomers.length > 0 && (
+              <div className="border-t border-border bg-muted/20 px-4 py-2 flex items-center justify-between gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-3" /> Prev
+                </button>
+                <div className="text-muted-foreground tabular-nums">
+                  Page <span className="font-semibold text-foreground">{page + 1}</span> of{" "}
+                  <span className="font-semibold text-foreground">{pageCount}</span>{" "}
+                  <span className="text-muted-foreground/70">
+                    · showing {visibleCustomers.length} of {filteredCustomers.length}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={page >= pageCount - 1}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next <ChevronRight className="size-3" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Detail panel */}
