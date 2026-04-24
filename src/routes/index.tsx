@@ -196,6 +196,9 @@ function RoiPage() {
         {/* Sensitivity analysis */}
         <SensitivityPanel />
 
+        {/* Per-NBA-trigger sensitivity */}
+        <PerTriggerSensitivityPanel />
+
         {/* Risk distribution */}
         <div className="grid lg:grid-cols-3 gap-5">
           <div className="lg:col-span-1 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-sm)]">
