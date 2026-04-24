@@ -422,7 +422,6 @@ function generateCustomers(): Customer[] {
   return customers;
 }
 
-
 export const NBA_TRIGGERS: Record<
   NbaTriggerKey,
   { label: string; description: string; channel: string; offer: string }
