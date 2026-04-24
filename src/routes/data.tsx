@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 type DatasetRow = {
   id: string;
   filename: string;
-  kind: "customer_info" | "usage" | "other";
+  kind: FileKind;
   storage_path: string;
   row_count: number | null;
   byte_size: number | null;
@@ -45,6 +45,7 @@ type DatasetRow = {
   is_active: boolean;
   uploaded_at: string;
 };
+
 
 export const Route = createFileRoute("/data")({
   head: () => ({
