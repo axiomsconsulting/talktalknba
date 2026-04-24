@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/data/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TRAIN_IPYNB, SCORE_IPYNB, README_MD } from "@/data/trainingScripts";
+import { TRAIN_IPYNB, SCORE_IPYNB, OFFER_IPYNB, README_MD } from "@/data/trainingScripts";
 import { useLiveDataStore } from "@/data/liveDataStore";
 
 type SignedLinks = Record<string, { url: string; filename: string } | null>;
