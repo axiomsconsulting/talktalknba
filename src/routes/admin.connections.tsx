@@ -745,3 +745,195 @@ function GDrivePanel({
     </Card>
   );
 }
+
+// ---------- Azure DevOps panel ----------
+
+function AzurePanel({
+  conn,
+  busy,
+  onSave,
+  onIngest,
+  onPull,
+}: {
+  conn?: Connection;
+  busy: string | null;
+  onSave: (patch: Partial<Connection>) => void;
+  onIngest: () => void;
+  onPull: () => void;
+}) {
+  const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
+  const initialFiles = cfg.files ?? {
+    cease: "cease.csv",
+    customer_info: "customer_info.parquet",
+    calls: "calls.csv",
+    usage: "usage.parquet",
+  };
+  const [organization, setOrganization] = useState(cfg.organization ?? "tt-insight-analytics");
+  const [project, setProject] = useState(cfg.project ?? "ds-tech-test");
+  const [repository, setRepository] = useState(cfg.repository ?? "tech-test");
+  const [branch, setBranch] = useState(cfg.branch ?? "main");
+  const [anonymous, setAnonymous] = useState(cfg.anonymous ?? true);
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [filesJson, setFilesJson] = useState(JSON.stringify(initialFiles, null, 2));
+
+  useEffect(() => {
+    const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
+    setOrganization(cfg.organization ?? "tt-insight-analytics");
+    setProject(cfg.project ?? "ds-tech-test");
+    setRepository(cfg.repository ?? "tech-test");
+    setBranch(cfg.branch ?? "main");
+    setAnonymous(cfg.anonymous ?? true);
+    setEnabled(conn?.enabled ?? true);
+    setFilesJson(JSON.stringify(cfg.files ?? initialFiles, null, 2));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conn?.id]);
+
+  const save = () => {
+    let parsedFiles: Record<string, string>;
+    try {
+      parsedFiles = JSON.parse(filesJson) as Record<string, string>;
+    } catch (e) {
+      toast.error(`Files JSON is not valid: ${(e as Error).message}`);
+      return;
+    }
+    const config: AzureRepoConfig = {
+      organization: organization.trim(),
+      project: project.trim(),
+      repository: repository.trim(),
+      branch: branch.trim() || undefined,
+      anonymous,
+      files: parsedFiles,
+    };
+    onSave({ config, enabled, name: `Azure DevOps · ${organization}/${repository}` });
+  };
+
+  const repoUrl = organization && project && repository
+    ? `https://dev.azure.com/${organization}/${project}/_git/${repository}`
+    : null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <GitBranch className="size-4" /> Azure DevOps Repos
+        </CardTitle>
+        <CardDescription>
+          Pull <code>cease.csv</code>, <code>calls.csv</code>, <code>customer_info.parquet</code>{" "}
+          and <code>usage.parquet</code> directly from a Git repo on{" "}
+          <span className="font-medium">dev.azure.com</span>. CSVs are parsed in-app and snapshotted
+          to the datasets bucket; parquet files are archived and handed off to the trainer (they
+          need a real Spark/DuckDB runtime to decode at scale).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="az-org">Organization</Label>
+            <Input
+              id="az-org"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+              placeholder="tt-insight-analytics"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="az-project">Project</Label>
+            <Input
+              id="az-project"
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              placeholder="ds-tech-test"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="az-repo">Repository</Label>
+            <Input
+              id="az-repo"
+              value={repository}
+              onChange={(e) => setRepository(e.target.value)}
+              placeholder="tech-test"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="az-branch">Branch</Label>
+            <Input
+              id="az-branch"
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              placeholder="main"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-md border p-3">
+          <Switch id="az-anon" checked={anonymous} onCheckedChange={setAnonymous} />
+          <div className="flex-1">
+            <Label htmlFor="az-anon" className="cursor-pointer">
+              Anonymous read
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Leave on for public Azure DevOps projects. Turn off and add a PAT to your
+              project secrets to read private repos.
+            </p>
+          </div>
+          <Switch id="az-enabled" checked={enabled} onCheckedChange={setEnabled} />
+          <Label htmlFor="az-enabled">Enabled</Label>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="az-files">File map (dataset kind → repo path)</Label>
+          <Textarea
+            id="az-files"
+            value={filesJson}
+            onChange={(e) => setFilesJson(e.target.value)}
+            rows={6}
+            className="font-mono text-xs"
+          />
+          <p className="text-xs text-muted-foreground">
+            Paths are relative to the repo root, e.g. <code>cease.csv</code> or{" "}
+            <code>data/usage.parquet</code>.
+          </p>
+        </div>
+
+        {repoUrl ? (
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+          >
+            Open repo on dev.azure.com <ExternalLink className="size-3" />
+          </a>
+        ) : null}
+
+        {conn?.last_status === "error" && conn.last_error ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">
+            Last error: {conn.last_error}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button onClick={save} disabled={busy === "azure_repo"}>
+            {busy === "azure_repo" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
+            Save
+          </Button>
+          <Button variant="outline" onClick={onIngest} disabled={!conn || !!busy}>
+            <RefreshCcw className="size-4" /> Index files
+          </Button>
+          <Button onClick={onPull} disabled={!conn || !!busy}>
+            {busy === "azure_repo-pull" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            Pull data now
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
