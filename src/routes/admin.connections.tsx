@@ -102,6 +102,23 @@ type ModelRun = {
   error: string | null;
 };
 
+type PullJob = {
+  id: string;
+  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error";
+  files_total: number;
+  files_done: number;
+  current_kind: string | null;
+  current_file: string | null;
+  current_bytes_total: number | null;
+  current_bytes_done: number | null;
+  current_rows_read: number | null;
+  started_at: string;
+  updated_at: string;
+  finished_at: string | null;
+  summary: Record<string, { rows?: number; bytes: number; format?: string; note?: string }> | null;
+  error: string | null;
+};
+
 const FIXED_SUBFOLDERS: Array<{ key: keyof GDriveSubfolders; label: string }> = [
   { key: "customer_info", label: "customer_info/" },
   { key: "calls", label: "calls/" },
@@ -241,14 +258,47 @@ function ConnectionsAdminPage() {
     }
   };
 
+  const [pullJob, setPullJob] = useState<PullJob | null>(null);
+
+  const refreshPullJob = async (jobId?: string) => {
+    try {
+      const res = (await callServer(`/api/admin/connections/pull-status`, jobId ? { jobId } : {})) as {
+        job: PullJob | null;
+      } | null;
+      setPullJob(res?.job ?? null);
+      return res?.job ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Poll while a job is active
+  useEffect(() => {
+    if (!pullJob) return;
+    const active = ["queued", "downloading", "parsing", "uploading"].includes(pullJob.status);
+    if (!active) return;
+    const t = setInterval(() => {
+      void refreshPullJob(pullJob.id);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [pullJob?.id, pullJob?.status]);
+
+  // On mount: hydrate latest job (so progress survives a refresh)
+  useEffect(() => {
+    if (isAdmin) void refreshPullJob();
+  }, [isAdmin]);
+
   const pullAzure = async () => {
     setBusy("azure_repo-pull");
     try {
       const res = (await callServer(`/api/admin/connections/pull-azure`, {})) as {
-        message?: string;
-        summary?: Record<string, { rows?: number; bytes: number; skipped?: string }>;
+        jobId?: string;
+        filesTotal?: number;
       } | null;
-      toast.success(res?.message ?? "Azure DevOps data pulled");
+      if (res?.jobId) {
+        toast.success(`Queued — ${res.filesTotal ?? 0} file(s) to pull`);
+        await refreshPullJob(res.jobId);
+      }
       await reload();
     } catch (e) {
       toast.error(`Pull failed: ${(e as Error).message}`);
@@ -309,6 +359,7 @@ function ConnectionsAdminPage() {
             onSave={(patch) => upsert("azure_repo", patch)}
             onIngest={() => ingest("azure_repo")}
             onPull={pullAzure}
+            pullJob={pullJob}
           />
         </TabsContent>
 
@@ -754,12 +805,14 @@ function AzurePanel({
   onSave,
   onIngest,
   onPull,
+  pullJob,
 }: {
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
   onIngest: () => void;
   onPull: () => void;
+  pullJob: PullJob | null;
 }) {
   const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
   const initialFiles = cfg.files ?? {
@@ -1081,6 +1134,8 @@ function AzurePanel({
           )}
         </div>
 
+        <PullProgress job={pullJob} disabled={!!busy} />
+
         <div className="flex flex-wrap gap-2 pt-2">
           <Button onClick={save} disabled={busy === "azure_repo"}>
             {busy === "azure_repo" ? (
@@ -1093,16 +1148,158 @@ function AzurePanel({
           <Button variant="outline" onClick={onIngest} disabled={!conn || !!busy}>
             <RefreshCcw className="size-4" /> Index files
           </Button>
-          <Button onClick={onPull} disabled={!conn || !!busy}>
-            {busy === "azure_repo-pull" ? (
+          <Button onClick={onPull} disabled={!conn || !!busy || isPullActive(pullJob)}>
+            {busy === "azure_repo-pull" || isPullActive(pullJob) ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <Download className="size-4" />
             )}
-            Pull data now
+            {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
           </Button>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ---------- Pull progress meter ----------
+
+function isPullActive(job: PullJob | null): boolean {
+  if (!job) return false;
+  return ["queued", "downloading", "parsing", "uploading"].includes(job.status);
+}
+
+function fmtBytes(n: number | null | undefined): string {
+  if (!n && n !== 0) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function fmtRows(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return n.toLocaleString();
+}
+
+function fmtDuration(ms: number): string {
+  if (ms < 1000) return `${ms} ms`;
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  return `${m}m ${rs}s`;
+}
+
+function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolean }) {
+  if (!job) return null;
+  const active = isPullActive(job);
+  const failed = job.status === "error";
+  const done = job.status === "done";
+
+  // Per-file percentage = bytes_done / bytes_total (only meaningful while parsing/uploading)
+  const filePct =
+    job.current_bytes_total && job.current_bytes_done
+      ? Math.min(100, Math.round((job.current_bytes_done / job.current_bytes_total) * 100))
+      : null;
+
+  // Overall percentage = files_done / files_total (per-file fraction folded in)
+  const overall = job.files_total
+    ? Math.min(
+        100,
+        Math.round(
+          ((job.files_done + (filePct != null ? filePct / 100 : 0)) / job.files_total) * 100,
+        ),
+      )
+    : 0;
+
+  const elapsedMs = Date.now() - new Date(job.started_at).getTime();
+  const etaMs =
+    overall > 0 && active && overall < 100 ? Math.round((elapsedMs / overall) * (100 - overall)) : null;
+
+  const summary = job.summary ?? {};
+  const summaryEntries = Object.entries(summary);
+
+  return (
+    <div
+      className={`mt-3 rounded-lg border ${
+        failed
+          ? "border-destructive/30 bg-destructive/5"
+          : done
+            ? "border-success/30 bg-success/5"
+            : "border-primary/30 bg-primary/5"
+      } p-4 space-y-3`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+            Pull job · {new Date(job.started_at).toLocaleTimeString()}
+          </div>
+          <div className="text-sm font-medium mt-0.5">
+            {failed
+              ? `Failed: ${job.error ?? "unknown error"}`
+              : done
+                ? `Completed — ${job.files_done}/${job.files_total} files`
+                : `${job.status} · ${job.current_kind ?? ""} ${
+                    job.current_file ? `· ${job.current_file.split("/").pop()}` : ""
+                  }`}
+          </div>
+        </div>
+        <div className="text-right text-xs text-muted-foreground tabular-nums">
+          <div>{overall}% overall</div>
+          <div>elapsed {fmtDuration(elapsedMs)}</div>
+          {etaMs != null && <div>eta ~{fmtDuration(etaMs)}</div>}
+        </div>
+      </div>
+
+      {/* Overall bar */}
+      <div className="space-y-1">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full transition-all ${
+              failed ? "bg-destructive" : done ? "bg-success" : "bg-primary"
+            }`}
+            style={{ width: `${overall}%` }}
+          />
+        </div>
+        <div className="text-[11px] text-muted-foreground flex justify-between">
+          <span>{job.files_done} / {job.files_total} files done</span>
+          {active && job.current_kind && (
+            <span>
+              {fmtRows(job.current_rows_read)} rows · {fmtBytes(job.current_bytes_done)}
+              {job.current_bytes_total ? ` / ${fmtBytes(job.current_bytes_total)}` : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Per-file bar (only while a file is in flight) */}
+      {active && filePct != null && (
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-full bg-primary/60 transition-all" style={{ width: `${filePct}%` }} />
+        </div>
+      )}
+
+      {/* Per-file summary once done */}
+      {summaryEntries.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+          {summaryEntries.map(([kind, info]) => (
+            <div key={kind} className="rounded border border-border bg-background/60 p-2">
+              <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">{kind}</div>
+              <div className="text-xs font-medium tabular-nums">{fmtRows(info.rows)} rows</div>
+              <div className="text-[10.5px] text-muted-foreground">{fmtBytes(info.bytes)} · {info.format ?? "—"}</div>
+              {info.note && <div className="text-[10.5px] text-amber-600 mt-0.5">{info.note}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!active && !done && !failed && (
+        <div className="text-[11px] text-muted-foreground">Waiting for next worker tick…</div>
+      )}
+      {disabled && active && (
+        <div className="text-[11px] text-muted-foreground">Polling every 2s…</div>
+      )}
+    </div>
   );
 }

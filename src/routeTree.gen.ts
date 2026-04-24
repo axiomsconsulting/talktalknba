@@ -23,9 +23,13 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminConnectionsRouteImport } from './routes/admin.connections'
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
 import { Route as ApiPublicIngestArtefactsRouteImport } from './routes/api.public.ingest.artefacts'
+import { Route as ApiPublicHooksPullAzureWorkerRouteImport } from './routes/api.public.hooks.pull-azure-worker'
 import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public.hooks.poll-drive'
+import { Route as ApiAdminTrainingKitRouteImport } from './routes/api.admin.training.kit'
+import { Route as ApiAdminTrainingImportRouteImport } from './routes/api.admin.training.import'
 import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
 import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.admin.connections.retrain'
+import { Route as ApiAdminConnectionsPullStatusRouteImport } from './routes/api.admin.connections.pull-status'
 import { Route as ApiAdminConnectionsPullAzureRouteImport } from './routes/api.admin.connections.pull-azure'
 import { Route as ApiAdminConnectionsPreviewAzureRouteImport } from './routes/api.admin.connections.preview-azure'
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
@@ -101,9 +105,25 @@ const ApiPublicIngestArtefactsRoute =
     path: '/api/public/ingest/artefacts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPullAzureWorkerRoute =
+  ApiPublicHooksPullAzureWorkerRouteImport.update({
+    id: '/api/public/hooks/pull-azure-worker',
+    path: '/api/public/hooks/pull-azure-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPollDriveRoute = ApiPublicHooksPollDriveRouteImport.update({
   id: '/api/public/hooks/poll-drive',
   path: '/api/public/hooks/poll-drive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminTrainingKitRoute = ApiAdminTrainingKitRouteImport.update({
+  id: '/api/admin/training/kit',
+  path: '/api/admin/training/kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminTrainingImportRoute = ApiAdminTrainingImportRouteImport.update({
+  id: '/api/admin/training/import',
+  path: '/api/admin/training/import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminConnectionsTestRoute = ApiAdminConnectionsTestRouteImport.update({
@@ -115,6 +135,12 @@ const ApiAdminConnectionsRetrainRoute =
   ApiAdminConnectionsRetrainRouteImport.update({
     id: '/api/admin/connections/retrain',
     path: '/api/admin/connections/retrain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminConnectionsPullStatusRoute =
+  ApiAdminConnectionsPullStatusRouteImport.update({
+    id: '/api/admin/connections/pull-status',
+    path: '/api/admin/connections/pull-status',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiAdminConnectionsPullAzureRoute =
@@ -153,9 +179,13 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
+  '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesByTo {
@@ -175,9 +205,13 @@ export interface FileRoutesByTo {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
+  '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesById {
@@ -198,9 +232,13 @@ export interface FileRoutesById {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
+  '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
+  '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
+  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRouteTypes {
@@ -222,9 +260,13 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
+    | '/api/admin/training/import'
+    | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
+    | '/api/public/hooks/pull-azure-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,9 +286,13 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
+    | '/api/admin/training/import'
+    | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
+    | '/api/public/hooks/pull-azure-worker'
     | '/api/public/ingest/artefacts'
   id:
     | '__root__'
@@ -266,9 +312,13 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
+    | '/api/admin/training/import'
+    | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
+    | '/api/public/hooks/pull-azure-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesById: FileRoutesById
 }
@@ -289,9 +339,13 @@ export interface RootRouteChildren {
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
   ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
   ApiAdminConnectionsPullAzureRoute: typeof ApiAdminConnectionsPullAzureRoute
+  ApiAdminConnectionsPullStatusRoute: typeof ApiAdminConnectionsPullStatusRoute
   ApiAdminConnectionsRetrainRoute: typeof ApiAdminConnectionsRetrainRoute
   ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
+  ApiAdminTrainingImportRoute: typeof ApiAdminTrainingImportRoute
+  ApiAdminTrainingKitRoute: typeof ApiAdminTrainingKitRoute
   ApiPublicHooksPollDriveRoute: typeof ApiPublicHooksPollDriveRoute
+  ApiPublicHooksPullAzureWorkerRoute: typeof ApiPublicHooksPullAzureWorkerRoute
   ApiPublicIngestArtefactsRoute: typeof ApiPublicIngestArtefactsRoute
 }
 
@@ -395,11 +449,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestArtefactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pull-azure-worker': {
+      id: '/api/public/hooks/pull-azure-worker'
+      path: '/api/public/hooks/pull-azure-worker'
+      fullPath: '/api/public/hooks/pull-azure-worker'
+      preLoaderRoute: typeof ApiPublicHooksPullAzureWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/poll-drive': {
       id: '/api/public/hooks/poll-drive'
       path: '/api/public/hooks/poll-drive'
       fullPath: '/api/public/hooks/poll-drive'
       preLoaderRoute: typeof ApiPublicHooksPollDriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/training/kit': {
+      id: '/api/admin/training/kit'
+      path: '/api/admin/training/kit'
+      fullPath: '/api/admin/training/kit'
+      preLoaderRoute: typeof ApiAdminTrainingKitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/training/import': {
+      id: '/api/admin/training/import'
+      path: '/api/admin/training/import'
+      fullPath: '/api/admin/training/import'
+      preLoaderRoute: typeof ApiAdminTrainingImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/connections/test': {
@@ -414,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/connections/retrain'
       fullPath: '/api/admin/connections/retrain'
       preLoaderRoute: typeof ApiAdminConnectionsRetrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/connections/pull-status': {
+      id: '/api/admin/connections/pull-status'
+      path: '/api/admin/connections/pull-status'
+      fullPath: '/api/admin/connections/pull-status'
+      preLoaderRoute: typeof ApiAdminConnectionsPullStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/connections/pull-azure': {
@@ -457,11 +539,24 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
   ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
   ApiAdminConnectionsPullAzureRoute: ApiAdminConnectionsPullAzureRoute,
+  ApiAdminConnectionsPullStatusRoute: ApiAdminConnectionsPullStatusRoute,
   ApiAdminConnectionsRetrainRoute: ApiAdminConnectionsRetrainRoute,
   ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
+  ApiAdminTrainingImportRoute: ApiAdminTrainingImportRoute,
+  ApiAdminTrainingKitRoute: ApiAdminTrainingKitRoute,
   ApiPublicHooksPollDriveRoute: ApiPublicHooksPollDriveRoute,
+  ApiPublicHooksPullAzureWorkerRoute: ApiPublicHooksPullAzureWorkerRoute,
   ApiPublicIngestArtefactsRoute: ApiPublicIngestArtefactsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

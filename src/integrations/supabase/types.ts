@@ -395,6 +395,105 @@ export type Database = {
         }
         Relationships: []
       }
+      pull_jobs: {
+        Row: {
+          connection_id: string
+          current_bytes_done: number | null
+          current_bytes_total: number | null
+          current_file: string | null
+          current_kind: string | null
+          current_rows_read: number | null
+          error: string | null
+          files_done: number
+          files_total: number
+          finished_at: string | null
+          id: string
+          pending_files: Json
+          started_at: string
+          status: string
+          summary: Json
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          connection_id: string
+          current_bytes_done?: number | null
+          current_bytes_total?: number | null
+          current_file?: string | null
+          current_kind?: string | null
+          current_rows_read?: number | null
+          error?: string | null
+          files_done?: number
+          files_total?: number
+          finished_at?: string | null
+          id?: string
+          pending_files?: Json
+          started_at?: string
+          status?: string
+          summary?: Json
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connection_id?: string
+          current_bytes_done?: number | null
+          current_bytes_total?: number | null
+          current_file?: string | null
+          current_kind?: string | null
+          current_rows_read?: number | null
+          error?: string | null
+          files_done?: number
+          files_total?: number
+          finished_at?: string | null
+          id?: string
+          pending_files?: Json
+          started_at?: string
+          status?: string
+          summary?: Json
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      top_customers: {
+        Row: {
+          churn_prob: number
+          created_at: string
+          customer_id: string
+          expected_save_gbp: number | null
+          features: Json | null
+          id: string
+          model_run_id: string | null
+          rank: number
+          reason_codes: Json
+          recommended_nba: string | null
+        }
+        Insert: {
+          churn_prob: number
+          created_at?: string
+          customer_id: string
+          expected_save_gbp?: number | null
+          features?: Json | null
+          id?: string
+          model_run_id?: string | null
+          rank: number
+          reason_codes?: Json
+          recommended_nba?: string | null
+        }
+        Update: {
+          churn_prob?: number
+          created_at?: string
+          customer_id?: string
+          expected_save_gbp?: number | null
+          features?: Json | null
+          id?: string
+          model_run_id?: string | null
+          rank?: number
+          reason_codes?: Json
+          recommended_nba?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

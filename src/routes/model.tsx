@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import stats from "@/data/modelStats.json";
 import { useLiveDataStore } from "@/data/liveDataStore";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { ExternalTrainingKit } from "@/components/ExternalTrainingKit";
 
 export const Route = createFileRoute("/model")({
   component: ModelPage,
@@ -375,6 +376,8 @@ function ModelPage() {
         />
 
         <SegmentBreakdown />
+
+        <ExternalTrainingKit />
 
         <Glossary />
       </div>
