@@ -144,7 +144,6 @@ function DataPage() {
           datasets={datasets}
           loading={loading}
           onChanged={refresh}
-          onActivate={setActive}
           activeFilename={source.kind === "uploaded" ? source.filename : null}
         />
       </div>
@@ -515,10 +514,82 @@ function EnrichmentStatusPanel() {
   const usageMap = useCustomerStore((s) => s.usageMap);
   const clear = useCustomerStore((s) => s.clearEnrichment);
 
+  const callsStats = useMemo(() => {
+    let totalLoyalty = 0;
+    let totalHold = 0;
+    let totalTalk = 0;
+    for (const v of callsMap.values()) {
+      totalLoyalty += v.loyaltyCalls90d;
+      totalHold += v.totalHoldSeconds;
+      totalTalk += v.totalTalkSeconds;
+    }
+    return { totalLoyalty, totalHold, totalTalk };
+  }, [callsMap]);
+
+  const ceaseStats = useMemo(() => {
+    const insights: Record<string, number> = {};
+    for (const v of ceaseMap.values()) insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
+    const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
+    return { distinct: Object.keys(insights).length, top };
+  }, [ceaseMap]);
+
+  const usageStats = useMemo(() => {
+    let totalDl = 0;
+    let totalUl = 0;
+    for (const v of usageMap.values()) {
+      totalDl += v.monthlyDownloadGb;
+      totalUl += v.monthlyUploadGb;
+    }
+    const n = usageMap.size || 1;
+    return { avgDl: Math.round(totalDl / n), avgUl: Math.round(totalUl / n) };
+  }, [usageMap]);
+
   const tiles = [
-    { kind: "calls" as const, icon: Phone, title: "calls.csv", description: "Loyalty calls, hold time, talk time, preferred channel", source: callsSource, size: callsMap.size },
-    { kind: "cease" as const, icon: XOctagon, title: "cease.csv", description: "Reason-description insight (e.g. CompetitorDeals)", source: ceaseSource, size: ceaseMap.size },
-    { kind: "usage" as const, icon: Activity, title: "usage.parquet", description: "Monthly download / upload vs package capacity", source: usageSource, size: usageMap.size },
+    {
+      kind: "calls" as const,
+      icon: Phone,
+      title: "Calls extract",
+      description: "Loyalty calls, hold time, talk time, preferred channel",
+      source: callsSource,
+      size: callsMap.size,
+      metrics: callsSource
+        ? [
+            { label: "Loyalty calls (sum)", value: callsStats.totalLoyalty.toLocaleString() },
+            { label: "Hold time", value: `${Math.round(callsStats.totalHold / 60).toLocaleString()} min` },
+            { label: "Talk time", value: `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min` },
+          ]
+        : [],
+    },
+    {
+      kind: "cease" as const,
+      icon: XOctagon,
+      title: "Cease extract",
+      description: "Reason-description insight (e.g. CompetitorDeals)",
+      source: ceaseSource,
+      size: ceaseMap.size,
+      metrics: ceaseSource
+        ? [
+            { label: "Distinct insights", value: ceaseStats.distinct.toString() },
+            { label: "Top reason", value: ceaseStats.top ? `${ceaseStats.top[0]}` : "—" },
+            { label: "Top count", value: ceaseStats.top ? ceaseStats.top[1].toLocaleString() : "—" },
+          ]
+        : [],
+    },
+    {
+      kind: "usage" as const,
+      icon: Activity,
+      title: "Usage extract",
+      description: "Monthly download / upload vs package capacity",
+      source: usageSource,
+      size: usageMap.size,
+      metrics: usageSource
+        ? [
+            { label: "Avg download / mo", value: `${usageStats.avgDl} GB` },
+            { label: "Avg upload / mo", value: `${usageStats.avgUl} GB` },
+            { label: "Customers", value: usageMap.size.toLocaleString() },
+          ]
+        : [],
+    },
   ];
 
   return (
@@ -529,8 +600,7 @@ function EnrichmentStatusPanel() {
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Calls · cease · usage signals</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Drop the corresponding extract above and it will be aggregated by customer ID and
-          layered onto the SHAP waterfall and NBA trigger derivation.
+          Activate an extract from the library below — or drop a new one above — and it will be aggregated by customer ID and layered onto the SHAP waterfall and NBA trigger derivation.
         </p>
       </div>
       <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -553,6 +623,11 @@ function EnrichmentStatusPanel() {
                   <div className="text-sm font-semibold text-foreground truncate">{t.title}</div>
                   <div className="text-[11px] text-muted-foreground">{t.description}</div>
                 </div>
+                {active && (
+                  <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    Active
+                  </span>
+                )}
               </div>
               {active ? (
                 <>
@@ -560,7 +635,19 @@ function EnrichmentStatusPanel() {
                     <span className="font-mono text-primary">{t.source!.filename}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t.size.toLocaleString()} customers enriched · {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
+                    {t.size.toLocaleString()} customers enriched · activated {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-1.5">
+                    {t.metrics.map((m) => (
+                      <div key={m.label} className="rounded-md border border-border bg-card px-2 py-1.5">
+                        <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                          {m.label}
+                        </div>
+                        <div className="text-xs font-semibold text-foreground tabular-nums truncate" title={m.value}>
+                          {m.value}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <button onClick={() => clear(t.kind)} className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start">
                     <Trash2 className="size-3" /> Clear enrichment
@@ -568,7 +655,7 @@ function EnrichmentStatusPanel() {
                 </>
               ) : (
                 <div className="text-[11px] text-muted-foreground italic">
-                  No {t.kind} extract loaded — upload one above to enrich the customer base.
+                  No {t.kind} extract loaded — upload one above or activate a stored {t.kind} file from the library.
                 </div>
               )}
             </div>
@@ -736,20 +823,33 @@ function DatasetTable({
   datasets,
   loading,
   onChanged,
-  onActivate,
   activeFilename,
 }: {
   datasets: DatasetRow[];
   loading: boolean;
   onChanged: () => void;
-  onActivate: (customers: ReturnType<typeof mapCustomers>, filename: string) => void;
   activeFilename: string | null;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
+  const setActive = useCustomerStore((s) => s.setActive);
+  const applyCalls = useCustomerStore((s) => s.applyCalls);
+  const applyCease = useCustomerStore((s) => s.applyCease);
+  const applyUsage = useCustomerStore((s) => s.applyUsage);
+  const callsSource = useCustomerStore((s) => s.callsSource);
+  const ceaseSource = useCustomerStore((s) => s.ceaseSource);
+  const usageSource = useCustomerStore((s) => s.usageSource);
+
+  function isActiveFor(d: DatasetRow): boolean {
+    if (d.kind === "customer_info") return activeFilename === d.filename;
+    if (d.kind === "calls") return callsSource?.filename === d.filename;
+    if (d.kind === "cease") return ceaseSource?.filename === d.filename;
+    if (d.kind === "usage") return usageSource?.filename === d.filename;
+    return false;
+  }
 
   async function activate(d: DatasetRow) {
-    if (d.kind !== "customer_info") {
-      alert("Only customer_info datasets can be activated.");
+    if (d.kind === "other") {
+      alert("Reference files cannot be activated.");
       return;
     }
     setBusyId(d.id);
@@ -758,12 +858,24 @@ function DatasetTable({
       if (error || !data) throw error ?? new Error("Download failed");
       const file = new File([data], d.filename, { type: data.type });
       const { rows } = await parseFile(file);
-      const mapped = mapCustomers(rows, DEFAULT_MAPPING);
-      if (mapped.length === 0) {
-        alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
-        return;
+
+      if (d.kind === "customer_info") {
+        const mapped = mapCustomers(rows, DEFAULT_MAPPING);
+        if (mapped.length === 0) {
+          alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
+          return;
+        }
+        setActive(mapped, d.filename);
+      } else {
+        const src = {
+          filename: d.filename,
+          rowsAggregated: rows.length,
+          uploadedAt: new Date().toISOString(),
+        };
+        if (d.kind === "calls") applyCalls(aggregateCalls(rows), src);
+        else if (d.kind === "cease") applyCease(aggregateCease(rows), src);
+        else if (d.kind === "usage") applyUsage(aggregateUsage(rows), src);
       }
-      onActivate(mapped, d.filename);
     } catch (err) {
       alert(`Activation failed: ${(err as Error).message}`);
     } finally {
@@ -791,7 +903,7 @@ function DatasetTable({
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Stored datasets</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Every upload is kept here. Re-activate any version to swap the live customer source.
+          Every upload is kept here. Activate any version to swap the live customer source or refresh the calls / cease / usage enrichment.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -822,7 +934,8 @@ function DatasetTable({
               </tr>
             )}
             {datasets.map((d) => {
-              const isActive = activeFilename === d.filename;
+              const isActive = isActiveFor(d);
+              const canActivate = d.kind !== "other";
               return (
                 <tr key={d.id} className={cn("hover:bg-muted/30", isActive && "bg-primary/5")}>
                   <td className="px-5 py-3.5">
@@ -850,7 +963,7 @@ function DatasetTable({
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {d.kind === "customer_info" && (
+                      {canActivate && !isActive && (
                         <button
                           onClick={() => activate(d)}
                           disabled={busyId === d.id}
