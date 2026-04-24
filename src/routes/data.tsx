@@ -735,20 +735,33 @@ function DatasetTable({
   datasets,
   loading,
   onChanged,
-  onActivate,
   activeFilename,
 }: {
   datasets: DatasetRow[];
   loading: boolean;
   onChanged: () => void;
-  onActivate: (customers: ReturnType<typeof mapCustomers>, filename: string) => void;
   activeFilename: string | null;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
+  const setActive = useCustomerStore((s) => s.setActive);
+  const applyCalls = useCustomerStore((s) => s.applyCalls);
+  const applyCease = useCustomerStore((s) => s.applyCease);
+  const applyUsage = useCustomerStore((s) => s.applyUsage);
+  const callsSource = useCustomerStore((s) => s.callsSource);
+  const ceaseSource = useCustomerStore((s) => s.ceaseSource);
+  const usageSource = useCustomerStore((s) => s.usageSource);
+
+  function isActiveFor(d: DatasetRow): boolean {
+    if (d.kind === "customer_info") return activeFilename === d.filename;
+    if (d.kind === "calls") return callsSource?.filename === d.filename;
+    if (d.kind === "cease") return ceaseSource?.filename === d.filename;
+    if (d.kind === "usage") return usageSource?.filename === d.filename;
+    return false;
+  }
 
   async function activate(d: DatasetRow) {
-    if (d.kind !== "customer_info") {
-      alert("Only customer_info datasets can be activated.");
+    if (d.kind === "other") {
+      alert("Reference files cannot be activated.");
       return;
     }
     setBusyId(d.id);
@@ -757,12 +770,24 @@ function DatasetTable({
       if (error || !data) throw error ?? new Error("Download failed");
       const file = new File([data], d.filename, { type: data.type });
       const { rows } = await parseFile(file);
-      const mapped = mapCustomers(rows, DEFAULT_MAPPING);
-      if (mapped.length === 0) {
-        alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
-        return;
+
+      if (d.kind === "customer_info") {
+        const mapped = mapCustomers(rows, DEFAULT_MAPPING);
+        if (mapped.length === 0) {
+          alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
+          return;
+        }
+        setActive(mapped, d.filename);
+      } else {
+        const src = {
+          filename: d.filename,
+          rowsAggregated: rows.length,
+          uploadedAt: new Date().toISOString(),
+        };
+        if (d.kind === "calls") applyCalls(aggregateCalls(rows), src);
+        else if (d.kind === "cease") applyCease(aggregateCease(rows), src);
+        else if (d.kind === "usage") applyUsage(aggregateUsage(rows), src);
       }
-      onActivate(mapped, d.filename);
     } catch (err) {
       alert(`Activation failed: ${(err as Error).message}`);
     } finally {
@@ -790,7 +815,7 @@ function DatasetTable({
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Stored datasets</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Every upload is kept here. Re-activate any version to swap the live customer source.
+          Every upload is kept here. Activate any version to swap the live customer source or refresh the calls / cease / usage enrichment.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -821,7 +846,8 @@ function DatasetTable({
               </tr>
             )}
             {datasets.map((d) => {
-              const isActive = activeFilename === d.filename;
+              const isActive = isActiveFor(d);
+              const canActivate = d.kind !== "other";
               return (
                 <tr key={d.id} className={cn("hover:bg-muted/30", isActive && "bg-primary/5")}>
                   <td className="px-5 py-3.5">
@@ -849,7 +875,7 @@ function DatasetTable({
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {d.kind === "customer_info" && (
+                      {canActivate && !isActive && (
                         <button
                           onClick={() => activate(d)}
                           disabled={busyId === d.id}
