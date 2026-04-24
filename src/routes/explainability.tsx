@@ -14,7 +14,8 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { featureImportance, featureLabels } from "@/data/nba";
-import { allCustomers, personas, type Customer } from "@/data/customers";
+import { personas, type Customer } from "@/data/customers";
+import { useCustomerStore } from "@/data/customerStore";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/explainability")({
@@ -38,8 +39,10 @@ export const Route = createFileRoute("/explainability")({
 });
 
 function ExplainabilityPage() {
+  const allCustomers = useCustomerStore((s) => s.customers);
+  const source = useCustomerStore((s) => s.source);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string>(personas[0].id);
+  const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
 
   const importanceData = useMemo(
     () =>
@@ -64,9 +67,9 @@ function ExplainabilityPage() {
         c.region.toLowerCase().includes(q) ||
         (c.persona ?? "").toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, allCustomers]);
 
-  const selected = allCustomers.find((c) => c.id === selectedId) ?? personas[0];
+  const selected = allCustomers.find((c) => c.id === selectedId) ?? allCustomers[0] ?? personas[0];
 
   return (
     <AppShell>
@@ -163,11 +166,23 @@ function ExplainabilityPage() {
                 />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
-                {filteredCustomers.length} of {allCustomers.length} customers · Upload{" "}
-                <code className="px-1 py-0.5 rounded bg-muted text-foreground/80 font-mono text-[10px]">
-                  customer_info.parquet
-                </code>{" "}
-                to load real extract
+                {filteredCustomers.length} of {allCustomers.length} customers ·{" "}
+                {source.kind === "uploaded" ? (
+                  <>
+                    live source{" "}
+                    <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]">
+                      {source.filename}
+                    </code>
+                  </>
+                ) : (
+                  <>
+                    using mock data — upload{" "}
+                    <code className="px-1 py-0.5 rounded bg-muted text-foreground/80 font-mono text-[10px]">
+                      customer_info.parquet
+                    </code>{" "}
+                    on the Data Library to swap in a real extract
+                  </>
+                )}
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">

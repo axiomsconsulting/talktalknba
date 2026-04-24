@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
   ResponsiveContainer,
@@ -11,13 +11,17 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { Info, Target, Coins, PoundSterling } from "lucide-react";
+import { Info, Target, Coins, PoundSterling, Users } from "lucide-react";
 import { roiParams, formatGbp, formatNumber } from "@/data/nba";
 import { cn } from "@/lib/utils";
+import {
+  useScenarioStore,
+  computeDeciles,
+  summariseScenario,
+  type RoiViewMode,
+} from "@/data/scenarioStore";
 
-type ViewMode = "lift" | "gross" | "compare";
-
-const VIEWS: Array<{ id: ViewMode; label: string; description: string }> = [
+const VIEWS: Array<{ id: RoiViewMode; label: string; description: string }> = [
   {
     id: "lift",
     label: "Targeted lift over baseline",
@@ -38,87 +42,44 @@ const VIEWS: Array<{ id: ViewMode; label: string; description: string }> = [
 ];
 
 export function RoiSimulator() {
-  const [budget, setBudget] = useState(20); // £ per saved customer
-  const [successRate, setSuccessRate] = useState(0.18); // 18%
-  const [callCost, setCallCost] = useState(4); // £ per outbound call
-  const [view, setView] = useState<ViewMode>("compare");
+  const { budget, successRate, callCost, view, setBudget, setSuccessRate, setCallCost, setView } =
+    useScenarioStore();
 
   const { highRiskVolume, averageAnnualArpuGbp, baselineRetentionConversionRate } = roiParams;
 
-  const calc = useMemo(() => {
-    // Build a bar chart over decile cohorts (10 cohorts of equal volume).
-    // Risk score concentration: top decile carries the highest churn probability.
-    // Simulate per-decile churn-likelihood weights summing to 1 across all 10 deciles.
-    const decileWeights = [0.27, 0.18, 0.13, 0.10, 0.08, 0.07, 0.06, 0.05, 0.04, 0.02];
-    const cohortSize = Math.round(highRiskVolume / 10);
+  const calc = useMemo(
+    () =>
+      computeDeciles({
+        budget,
+        successRate,
+        callCost,
+        view,
+        highRiskVolume,
+        averageAnnualArpuGbp,
+        baselineRetentionConversionRate,
+      }),
+    [budget, successRate, callCost, view, highRiskVolume, averageAnnualArpuGbp, baselineRetentionConversionRate]
+  );
+
+  const totals = useMemo(() => summariseScenario(calc), [calc]);
+
+  // Top decile vs random comparison (D1 only — the cohort decision)
+  const topDecile = calc[0];
+  const randomCohortSaved = Math.round(
+    (totals.totalSaved / 10) * (calc.reduce((s, d) => s + d.targetedSaved, 0) > 0 ? 1 : 1)
+  );
+  // The expected saves if you picked the SAME volume randomly across the whole high-risk population
+  const randomEquivalent = useMemo(() => {
+    const cohortSize = topDecile.contacted;
+    const avgConversionAcrossBase = successRate; // success rate applies to actual at-risk
+    // average at-risk in any given cohort if randomly sampled from high-risk volume
+    const avgAtRiskPerCohort = highRiskVolume * 0.1;
+    const saved = avgAtRiskPerCohort * avgConversionAcrossBase;
     const arpu = averageAnnualArpuGbp;
-
-    // Random sampling assumption: each cohort = average risk = total / 10
-    const randomChurnPerCohort = (decileWeights.reduce((a, b) => a + b, 0) / 10) * highRiskVolume;
-
-    return decileWeights.map((w, i) => {
-      const decile = i + 1;
-      const targetedAtRiskCustomers = w * highRiskVolume; // expected churners in this decile if untreated
-      const randomAtRiskCustomers = randomChurnPerCohort;
-
-      // Customers we contact in this cohort (we contact everyone in the cohort)
-      const contacted = cohortSize;
-      const callSpend = contacted * callCost;
-
-      // Targeted: success rate is full rate; baseline always saves 15% of at-risk
-      const targetedSavedCustomers = targetedAtRiskCustomers * successRate;
-      const targetedBaselineSaved = targetedAtRiskCustomers * baselineRetentionConversionRate;
-      const targetedIncrementalSaved = targetedSavedCustomers - targetedBaselineSaved;
-
-      const targetedRevenueSaved = targetedSavedCustomers * arpu;
-      const targetedIncrementalRevenue = targetedIncrementalSaved * arpu;
-      const targetedBudgetSpend = targetedSavedCustomers * budget;
-      const targetedTotalCost = callSpend + targetedBudgetSpend;
-
-      // Random sampling: same volume contacted but random hit rate
-      const randomSavedCustomers = randomAtRiskCustomers * successRate * (cohortSize / highRiskVolume) * 10 / 10;
-      // Simpler: random cohort hit rate is the average across base
-      const randomSavedSimple = (randomAtRiskCustomers / 10) * successRate;
-      const randomRevenueSaved = randomSavedSimple * arpu;
-      const randomBudgetSpend = randomSavedSimple * budget;
-      const randomTotalCost = callSpend + randomBudgetSpend;
-
-      let targetedNet = 0;
-      let randomNet = 0;
-
-      if (view === "lift") {
-        targetedNet = targetedIncrementalRevenue - targetedTotalCost;
-        randomNet = randomRevenueSaved - randomBudgetSpend - callSpend - (randomAtRiskCustomers / 10) * baselineRetentionConversionRate * arpu * -0; // baseline subtracted
-        // Random lift over baseline
-        const randomBaselineSaved = (randomAtRiskCustomers / 10) * baselineRetentionConversionRate;
-        const randomIncrementalRevenue = (randomSavedSimple - randomBaselineSaved) * arpu;
-        randomNet = randomIncrementalRevenue - randomTotalCost;
-      } else if (view === "gross") {
-        targetedNet = targetedRevenueSaved - targetedTotalCost;
-        randomNet = randomRevenueSaved - randomTotalCost;
-      } else {
-        // compare uses gross saves minus costs as the apples-to-apples measure
-        targetedNet = targetedRevenueSaved - targetedTotalCost;
-        randomNet = randomRevenueSaved - randomTotalCost;
-      }
-
-      return {
-        decile: `D${decile}`,
-        targeted: Math.round(targetedNet),
-        random: Math.round(randomNet),
-        targetedSaved: Math.round(targetedSavedCustomers),
-        contacted,
-      };
-    });
-  }, [budget, successRate, callCost, view, highRiskVolume, averageAnnualArpuGbp, baselineRetentionConversionRate]);
-
-  const totals = useMemo(() => {
-    const totalTargetedNet = calc.reduce((s, d) => s + d.targeted, 0);
-    const totalRandomNet = calc.reduce((s, d) => s + d.random, 0);
-    const totalSaved = calc.reduce((s, d) => s + d.targetedSaved, 0);
-    const totalContacted = calc.reduce((s, d) => s + d.contacted, 0);
-    return { totalTargetedNet, totalRandomNet, totalSaved, totalContacted };
-  }, [calc]);
+    const rev = saved * arpu;
+    const cost = cohortSize * callCost + saved * budget;
+    return { saved: Math.round(saved), revenue: Math.round(rev), net: Math.round(rev - cost), cohortSize };
+  }, [topDecile, successRate, highRiskVolume, averageAnnualArpuGbp, callCost, budget]);
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
@@ -152,7 +113,7 @@ export function RoiSimulator() {
 
       <div className="grid lg:grid-cols-[1fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-border">
         {/* Sliders */}
-        <div className="p-5 sm:p-7 space-y-7 bg-[var(--surface-sunken)]/40">
+        <div className="p-5 sm:p-7 space-y-6 bg-[var(--surface-sunken)]/40">
           <SliderControl
             icon={Coins}
             label="Retention Budget per Saved Customer"
@@ -188,8 +149,8 @@ export function RoiSimulator() {
           />
 
           <div className="rounded-lg bg-card border border-border p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Scenario outputs
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+              <Users className="size-3" /> Targeted at this scenario
             </div>
             <div className="space-y-2.5 text-sm">
               <Stat label="Customers contacted" value={formatNumber(totals.totalContacted, { compact: true })} />
@@ -220,7 +181,7 @@ export function RoiSimulator() {
             <Info className="size-3.5 mt-0.5 shrink-0 text-primary" />
             <span>{VIEWS.find((v) => v.id === view)?.description}</span>
           </div>
-          <div className="h-[380px] -mx-2">
+          <div className="h-[320px] -mx-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={calc} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.01 300)" vertical={false} />
@@ -267,6 +228,76 @@ export function RoiSimulator() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Top-decile vs random comparison table */}
+          <div className="mt-4 rounded-lg border border-border overflow-hidden">
+            <div className="px-4 py-2.5 bg-[var(--surface-sunken)] border-b border-border flex items-center justify-between">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Top-decile vs random · same contact volume
+              </div>
+              <div className="text-[11px] text-muted-foreground tabular-nums">
+                cohort: {formatNumber(topDecile.contacted, { compact: true })}
+              </div>
+            </div>
+            <table className="w-full text-xs">
+              <thead className="bg-card text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Strategy</th>
+                  <th className="px-4 py-2 text-right font-medium">Customers saved</th>
+                  <th className="px-4 py-2 text-right font-medium">Revenue saved</th>
+                  <th className="px-4 py-2 text-right font-medium">Net ROI</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                <tr className="bg-primary/5">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-primary" />
+                      <span className="font-medium text-foreground">Top decile (model-led)</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-foreground">
+                    {formatNumber(topDecile.targetedSaved, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-foreground">
+                    {formatGbp(topDecile.targetedRevenueSaved, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-primary">
+                    {formatGbp(topDecile.targeted, { compact: true })}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-muted-foreground" />
+                      <span className="font-medium text-foreground">Random sample · equal size</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatNumber(randomEquivalent.saved, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatGbp(randomEquivalent.revenue, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatGbp(randomEquivalent.net, { compact: true })}
+                  </td>
+                </tr>
+                <tr className="bg-[var(--success)]/5">
+                  <td className="px-4 py-2.5 font-semibold text-foreground">Model uplift</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-[var(--success)] font-semibold">
+                    +{formatNumber(topDecile.targetedSaved - randomEquivalent.saved, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-[var(--success)] font-semibold">
+                    +{formatGbp(topDecile.targetedRevenueSaved - randomEquivalent.revenue, { compact: true })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-[var(--success)] font-semibold">
+                    +{formatGbp(topDecile.targeted - randomEquivalent.net, { compact: true })}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
