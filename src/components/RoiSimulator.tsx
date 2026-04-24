@@ -11,7 +11,7 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { Info, Target, Coins, PoundSterling, Users, Layers } from "lucide-react";
+import { Info, Target, Coins, PoundSterling, Users, Layers, TrendingUp, BadgePoundSterling, Sparkles } from "lucide-react";
 import { roiParams, formatGbp, formatNumber } from "@/data/nba";
 import { cn } from "@/lib/utils";
 import {
