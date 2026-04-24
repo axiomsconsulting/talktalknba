@@ -138,6 +138,8 @@ function DataPage() {
 
         <UploadCard onUploaded={refresh} />
 
+        <EnrichmentStatusPanel />
+
         <DatasetTable
           datasets={datasets}
           loading={loading}
