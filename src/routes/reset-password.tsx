@@ -20,11 +20,43 @@ function ResetPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // The recovery link puts a session on the URL hash; supabase-js handles it
-    // automatically via detectSessionInUrl. We just confirm we have a session.
-    void supabase.auth.getSession().then(({ data }) => {
-      setReady(!!data.session);
+    let cancelled = false;
+
+    // Listen for the PASSWORD_RECOVERY event fired by detectSessionInUrl
+    // when supabase-js parses the recovery tokens out of the URL hash.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) {
+        setReady(true);
+      }
     });
+
+    // Also poll the current session — covers the case where the listener
+    // attaches after detectSessionInUrl has already processed the hash, or
+    // the user lands here while already signed in (e.g. clicking the link
+    // in another tab).
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (data.session) {
+        setReady(true);
+        return;
+      }
+      // If the URL still has a hash (token fragment), give supabase-js a
+      // moment to process it.
+      if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+        setTimeout(check, 250);
+      } else {
+        // No session and no recovery hash — link is invalid or expired.
+        setError("This reset link is invalid or has expired. Request a new one from the sign-in page.");
+      }
+    };
+    void check();
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const submit = async (e: FormEvent) => {
