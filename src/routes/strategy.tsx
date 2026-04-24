@@ -8,10 +8,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   CircleSlash,
+  Headphones,
+  Wrench,
+  Mail,
+  PoundSterling,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { treatmentMatrix, roiParams, formatNumber } from "@/data/nba";
+import { NBA_TRIGGERS } from "@/data/customers";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/strategy")({
