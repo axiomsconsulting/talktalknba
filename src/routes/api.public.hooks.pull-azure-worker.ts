@@ -327,3 +327,14 @@ async function failJob(jobId: string, message: string) {
     .update({ status: "error", error: message, finished_at: new Date().toISOString() })
     .eq("id", jobId);
 }
+
+/** Random sample of `k` items from `arr` (Fisher–Yates partial shuffle). */
+function reservoirSample<T>(arr: T[], k: number): T[] {
+  if (k >= arr.length) return arr.slice();
+  const copy = arr.slice();
+  for (let i = 0; i < k; i += 1) {
+    const j = i + Math.floor(Math.random() * (copy.length - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, k);
+}
