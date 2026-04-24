@@ -13,9 +13,12 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
-import { featureImportance, featureLabels } from "@/data/nba";
+import { featureImportance, featureLabels, formatGbp } from "@/data/nba";
 import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import { customerLtv } from "@/data/financials";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/explainability")({
