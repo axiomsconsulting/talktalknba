@@ -436,13 +436,27 @@ function recommendAction(c: Customer): string {
   return "Suppress from outbound. Maintain in nurture sequences only — outbound contact would erode satisfaction.";
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value, tone }: { label: string; value: string; tone?: "warn" }) {
   return (
-    <div className="rounded-lg bg-card border border-border px-3 py-2">
+    <div
+      className={cn(
+        "rounded-lg border px-3 py-2",
+        tone === "warn"
+          ? "bg-[var(--risk-high)]/5 border-[var(--risk-high)]/30"
+          : "bg-card border-border"
+      )}
+    >
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-      <div className="text-sm font-medium text-foreground mt-0.5 truncate">{value}</div>
+      <div
+        className={cn(
+          "text-sm font-medium mt-0.5 truncate",
+          tone === "warn" ? "text-[var(--risk-high)]" : "text-foreground"
+        )}
+      >
+        {value}
+      </div>
     </div>
   );
 }
