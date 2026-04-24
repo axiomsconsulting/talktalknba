@@ -176,3 +176,141 @@ export async function databricksTriggerJob(jobId: string, runName?: string) {
   }
   return (await res.json()) as { run_id?: number; number_in_job?: number };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Azure DevOps Repos helpers                                         */
+/*  Anonymous read against dev.azure.com REST API. No auth required    */
+/*  when the project allows public access (the tt-insight-analytics    */
+/*  /tech-test repo does).                                             */
+/* ------------------------------------------------------------------ */
+
+export type AzureRepoConfig = {
+  organization: string;
+  project: string;
+  repository: string;
+  branch?: string;
+  anonymous?: boolean;
+  /** Optional PAT — only used when anonymous=false. */
+  pat?: string;
+  /** Map of dataset kind ("cease", "calls", ...) -> repo path. */
+  files: Record<string, string>;
+};
+
+function azureBase(cfg: AzureRepoConfig) {
+  const { organization, project, repository } = cfg;
+  return `https://dev.azure.com/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/_apis/git/repositories/${encodeURIComponent(repository)}`;
+}
+
+function azureHeaders(cfg: AzureRepoConfig): Record<string, string> {
+  if (cfg.anonymous) return { Accept: "application/json" };
+  if (cfg.pat) {
+    const token = Buffer.from(`:${cfg.pat}`).toString("base64");
+    return { Accept: "application/json", Authorization: `Basic ${token}` };
+  }
+  return { Accept: "application/json" };
+}
+
+/** List repository items (recursive, full tree). */
+export async function azureListRepoItems(cfg: AzureRepoConfig) {
+  const url = `${azureBase(cfg)}/items?recursionLevel=Full&api-version=7.1`;
+  const res = await fetch(url, { headers: azureHeaders(cfg) });
+  if (!res.ok) {
+    const text = await res.text();
+    throw jsonError(res.status, `Azure list items failed: ${text.slice(0, 300)}`);
+  }
+  const json = (await res.json()) as {
+    value?: Array<{
+      objectId: string;
+      gitObjectType: string;
+      commitId: string;
+      path: string;
+      isFolder?: boolean;
+    }>;
+  };
+  return json.value ?? [];
+}
+
+/** Download a single file as raw bytes (Uint8Array). */
+export async function azureDownloadFile(cfg: AzureRepoConfig, path: string) {
+  const params = new URLSearchParams({
+    path,
+    "api-version": "7.1",
+    "$format": "octetStream",
+    download: "true",
+  });
+  if (cfg.branch) {
+    params.set("versionDescriptor.versionType", "branch");
+    params.set("versionDescriptor.version", cfg.branch);
+  }
+  const url = `${azureBase(cfg)}/items?${params.toString()}`;
+  const res = await fetch(url, { headers: azureHeaders(cfg) });
+  if (!res.ok) {
+    const text = await res.text();
+    throw jsonError(res.status, `Azure download failed (${path}): ${text.slice(0, 300)}`);
+  }
+  const buf = new Uint8Array(await res.arrayBuffer());
+  return buf;
+}
+
+/** sha256 hex of a Uint8Array, using Web Crypto. */
+export async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const arr = Array.from(new Uint8Array(digest));
+  return arr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tiny CSV parser — handles quoted fields, embedded commas/newlines  */
+/*  and CRLF.  No streaming; intended for the small cease.csv /        */
+/*  calls.csv dropped into the repo (a few MB at most).                */
+/* ------------------------------------------------------------------ */
+
+export function parseCsv(text: string): { headers: string[]; rows: string[][] } {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inQuotes = true;
+      continue;
+    }
+    if (ch === ",") {
+      cur.push(field);
+      field = "";
+      continue;
+    }
+    if (ch === "\n" || ch === "\r") {
+      // finish row (skip the \n in \r\n)
+      if (field.length || cur.length) {
+        cur.push(field);
+        rows.push(cur);
+        cur = [];
+        field = "";
+      }
+      if (ch === "\r" && text[i + 1] === "\n") i += 1;
+      continue;
+    }
+    field += ch;
+  }
+  if (field.length || cur.length) {
+    cur.push(field);
+    rows.push(cur);
+  }
+  const headers = rows.shift() ?? [];
+  return { headers, rows };
+}
