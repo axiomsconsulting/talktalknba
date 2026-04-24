@@ -49,6 +49,12 @@ export const Route = createRootRoute({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "TalkTalk NBA — Retention Decisioning" },
+      { name: "description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },
+      { property: "og:description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },
+      { name: "twitter:description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b2136d87-7108-4e16-ac69-cb2ba346e5c6/id-preview-e078b3c9--eba547f9-967a-4de5-bf53-d035c4b48cd6.lovable.app-1777040154971.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b2136d87-7108-4e16-ac69-cb2ba346e5c6/id-preview-e078b3c9--eba547f9-967a-4de5-bf53-d035c4b48cd6.lovable.app-1777040154971.png" },
     ],
     links: [
       {
