@@ -61,7 +61,13 @@ type LiveDataStore = {
   loading: boolean;
   stats: LiveModelStats | null;
   run: LiveRunMeta | null;
-  load: () => Promise<void>;
+  /**
+   * Fetch the latest successful model_runs row.
+   * Pass `force: true` to bypass the "already loaded" guard — needed after
+   * the user signs in (the initial pre-auth call returns null due to RLS)
+   * or after a fresh import via the External Training Kit.
+   */
+  load: (force?: boolean) => Promise<void>;
 };
 
 export const useLiveDataStore = create<LiveDataStore>((set, get) => ({
@@ -69,8 +75,13 @@ export const useLiveDataStore = create<LiveDataStore>((set, get) => ({
   loading: false,
   stats: null,
   run: null,
-  load: async () => {
-    if (get().loading || get().loaded) return;
+  load: async (force = false) => {
+    const state = get();
+    if (state.loading) return;
+    // Skip the implicit on-mount call once we already have stats; always
+    // honour explicit `force` requests so post-login / post-import refreshes
+    // re-read the row that RLS previously hid.
+    if (!force && state.loaded && state.stats) return;
     set({ loading: true });
     try {
       const { data, error } = await supabase

@@ -8,6 +8,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { useBrandingStore, applyBrandingToDocument } from "@/data/brandingStore";
 import { useLiveDataStore } from "@/data/liveDataStore";
 import { useCustomerStore } from "@/data/customerStore";
+import { useAuth } from "@/data/auth";
 
 function NotFoundComponent() {
   return (
@@ -116,10 +117,15 @@ function BrandingHydrator() {
 function LiveDataHydrator() {
   const load = useLiveDataStore((s) => s.load);
   const hydrateCustomers = useCustomerStore((s) => s.hydrate);
+  // Re-fetch the latest model run whenever the auth session changes.
+  // The initial pre-auth call is blocked by RLS (returns null), so we MUST
+  // force a refetch once a session is available — otherwise the store stays
+  // stuck on `loaded: true / stats: null` and the Model page renders blank.
+  const userId = useAuth().user?.id ?? null;
   useEffect(() => {
-    void load();
+    void load(!!userId);
     void hydrateCustomers();
-  }, [load, hydrateCustomers]);
+  }, [load, hydrateCustomers, userId]);
   return null;
 }
 
