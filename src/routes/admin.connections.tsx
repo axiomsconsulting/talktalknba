@@ -1174,6 +1174,20 @@ function AzurePanel({
             )}
             {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
           </Button>
+          {isPullActive(pullJob) ? (
+            <Button
+              variant="destructive"
+              onClick={onCancel}
+              disabled={busy === "azure_repo-cancel"}
+            >
+              {busy === "azure_repo-cancel" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <StopCircle className="size-4" />
+              )}
+              Stop pull
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
