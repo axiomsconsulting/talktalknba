@@ -101,7 +101,7 @@ function RoiPage() {
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
         {/* KPI row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           <KpiCard
             label="Total Customer Base"
             value={hasSource ? formatNumber(roiParams.totalCustomerBase, { compact: true }) : null}
@@ -170,7 +170,7 @@ function RoiPage() {
         </div>
 
         {/* Financial KPIs · driven by the editable NBA rules */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           <KpiCard
             label="Gross Retained Revenue"
             value={hasSource ? formatGbp(portfolioTotals.grossRetainedGbp, { compact: true }) : null}
