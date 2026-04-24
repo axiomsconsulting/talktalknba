@@ -50,8 +50,14 @@ const VIEWS: Array<{ id: RoiViewMode; label: string; description: string }> = [
 export function RoiSimulator() {
   const { budget, successRate, callCost, view, setBudget, setSuccessRate, setCallCost, setView } =
     useScenarioStore();
+  const { rules, loaded, load } = useNbaRulesStore();
+
+  useEffect(() => {
+    if (!loaded) load();
+  }, [loaded, load]);
 
   const { highRiskVolume, averageAnnualArpuGbp, baselineRetentionConversionRate } = roiParams;
+  const monthlyArpu = averageAnnualArpuGbp / 12;
 
   const calc = useMemo(
     () =>
@@ -68,6 +74,23 @@ export function RoiSimulator() {
   );
 
   const totals = useMemo(() => summariseScenario(calc), [calc]);
+
+  // Per-rule financial breakdown (uses live editable rules + scenario success rate)
+  const ruleFinancials = useMemo(
+    () =>
+      computeRuleFinancials(rules, {
+        highRiskVolume,
+        averageMonthlyArpuGbp: monthlyArpu,
+        baselineRetentionConversionRate,
+        successRate,
+      }),
+    [rules, highRiskVolume, monthlyArpu, baselineRetentionConversionRate, successRate],
+  );
+  const avgLtvPerSave = customerLtv(monthlyArpu, "High");
+  const portfolioTotals = useMemo(
+    () => summariseRuleFinancials(ruleFinancials, avgLtvPerSave),
+    [ruleFinancials, avgLtvPerSave],
+  );
 
   // Top decile vs random comparison (D1 only — the cohort decision)
   const topDecile = calc[0];
