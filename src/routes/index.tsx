@@ -1,5 +1,6 @@
+import { useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, AlertTriangle, BadgePoundSterling, ShieldCheck } from "lucide-react";
+import { Users, AlertTriangle, BadgePoundSterling, ShieldCheck, Scissors, Wallet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
@@ -7,6 +8,13 @@ import { RoiSimulator } from "@/components/RoiSimulator";
 import { SensitivityPanel } from "@/components/SensitivityPanel";
 import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import { useScenarioStore } from "@/data/scenarioStore";
+import {
+  computeRuleFinancials,
+  summariseRuleFinancials,
+  customerLtv,
+} from "@/data/financials";
 import {
   ResponsiveContainer,
   PieChart,
