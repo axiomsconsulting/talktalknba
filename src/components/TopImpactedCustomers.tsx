@@ -72,7 +72,7 @@ export function TopImpactedCustomers() {
           </p>
         </div>
         <div className="flex items-start gap-2">
-          <ProvenanceTag kind="ml" source="External training · score_top50.py" />
+          <ProvenanceTag prov={{ kind: "ml", source: "External training · score_top50.py" }} />
           <button
             onClick={load}
             className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-muted"
