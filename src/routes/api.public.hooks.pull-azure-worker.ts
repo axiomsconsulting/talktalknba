@@ -6,15 +6,16 @@ import {
   type AzureRepoConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getRequest } from "@tanstack/react-start/server";
 
 /**
  * Worker that processes ONE file from the oldest active pull_jobs row.
- * Driven by pg_cron every 30s; also kicked directly by /pull-azure on
- * job creation so the user sees progress immediately.
+ * Driven by pg_cron every 30s. Also self-kicks after finishing one file so
+ * multi-file pulls progress back-to-back without waiting for the next tick.
  *
  * Public endpoint — but only mutates internal pull_jobs / storage. No PII
  * leaves the worker. Concurrent ticks are made safe by an UPDATE…SET
- * status='running' guard before doing real work.
+ * status='downloading' guard on the chosen job before doing real work.
  */
 export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
   server: {
@@ -62,7 +63,8 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
         const cfg = conn.config as AzureRepoConfig;
 
         try {
-          // Mark file in flight
+          // Mark file in flight with a human-readable note
+          const fileName = next.path.split("/").pop() ?? next.path;
           await supabaseAdmin
             .from("pull_jobs")
             .update({
@@ -72,8 +74,12 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               current_bytes_total: null,
               current_bytes_done: null,
               current_rows_read: 0,
+              error: `Downloading ${next.kind}: ${fileName}…`,
             })
             .eq("id", job.id);
+
+          // Cancellation check #1
+          if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
           // Download (Azure REST returns full file — Worker has no streaming
           // primitive that Azure speaks, so we measure bytes after fetch).
@@ -84,8 +90,12 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               status: "parsing",
               current_bytes_total: bytes.byteLength,
               current_bytes_done: bytes.byteLength,
+              error: `Parsing ${next.kind} (${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB)…`,
             })
             .eq("id", job.id);
+
+          // Cancellation check #2
+          if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
           // Archive raw file (overwrite — no per-run history, keeps storage flat)
           const archivePath = `azure/${conn.id}/${next.kind}/${next.path.split("/").pop()}`;
@@ -130,6 +140,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
                 note: `Parquet decode failed: ${(e as Error).message}`,
               } as never;
               await advanceJob(job.id, pending, summary);
+              kickSelf();
               return json(200, { jobId: job.id, status: "skipped" });
             }
           } else {
@@ -139,15 +150,11 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               note: "Unrecognised extension — archived only",
             } as never;
             await advanceJob(job.id, pending, summary);
+            kickSelf();
             return json(200, { jobId: job.id, status: "archived" });
           }
 
           // ── Customer-coherent sampling ────────────────────────────────────
-          // For customer_info: pick the first N rows (or all, if no limit) and
-          // remember their unique_customer_identifier values for the rest of
-          // the pull. For calls/cease/usage: filter to the chosen IDs so the
-          // four files describe the same customer set and the worker stays
-          // well under the per-tick CPU budget.
           let filteredRows = parsedRows;
           let filteredTotal = totalRows;
           let filterNote: string | undefined;
@@ -186,8 +193,15 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
 
           await supabaseAdmin
             .from("pull_jobs")
-            .update({ status: "uploading", current_rows_read: filteredTotal })
+            .update({
+              status: "uploading",
+              current_rows_read: filteredTotal,
+              error: `Uploading ${next.kind} snapshot (${filteredTotal.toLocaleString()} rows)…`,
+            })
             .eq("id", job.id);
+
+          // Cancellation check #3
+          if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
           // Snapshot for the live store
           summary[next.kind] = {
@@ -229,6 +243,8 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
           }
 
           await advanceJob(job.id, pending, summary);
+          // Kick self for the next file so the user doesn't wait 30s for cron.
+          kickSelf();
           return json(200, { jobId: job.id, status: "file_done", file: next.path });
         } catch (e) {
           await failJob(job.id, (e as Error).message);
@@ -244,6 +260,33 @@ function json(status: number, body: unknown) {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** Returns true if the job has been cancelled mid-flight. */
+async function isCancelled(jobId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("pull_jobs")
+    .select("status")
+    .eq("id", jobId)
+    .maybeSingle();
+  return data?.status === "cancelled";
+}
+
+/** Fire-and-forget: ask ourselves to process the next file immediately. */
+function kickSelf() {
+  try {
+    const req = getRequest();
+    const origin = new URL(req.url).origin;
+    void fetch(`${origin}/api/public/hooks/pull-azure-worker`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    }).catch(() => {
+      /* cron will pick it up on the next tick */
+    });
+  } catch {
+    /* no request context — not fatal, cron will tick */
+  }
 }
 
 async function advanceJob(
@@ -272,6 +315,7 @@ async function advanceJob(
       current_bytes_total: null,
       current_bytes_done: null,
       current_rows_read: null,
+      error: null,
       finished_at: isLast ? new Date().toISOString() : null,
     })
     .eq("id", jobId);
