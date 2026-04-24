@@ -77,6 +77,7 @@ function BrandingPage() {
       app_name: form.app_name,
       app_description: form.app_description,
       logo_url: form.logo_url,
+      favicon_url: form.favicon_url,
       primary_color: form.primary_color,
       accent_color: form.accent_color,
       gradient_css: form.gradient_css,
