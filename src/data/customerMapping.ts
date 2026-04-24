@@ -171,9 +171,31 @@ const REGION_POOL = [
   "East of England",
 ];
 
+// Optional enrichment: aggregated signals keyed by raw customer id.
+export type CallEnrichment = {
+  loyaltyCalls90d: number;
+  totalHoldSeconds: number;
+  totalTalkSeconds: number;
+  preferredChannel?: string;
+};
+export type CeaseEnrichment = {
+  insight: BehavioralSignals["ceaseInsight"];
+};
+export type UsageEnrichment = {
+  monthlyDownloadGb: number;
+  monthlyUploadGb: number;
+};
+
+export type EnrichmentMaps = {
+  calls?: Map<string, CallEnrichment>;
+  cease?: Map<string, CeaseEnrichment>;
+  usage?: Map<string, UsageEnrichment>;
+};
+
 export function mapCustomers(
   rows: RawCustomerRow[],
-  mapping: FieldMapping = DEFAULT_MAPPING
+  mapping: FieldMapping = DEFAULT_MAPPING,
+  enrichment: EnrichmentMaps = {}
 ): Customer[] {
   // De-duplicate by id (a single customer can have many monthly rows; keep the latest)
   const latest = new Map<string, RawCustomerRow>();
@@ -192,7 +214,7 @@ export function mapCustomers(
 
   const out: Customer[] = [];
   let i = 0;
-  for (const [id, row] of latest) {
+  for (const [rawId, row] of latest) {
     const tenureDays = num(row[mapping.tenureDays]);
     const oocDays = num(row[mapping.oocDays]);
     const ddCancel60 = num(row[mapping.ddCancel60]);
@@ -203,53 +225,199 @@ export function mapCustomers(
     const pkg = str(row[mapping.package]) || "Unknown package";
     const technology = str(row[mapping.technology]);
 
+    const callsRow = enrichment.calls?.get(rawId);
+    const ceaseRow = enrichment.cease?.get(rawId);
+    const usageRow = enrichment.usage?.get(rawId);
+
     let score: number;
     let contributions: SHAPContribution[];
+    const baseRisk = computeRiskScore({
+      oocDays,
+      ddCancel60,
+      ddCancels,
+      tenureDays,
+      speed,
+      lineSpeed,
+      contractStatus: contractRaw,
+    });
+    contributions = baseRisk.contributions;
+    score = baseRisk.score;
+
+    // Enrichment SHAP contributions
+    if (callsRow && callsRow.loyaltyCalls90d > 0) {
+      const impact = Math.min(0.22, callsRow.loyaltyCalls90d * 0.07);
+      contributions.push({
+        feature: "loyalty_calls",
+        label: "Loyalty Calls",
+        impact: Number(impact.toFixed(3)),
+        detail: `${callsRow.loyaltyCalls90d} loyalty call(s) in last 90 days.`,
+      });
+      score = Math.min(0.98, score + impact);
+    }
+    if (callsRow && callsRow.totalHoldSeconds > 600) {
+      const impact = Math.min(0.12, (callsRow.totalHoldSeconds / 3600) * 0.08);
+      contributions.push({
+        feature: "total_hold_time",
+        label: "Total Hold Time",
+        impact: Number(impact.toFixed(3)),
+        detail: `${Math.round(callsRow.totalHoldSeconds / 60)} minutes on hold across recent calls.`,
+      });
+      score = Math.min(0.98, score + impact);
+    }
+    if (ceaseRow?.insight === "CompetitorDeals") {
+      const impact = 0.15;
+      contributions.push({
+        feature: "cease_competitor",
+        label: "Cease Pattern · Competitor",
+        impact,
+        detail: "Profile matches historical Competitor Deals cease patterns.",
+      });
+      score = Math.min(0.98, score + impact);
+    }
+    if (usageRow && usageRow.monthlyDownloadGb > 800 && /Fibre 35|Fibre 65|ADSL|Essentials/i.test(pkg)) {
+      const impact = 0.08;
+      contributions.push({
+        feature: "usage_overflow",
+        label: "Usage vs Package",
+        impact,
+        detail: `${Math.round(usageRow.monthlyDownloadGb)} GB/mo on a basic package — capacity-bound.`,
+      });
+      score = Math.min(0.98, score + impact);
+    }
+    contributions.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+
     if (mapping.riskScoreOverride && row[mapping.riskScoreOverride] != null) {
       score = Math.max(0, Math.min(1, num(row[mapping.riskScoreOverride])));
-      contributions = computeRiskScore({
-        oocDays,
-        ddCancel60,
-        ddCancels,
-        tenureDays,
-        speed,
-        lineSpeed,
-        contractStatus: contractRaw,
-      }).contributions;
-    } else {
-      const r = computeRiskScore({
-        oocDays,
-        ddCancel60,
-        ddCancels,
-        tenureDays,
-        speed,
-        lineSpeed,
-        contractStatus: contractRaw,
-      });
-      score = r.score;
-      contributions = r.contributions;
     }
 
     const arpuMonthly = mapping.arpuOverride && row[mapping.arpuOverride] != null
       ? num(row[mapping.arpuOverride])
       : packageArpu(pkg);
 
+    const signals: BehavioralSignals = {
+      loyaltyCalls90d: callsRow?.loyaltyCalls90d ?? 0,
+      totalHoldSeconds: callsRow?.totalHoldSeconds ?? 0,
+      totalTalkSeconds: callsRow?.totalTalkSeconds ?? 0,
+      oocDays,
+      soldSpeedMbps: speed,
+      lineSpeedMbps: lineSpeed,
+      technology,
+      monthlyDownloadGb: usageRow?.monthlyDownloadGb ?? 0,
+      monthlyUploadGb: usageRow?.monthlyUploadGb ?? 0,
+      ceaseInsight: ceaseRow?.insight,
+      preferredChannel: callsRow?.preferredChannel,
+    };
+
+    const contractStatus = normaliseContract(contractRaw);
+    const riskTier = tierFromScore(score);
+
     out.push({
-      id: `TT-${id.slice(0, 8).toUpperCase()}`,
-      name: `Customer ${id.slice(0, 6).toUpperCase()}`,
+      id: `TT-${rawId.slice(0, 8).toUpperCase()}`,
+      name: `Customer ${rawId.slice(0, 6).toUpperCase()}`,
       tenureDays,
       package: pkg,
       riskScore: Number(score.toFixed(3)),
-      riskTier: tierFromScore(score),
+      riskTier,
       monthlyArpu: arpuMonthly,
-      contractStatus: normaliseContract(contractRaw),
+      contractStatus,
       region: REGION_POOL[i % REGION_POOL.length],
       shap: contributions,
       persona: technology ? `${technology} · ${pkg}` : undefined,
+      signals,
+      nbaTrigger: deriveNbaTrigger({ riskTier, contractStatus, signals, package: pkg }),
     });
     i += 1;
   }
   return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aggregators for the calls / cease / usage extracts.
+// These reduce per-event rows to one record per customer keyed by raw id.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function aggregateCalls(rows: RawCustomerRow[]): Map<string, CallEnrichment> {
+  const out = new Map<string, CallEnrichment>();
+  // Treat anything within ~90 days of the most recent event as "recent"
+  let maxDate = "";
+  for (const r of rows) {
+    const d = str(r["event_date"]);
+    if (d > maxDate) maxDate = d;
+  }
+  const cutoff = maxDate ? new Date(maxDate) : null;
+  if (cutoff) cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffIso = cutoff ? cutoff.toISOString().slice(0, 10) : "";
+
+  // Track most-frequent call type per customer to infer preferred channel
+  const channelCounts = new Map<string, Map<string, number>>();
+
+  for (const r of rows) {
+    const id = str(r["unique_customer_identifier"]);
+    if (!id) continue;
+    const callType = str(r["call_type_key"] || r["call_type"]);
+    const eventDate = str(r["event_date"]);
+    const talk = num(r["talk_time_seconds"]);
+    const hold = num(r["hold_time_seconds"]);
+
+    const cur = out.get(id) ?? { loyaltyCalls90d: 0, totalHoldSeconds: 0, totalTalkSeconds: 0 };
+    cur.totalHoldSeconds += hold;
+    cur.totalTalkSeconds += talk;
+    if (callType.toLowerCase().includes("loyalty") && (!cutoffIso || eventDate >= cutoffIso)) {
+      cur.loyaltyCalls90d += 1;
+    }
+    out.set(id, cur);
+
+    const cm = channelCounts.get(id) ?? new Map<string, number>();
+    cm.set(callType, (cm.get(callType) ?? 0) + 1);
+    channelCounts.set(id, cm);
+  }
+
+  for (const [id, counts] of channelCounts) {
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (top) {
+      const cur = out.get(id);
+      if (cur) cur.preferredChannel = top[0] === "Loyalty" ? "Outbound Call" : top[0];
+    }
+  }
+
+  return out;
+}
+
+export function aggregateCease(rows: RawCustomerRow[]): Map<string, CeaseEnrichment> {
+  const out = new Map<string, CeaseEnrichment>();
+  for (const r of rows) {
+    const id = str(r["unique_customer_identifier"]);
+    if (!id) continue;
+    const insight = str(r["reason_description_insight"]) as BehavioralSignals["ceaseInsight"];
+    if (insight) out.set(id, { insight });
+  }
+  return out;
+}
+
+export function aggregateUsage(rows: RawCustomerRow[]): Map<string, UsageEnrichment> {
+  const out = new Map<string, { dl: number; ul: number; n: number }>();
+  for (const r of rows) {
+    const id = str(r["unique_customer_identifier"]);
+    if (!id) continue;
+    const dl = num(r["usage_download_mbs"]);
+    const ul = num(r["usage_upload_mbs"]);
+    const cur = out.get(id) ?? { dl: 0, ul: 0, n: 0 };
+    cur.dl += dl;
+    cur.ul += ul;
+    cur.n += 1;
+    out.set(id, cur);
+  }
+  // mbs is per-day reading; sum/30 ≈ monthly average. Convert to GB (÷ 1024).
+  const result = new Map<string, UsageEnrichment>();
+  for (const [id, v] of out) {
+    const monthlyDownloadGb = (v.dl / Math.max(1, v.n)) * 30 / 1024;
+    const monthlyUploadGb = (v.ul / Math.max(1, v.n)) * 30 / 1024;
+    result.set(id, {
+      monthlyDownloadGb: Math.round(monthlyDownloadGb),
+      monthlyUploadGb: Math.round(monthlyUploadGb),
+    });
+  }
+  return result;
 }
 
 // Detect available column names from a parsed sample row to pre-fill the mapping UI.
