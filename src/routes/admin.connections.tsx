@@ -776,6 +776,19 @@ function AzurePanel({
   const [enabled, setEnabled] = useState(conn?.enabled ?? true);
   const [filesJson, setFilesJson] = useState(JSON.stringify(initialFiles, null, 2));
 
+  type PreviewResult = {
+    path: string;
+    format: "csv" | "parquet" | "raw";
+    bytes: number;
+    total_rows?: number;
+    column_count?: number;
+    headers?: string[];
+    sample_rows?: unknown[][];
+    note?: string;
+  };
+  const [previews, setPreviews] = useState<Record<string, PreviewResult>>({});
+  const [previewBusy, setPreviewBusy] = useState<string | null>(null);
+
   useEffect(() => {
     const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
     setOrganization(cfg.organization ?? "tt-insight-analytics");
@@ -785,8 +798,31 @@ function AzurePanel({
     setAnonymous(cfg.anonymous ?? true);
     setEnabled(conn?.enabled ?? true);
     setFilesJson(JSON.stringify(cfg.files ?? initialFiles, null, 2));
+    setPreviews({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conn?.id]);
+
+  const previewFile = async (kind: string) => {
+    setPreviewBusy(kind);
+    try {
+      const res = (await callServer(`/api/admin/connections/preview-azure`, {
+        kind,
+        limit: 5,
+      })) as PreviewResult;
+      setPreviews((p) => ({ ...p, [kind]: res }));
+    } catch (e) {
+      toast.error(`Preview failed: ${(e as Error).message}`);
+    } finally {
+      setPreviewBusy(null);
+    }
+  };
+
+  let parsedFilesPreview: Record<string, string> = {};
+  try {
+    parsedFilesPreview = JSON.parse(filesJson) as Record<string, string>;
+  } catch {
+    /* keep empty */
+  }
 
   const save = () => {
     let parsedFiles: Record<string, string>;
