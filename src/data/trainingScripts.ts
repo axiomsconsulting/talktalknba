@@ -384,7 +384,7 @@ export const SCORE_IPYNB = notebook([
   ),
   code(
     "from __future__ import annotations",
-    "import json, pickle",
+    "import json, pickle, math",
     "from pathlib import Path",
     "",
     "import numpy as np",
