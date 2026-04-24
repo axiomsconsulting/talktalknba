@@ -223,6 +223,7 @@ function RoiPage() {
                     ? "neutral"
                     : "down",
             }}
+            prov={ruleProv}
           />
         </div>
 
