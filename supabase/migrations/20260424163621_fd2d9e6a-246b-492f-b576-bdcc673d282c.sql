@@ -1,0 +1,1 @@
+ALTER TYPE public.data_connection_kind ADD VALUE IF NOT EXISTS 'azure_repo';
