@@ -330,6 +330,105 @@ export function RoiSimulator() {
           </div>
         </div>
       </div>
+
+      {/* Per-rule financial breakdown — driven by the editable NBA rules */}
+      <div className="border-t border-border bg-[var(--surface-sunken)]/40">
+        <div className="px-5 sm:px-7 py-5 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+              <Layers className="size-3.5" />
+              Per-rule financials
+            </div>
+            <h3 className="mt-1 text-base font-semibold text-foreground">
+              Where the spend lands · revenue dilution by NBA
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Volumes derived from the rules in <code className="px-1 py-0.5 rounded bg-muted text-foreground/80 font-mono text-[10px]">/nba-rules</code>. Edit a rule's discount, contract length or cost-to-serve to see the dilution and net retained revenue update live.
+            </p>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <div>Avg saved-customer LTV: <span className="font-semibold text-foreground tabular-nums">{formatGbp(avgLtvPerSave)}</span></div>
+            <div>Total saved-customer LTV: <span className="font-semibold text-foreground tabular-nums">{formatGbp(portfolioTotals.totalLtvGbp, { compact: true })}</span></div>
+          </div>
+        </div>
+        {ruleFinancials.length === 0 ? (
+          <div className="px-5 sm:px-7 pb-6 text-sm text-muted-foreground">
+            No active NBA rules. Activate at least one rule on the NBA Rules page to see the breakdown.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs min-w-[820px]">
+              <thead className="bg-card text-[10px] uppercase tracking-wider text-muted-foreground border-y border-border">
+                <tr>
+                  <th className="px-5 py-2.5 text-left font-medium">NBA rule</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Contacted</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Saved</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Gross retained</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Dilution</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Cost-to-serve</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Net retained</th>
+                  <th className="px-3 py-2.5 text-right font-medium">% LTV used</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {ruleFinancials.map((r) => (
+                  <tr key={r.triggerKey} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-5 py-2.5">
+                      <div className="font-medium text-foreground">{r.label}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{r.channel}</div>
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                      {formatNumber(r.contacted, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                      {formatNumber(r.saved, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                      {formatGbp(r.grossRetainedGbp, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-[var(--risk-high)]">
+                      −{formatGbp(r.dilutionGbp, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                      −{formatGbp(r.costToServeGbp, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-primary">
+                      {formatGbp(r.netRetainedGbp, { compact: true })}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                      {r.ltvBudgetUsedPct.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-primary/5 font-semibold">
+                  <td className="px-5 py-2.5 text-foreground">Portfolio total</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                    {formatNumber(portfolioTotals.contacted, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                    {formatNumber(portfolioTotals.saved, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                    {formatGbp(portfolioTotals.grossRetainedGbp, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-[var(--risk-high)]">
+                    −{formatGbp(portfolioTotals.dilutionGbp, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                    −{formatGbp(portfolioTotals.costToServeGbp, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                    {formatGbp(portfolioTotals.netRetainedGbp, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                    {portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
