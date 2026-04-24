@@ -7,6 +7,10 @@ import {
   driveFindChildFolder,
   driveListFolder,
   databricksRunSql,
+  azureListRepoItems,
+  azureDownloadFile,
+  sha256Hex,
+  type AzureRepoConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -24,8 +28,8 @@ export const Route = createFileRoute("/api/admin/connections/ingest")({
 
         const body = (await request.json().catch(() => null)) as { kind?: string } | null;
         const kind = body?.kind;
-        if (kind !== "databricks" && kind !== "gdrive") {
-          return jsonError(400, "kind must be 'databricks' or 'gdrive'");
+        if (kind !== "databricks" && kind !== "gdrive" && kind !== "azure_repo") {
+          return jsonError(400, "kind must be 'databricks', 'gdrive' or 'azure_repo'");
         }
 
         const { data: conn, error } = await supabaseAdmin
@@ -66,7 +70,7 @@ export const Route = createFileRoute("/api/admin/connections/ingest")({
                     );
                 }
               }
-            } else {
+            } else if (kind === "databricks") {
               const cfg = (conn.config ?? {}) as {
                 warehouse_id?: string;
                 queries?: Array<{ kind: string; sql: string }>;
@@ -91,13 +95,47 @@ export const Route = createFileRoute("/api/admin/connections/ingest")({
                   { onConflict: "connection_id,kind,remote_id" },
                 );
               }
+            } else {
+              // azure_repo
+              const cfg = (conn.config ?? {}) as Partial<AzureRepoConfig>;
+              if (!cfg.organization || !cfg.project || !cfg.repository || !cfg.files) {
+                throw new Error("Azure repo config requires organization, project, repository, files");
+              }
+              const items = await azureListRepoItems(cfg as AzureRepoConfig);
+              const byPath = new Map(items.map((it) => [it.path.replace(/^\//, ""), it]));
+              for (const [datasetKind, relPath] of Object.entries(cfg.files)) {
+                const item = byPath.get(relPath);
+                if (!item) continue;
+                // Download to compute size + hash so future runs can detect changes.
+                const bytes = await azureDownloadFile(cfg as AzureRepoConfig, "/" + relPath);
+                const hash = await sha256Hex(bytes);
+                filesSeen += 1;
+                await supabaseAdmin.from("data_source_files").upsert(
+                  {
+                    connection_id: conn.id,
+                    kind: datasetKind,
+                    remote_id: item.objectId,
+                    remote_name: relPath,
+                    remote_modified_at: new Date().toISOString(),
+                    remote_hash: hash,
+                    bytes: bytes.byteLength,
+                    last_seen_at: new Date().toISOString(),
+                  },
+                  { onConflict: "connection_id,kind,remote_id" },
+                );
+              }
             }
           });
 
           return jsonOk({
             ok: true,
             files: filesSeen,
-            message: `Discovered ${filesSeen} ${kind === "gdrive" ? "file(s)" : "table(s)"}`,
+            message:
+              kind === "gdrive"
+                ? `Discovered ${filesSeen} file(s) in Drive`
+                : kind === "databricks"
+                  ? `Probed ${filesSeen} table(s) in Databricks`
+                  : `Indexed ${filesSeen} file(s) from Azure DevOps`,
           });
         } catch (e) {
           if (e instanceof Response) return e;
@@ -107,3 +145,4 @@ export const Route = createFileRoute("/api/admin/connections/ingest")({
     },
   },
 });
+
