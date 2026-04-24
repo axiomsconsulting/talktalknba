@@ -24,7 +24,7 @@ const Body = z.object({
   /** Or pass an explicit path relative to the repo root. */
   path: z.string().min(1).optional(),
   /** How many sample rows to return. */
-  limit: z.number().int().min(1).max(50).optional(),
+  limit: z.number().int().min(1).max(10).optional(),
 });
 
 export const Route = createFileRoute("/api/admin/connections/preview-azure")({
