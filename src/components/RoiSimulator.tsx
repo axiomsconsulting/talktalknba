@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
   ResponsiveContainer,
@@ -11,7 +11,7 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { Info, Target, Coins, PoundSterling, Users } from "lucide-react";
+import { Info, Target, Coins, PoundSterling, Users, Layers } from "lucide-react";
 import { roiParams, formatGbp, formatNumber } from "@/data/nba";
 import { cn } from "@/lib/utils";
 import {
@@ -20,6 +20,12 @@ import {
   summariseScenario,
   type RoiViewMode,
 } from "@/data/scenarioStore";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import {
+  computeRuleFinancials,
+  summariseRuleFinancials,
+  customerLtv,
+} from "@/data/financials";
 
 const VIEWS: Array<{ id: RoiViewMode; label: string; description: string }> = [
   {
