@@ -374,6 +374,7 @@ function ConnectionsAdminPage() {
             onSave={(patch) => upsert("azure_repo", patch)}
             onIngest={() => ingest("azure_repo")}
             onPull={pullAzure}
+            onCancel={cancelPull}
             pullJob={pullJob}
           />
         </TabsContent>
