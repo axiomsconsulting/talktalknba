@@ -14,6 +14,24 @@ export type SHAPContribution = {
   detail: string;
 };
 
+export type BehavioralSignals = {
+  // Calls (from calls.csv)
+  loyaltyCalls90d: number;
+  totalHoldSeconds: number;
+  totalTalkSeconds: number;
+  // Contract / network (from customer_info.parquet)
+  oocDays: number;
+  soldSpeedMbps: number;
+  lineSpeedMbps: number;
+  technology: string;
+  // Usage (from usage.parquet)
+  monthlyDownloadGb: number;
+  monthlyUploadGb: number;
+  // Cease intent (from cease.csv) — derived insight if present
+  ceaseInsight?: "CompetitorDeals" | "HomeMove" | "Bereavement" | "Other" | "VagueReason";
+  preferredChannel?: string;
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -28,7 +46,19 @@ export type Customer = {
   shap: SHAPContribution[];
   // Optional persona narrative
   persona?: string;
+  // Live behavioural signals surfaced in the explainability profile
+  signals?: BehavioralSignals;
+  // The Next Best Action this customer should receive
+  nbaTrigger?: NbaTriggerKey;
 };
+
+export type NbaTriggerKey =
+  | "loyalty_save_desk"
+  | "free_tech_upgrade"
+  | "rightsize_email"
+  | "competitor_match"
+  | "suppress"
+  | "nurture";
 
 const PACKAGES = [
   "Fibre 35 (FTTC-OR)",
