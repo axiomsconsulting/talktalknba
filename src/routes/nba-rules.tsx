@@ -1,11 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Settings2, Save, RotateCcw, Check, AlertCircle, PoundSterling, CalendarClock, Phone, Filter } from "lucide-react";
+import {
+  Settings2,
+  Save,
+  RotateCcw,
+  Check,
+  AlertCircle,
+  PoundSterling,
+  CalendarClock,
+  Phone,
+  Filter,
+  ChevronRight,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useNbaRulesStore, type NbaRule } from "@/data/nbaRulesStore";
 import { useProductStore, activeProducts } from "@/data/products";
 import { cn } from "@/lib/utils";
@@ -29,6 +48,7 @@ function NbaRulesPage() {
   const { rules, loaded, loading, error, load, save, setLocal } = useNbaRulesStore();
   const products = useProductStore((s) => s.products);
   const productNames = useMemo(() => activeProducts(products).map((p) => p.name), [products]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
@@ -62,12 +82,20 @@ function NbaRulesPage() {
     setTimeout(() => setSavedId((curr) => (curr === rule.id ? null : curr)), 1500);
   };
 
+  const handleToggleActive = async (rule: NbaRule, isActive: boolean) => {
+    setLocal(rule.id, { isActive });
+    // Persist immediately for the inline toggle
+    await save({ ...rule, isActive });
+  };
+
+  const editingRule = rules.find((r) => r.id === editingId) ?? null;
+
   return (
     <AppShell>
       <PageHeader
         eyebrow="Operations · Decisioning"
         title="NBA Rules"
-        description="The decisioning rulebook the simulator and customer profiles read from. Edit a rule, save, and the new economics flow through to ROI, dilution and LTV figures everywhere in the app."
+        description="The decisioning rulebook the simulator and customer profiles read from. Toggle a rule on/off inline, or click to edit its full configuration."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-5">
@@ -82,30 +110,153 @@ function NbaRulesPage() {
           <div className="text-sm text-muted-foreground">Loading rules…</div>
         )}
 
-        <div className="grid gap-5">
+        <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden divide-y divide-border">
           {rules.map((rule) => (
-            <RuleCard
+            <RuleListItem
               key={rule.id}
               rule={rule}
-              productOptions={productNames}
-              onPatch={(patch) => handlePatch(rule.id, patch)}
-              onSave={() => handleSave(rule)}
-              dirty={dirtyIds.has(rule.id)}
-              saving={savingId === rule.id}
-              saved={savedId === rule.id}
+              onOpen={() => setEditingId(rule.id)}
+              onToggleActive={(v) => handleToggleActive(rule, v)}
             />
           ))}
         </div>
       </div>
+
+      <Dialog
+        open={editingRule !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingId(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {editingRule && (
+            <RuleEditor
+              rule={editingRule}
+              productOptions={productNames}
+              onPatch={(patch) => handlePatch(editingRule.id, patch)}
+              onSave={async () => {
+                await handleSave(editingRule);
+              }}
+              onClose={() => setEditingId(null)}
+              dirty={dirtyIds.has(editingRule.id)}
+              saving={savingId === editingRule.id}
+              saved={savedId === editingRule.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
 
-function RuleCard({
+function summariseRule(rule: NbaRule): string {
+  const parts: string[] = [];
+  parts.push(`${rule.discountPct.toFixed(0)}% off`);
+  parts.push(rule.contractMonths === 0 ? "no re-contract" : `${rule.contractMonths}-mo contract`);
+  parts.push(`via ${rule.channel}`);
+  parts.push(`${formatGbp(rule.costPerContactGbp)}/contact`);
+
+  const t = rule.thresholds;
+  const triggers: string[] = [];
+  if (t.loyaltyCalls90d != null) triggers.push(`${t.loyaltyCalls90d}+ loyalty calls/90d`);
+  if (t.holdSeconds != null) triggers.push(`${t.holdSeconds}s+ hold`);
+  if (t.oocDays != null) triggers.push(`${t.oocDays}+ days OOC`);
+  if (t.speedDeficitPct != null) triggers.push(`≥${(t.speedDeficitPct * 100).toFixed(0)}% speed deficit`);
+  if (t.monthlyDownloadGb != null) triggers.push(`≥${t.monthlyDownloadGb}GB/mo`);
+  if (triggers.length) parts.push(`when ${triggers.join(" + ")}`);
+
+  if (rule.eligiblePackages.length) {
+    parts.push(
+      rule.eligiblePackages.length <= 2
+        ? `for ${rule.eligiblePackages.join(", ")}`
+        : `for ${rule.eligiblePackages.length} packages`,
+    );
+  } else {
+    parts.push("for all packages");
+  }
+
+  return parts.join(" · ");
+}
+
+function RuleListItem({
+  rule,
+  onOpen,
+  onToggleActive,
+}: {
+  rule: NbaRule;
+  onOpen: () => void;
+  onToggleActive: (v: boolean) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-4 px-5 sm:px-6 py-4 transition-colors hover:bg-muted/40",
+        !rule.isActive && "opacity-60",
+      )}
+    >
+      <button
+        onClick={onOpen}
+        className="flex-1 min-w-0 text-left flex items-start gap-3 group"
+      >
+        <div className="mt-0.5 size-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Settings2 className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-foreground truncate">{rule.label}</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+              {rule.triggerKey}
+            </span>
+            <span
+              className={cn(
+                "px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded",
+                rule.isActive
+                  ? "bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20"
+                  : "bg-muted text-muted-foreground border border-border",
+              )}
+            >
+              {rule.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+          {rule.description && (
+            <div className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+              {rule.description}
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+            <span className="text-foreground/70 font-medium">Configured:</span>{" "}
+            {summariseRule(rule)}
+          </div>
+        </div>
+      </button>
+
+      <div
+        className="flex items-center gap-3 shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Switch
+          checked={rule.isActive}
+          onCheckedChange={onToggleActive}
+          aria-label={rule.isActive ? "Deactivate rule" : "Activate rule"}
+        />
+        <button
+          onClick={onOpen}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Edit rule"
+        >
+          <ChevronRight className="size-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RuleEditor({
   rule,
   productOptions,
   onPatch,
   onSave,
+  onClose,
   dirty,
   saving,
   saved,
@@ -113,7 +264,8 @@ function RuleCard({
   rule: NbaRule;
   productOptions: string[];
   onPatch: (patch: Partial<NbaRule>) => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
+  onClose: () => void;
   dirty: boolean;
   saving: boolean;
   saved: boolean;
@@ -130,68 +282,41 @@ function RuleCard({
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-card shadow-[var(--shadow-sm)] overflow-hidden transition-opacity",
-        !rule.isActive && "opacity-70",
-        "border-border",
-      )}
-    >
-      <div className="px-5 sm:px-7 py-5 border-b border-border flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Settings2 className="size-4 text-primary" />
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              {rule.triggerKey}
-            </span>
-            <span
-              className={cn(
-                "px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded",
-                rule.isActive
-                  ? "bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20"
-                  : "bg-muted text-muted-foreground border border-border",
-              )}
-            >
-              {rule.isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
+    <>
+      <DialogHeader>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            {rule.triggerKey}
+          </span>
+          <span
+            className={cn(
+              "px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded",
+              rule.isActive
+                ? "bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20"
+                : "bg-muted text-muted-foreground border border-border",
+            )}
+          >
+            {rule.isActive ? "Active" : "Inactive"}
+          </span>
+        </div>
+        <DialogTitle>
           <Input
             value={rule.label}
             onChange={(e) => onPatch({ label: e.target.value })}
-            className="mt-2 text-lg font-semibold border-transparent hover:border-border focus-visible:border-border bg-transparent px-0 h-auto py-1"
+            className="text-lg font-semibold border-transparent hover:border-border focus-visible:border-border bg-transparent px-0 h-auto py-1"
           />
+        </DialogTitle>
+        <DialogDescription asChild>
           <textarea
             value={rule.description}
             onChange={(e) => onPatch({ description: e.target.value })}
             rows={2}
             className="mt-1 w-full text-sm text-muted-foreground bg-transparent border border-transparent hover:border-border focus:border-border rounded px-0 py-1 resize-none focus:outline-none"
           />
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Active</span>
-            <Switch
-              checked={rule.isActive}
-              onCheckedChange={(v) => onPatch({ isActive: v })}
-            />
-          </div>
-          <button
-            onClick={onSave}
-            disabled={!dirty || saving}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors",
-              dirty
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed",
-            )}
-          >
-            {saved ? <Check className="size-3.5" /> : saving ? <RotateCcw className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
-            {saved ? "Saved" : saving ? "Saving…" : "Save"}
-          </button>
-        </div>
-      </div>
+        </DialogDescription>
+      </DialogHeader>
 
-      <div className="p-5 sm:p-7 grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 py-2">
         {/* Offer */}
         <Section title="Offer" icon={PoundSterling}>
           <FieldRow label={`Discount · ${rule.discountPct.toFixed(0)}%`} hint="% off the contracted monthly price">
@@ -310,7 +435,38 @@ function RuleCard({
           </FieldRow>
         </Section>
       </div>
-    </div>
+
+      <DialogFooter className="flex flex-row items-center justify-between sm:justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Active</span>
+          <Switch
+            checked={rule.isActive}
+            onCheckedChange={(v) => onPatch({ isActive: v })}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="px-3 py-2 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border bg-card"
+          >
+            Close
+          </button>
+          <button
+            onClick={onSave}
+            disabled={!dirty || saving}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors",
+              dirty
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed",
+            )}
+          >
+            {saved ? <Check className="size-3.5" /> : saving ? <RotateCcw className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+            {saved ? "Saved" : saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </DialogFooter>
+    </>
   );
 }
 
