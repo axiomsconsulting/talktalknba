@@ -58,12 +58,20 @@ type GDriveConfig = {
   root_folder_url?: string;
   subfolders?: GDriveSubfolders;
 };
+type AzureRepoConfig = {
+  organization?: string;
+  project?: string;
+  repository?: string;
+  branch?: string;
+  anonymous?: boolean;
+  files?: Record<string, string>;
+};
 
 type Connection = {
   id: string;
   kind: ConnectionKind;
   name: string;
-  config: DatabricksConfig | GDriveConfig | Record<string, unknown>;
+  config: DatabricksConfig | GDriveConfig | AzureRepoConfig | Record<string, unknown>;
   schedule_cron: string | null;
   enabled: boolean;
   last_run_at: string | null;
