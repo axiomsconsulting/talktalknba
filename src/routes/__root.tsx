@@ -29,14 +29,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "TalkTalk NBA — Retention Decisioning" },
+      {
+        name: "description",
+        content:
+          "Enterprise Next Best Action churn-prevention platform for TalkTalk: ROI modelling, transparent AI explainability and end-to-end decisioning architecture.",
+      },
+      { name: "author", content: "TalkTalk · Data Science" },
+      { property: "og:title", content: "TalkTalk NBA — Retention Decisioning" },
+      {
+        property: "og:description",
+        content:
+          "Live ROI modelling, model explainability and the architecture behind TalkTalk's churn-prevention engine.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
