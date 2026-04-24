@@ -241,6 +241,22 @@ function ConnectionsAdminPage() {
     }
   };
 
+  const pullAzure = async () => {
+    setBusy("azure_repo-pull");
+    try {
+      const res = (await callServer(`/api/admin/connections/pull-azure`, {})) as {
+        message?: string;
+        summary?: Record<string, { rows?: number; bytes: number; skipped?: string }>;
+      } | null;
+      toast.success(res?.message ?? "Azure DevOps data pulled");
+      await reload();
+    } catch (e) {
+      toast.error(`Pull failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const trigger = async () => {
     setBusy("retrain");
     try {
@@ -260,6 +276,7 @@ function ConnectionsAdminPage() {
 
   const dbx = (conns ?? []).find((c) => c.kind === "databricks");
   const gdr = (conns ?? []).find((c) => c.kind === "gdrive");
+  const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
 
   return (
     <AppShell>
