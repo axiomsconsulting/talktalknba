@@ -317,7 +317,12 @@ function CustomerRow({
               </span>
             )}
           </div>
-          <div className="text-[11px] font-mono text-muted-foreground mt-0.5">{customer.id}</div>
+          <div
+            className="text-[11px] font-mono text-muted-foreground mt-0.5 break-all line-clamp-3 leading-snug"
+            title={customer.id}
+          >
+            {customer.id}
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
             {customer.package} · {customer.region}
           </div>
