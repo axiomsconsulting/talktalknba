@@ -65,9 +65,13 @@ function UsersAdminPage() {
 
   const setStatus = async (userId: string, status: AccountStatus) => {
     setBusyId(userId);
-    const patch: Record<string, unknown> = { status };
-    if (status === "active") patch.approved_at = new Date().toISOString();
-    await supabase.from("profiles").update(patch).eq("user_id", userId);
+    await supabase
+      .from("profiles")
+      .update({
+        status,
+        approved_at: status === "active" ? new Date().toISOString() : null,
+      })
+      .eq("user_id", userId);
     // Default new approved users to "analyst" so they have access immediately
     if (status === "active") {
       const existing = rows?.find((r) => r.user_id === userId);
