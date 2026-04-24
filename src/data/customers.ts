@@ -391,6 +391,83 @@ function generateCustomers(): Customer[] {
   return customers;
 }
 
+// Decide which Next Best Action a customer should receive based on their
+// behavioural signals. The rules mirror the four NBA triggers documented on
+// the Strategy page so the explainability and strategy views stay in sync.
+export function deriveNbaTrigger(input: {
+  riskTier: RiskTier;
+  contractStatus: Customer["contractStatus"];
+  signals?: Partial<BehavioralSignals>;
+  package: string;
+}): NbaTriggerKey {
+  const { riskTier, contractStatus, signals = {}, package: pkg } = input;
+  const speedDeficit =
+    signals.soldSpeedMbps && signals.lineSpeedMbps
+      ? (signals.soldSpeedMbps - signals.lineSpeedMbps) / signals.soldSpeedMbps
+      : 0;
+  const isHeavyUser =
+    (signals.monthlyDownloadGb ?? 0) > 800 &&
+    /Fibre 35|Fibre 65|ADSL|Essentials/i.test(pkg);
+
+  if (riskTier === "Low") return "suppress";
+  if (signals.ceaseInsight === "CompetitorDeals") return "competitor_match";
+  if ((signals.loyaltyCalls90d ?? 0) >= 2 || (signals.totalHoldSeconds ?? 0) > 1800) {
+    return "loyalty_save_desk";
+  }
+  if (speedDeficit > 0.25 || /ADSL|Fibre 35/i.test(pkg)) return "free_tech_upgrade";
+  if (isHeavyUser) return "rightsize_email";
+  if (riskTier === "High" && contractStatus === "Out of contract") return "loyalty_save_desk";
+  return "nurture";
+}
+
+export const NBA_TRIGGERS: Record<
+  NbaTriggerKey,
+  { label: string; description: string; channel: string; offer: string }
+> = {
+  loyalty_save_desk: {
+    label: "Specialist Save Desk",
+    description:
+      "Multiple loyalty calls or extended hold time → friction + active shopping. Route to a specialist save agent with a pre-approved discount.",
+    channel: "Outbound Call",
+    offer: "20% loyalty discount + 24-month re-contract",
+  },
+  free_tech_upgrade: {
+    label: "Free Tech Upgrade",
+    description:
+      "Speed deficit or legacy technology → fix the root cause rather than discounting. Move them to a faster line at the same price.",
+    channel: "Outbound Call + Engineer Visit",
+    offer: "FTTC → G.Fast / FTTP migration, no install fee",
+  },
+  rightsize_email: {
+    label: "Right-size Upgrade Email",
+    description:
+      "Heavy usage on a basic package → throttling and poor performance. Trigger an automated upgrade campaign tailored to their use case.",
+    channel: "Email + In-app",
+    offer: "Premium fibre package, 6-month price hold",
+  },
+  competitor_match: {
+    label: "Competitor-match Save Offer",
+    description:
+      "Cease intent matches Competitor Deals patterns → price is the primary lever. Trigger highest-tier retention offer immediately via preferred channel.",
+    channel: "Customer's preferred channel",
+    offer: "Top-tier price match (£/month off)",
+  },
+  suppress: {
+    label: "Do Not Disturb",
+    description:
+      "Long-tenure low-risk customer. Outbound contact would erode satisfaction and induce churn — hold in nurture sequences only.",
+    channel: "Suppress",
+    offer: "Annual thank-you only",
+  },
+  nurture: {
+    label: "Personalised Nurture",
+    description:
+      "Mid-risk customer without a single dominant trigger. Send a personalised retention email with usage insights.",
+    channel: "Email",
+    offer: "Account review + bill explainer",
+  },
+};
+
 export const personas: Customer[] = PERSONAS;
 export const generatedCustomers: Customer[] = generateCustomers();
 export const allCustomers: Customer[] = [...PERSONAS, ...generatedCustomers];
