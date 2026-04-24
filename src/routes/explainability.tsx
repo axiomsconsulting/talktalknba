@@ -13,9 +13,12 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
-import { featureImportance, featureLabels } from "@/data/nba";
+import { featureImportance, featureLabels, formatGbp } from "@/data/nba";
 import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/data/customers";
 import { useCustomerStore } from "@/data/customerStore";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import { customerLtv } from "@/data/financials";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/explainability")({
@@ -41,6 +44,8 @@ export const Route = createFileRoute("/explainability")({
 function ExplainabilityPage() {
   const allCustomers = useCustomerStore((s) => s.customers);
   const source = useCustomerStore((s) => s.source);
+  const { rules, loaded, load } = useNbaRulesStore();
+  useEffect(() => { if (!loaded) load(); }, [loaded, load]);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
 
@@ -203,7 +208,7 @@ function ExplainabilityPage() {
           </div>
 
           {/* Detail panel */}
-          <CustomerDetail customer={selected} />
+          <CustomerDetail customer={selected} rules={rules} />
         </div>
       </div>
     </AppShell>
@@ -265,13 +270,22 @@ function CustomerRow({
   );
 }
 
-function CustomerDetail({ customer }: { customer: Customer }) {
+function CustomerDetail({ customer, rules }: { customer: Customer; rules: import("@/data/nbaRulesStore").NbaRule[] }) {
   const tierColor =
     customer.riskTier === "High"
       ? "var(--risk-high)"
       : customer.riskTier === "Medium"
         ? "var(--risk-medium)"
         : "var(--risk-low)";
+
+  // Customer LTV + dilution from the matched NBA rule
+  const matchedRule = rules.find((r) => r.triggerKey === (customer.nbaTrigger ?? "nurture"));
+  const ltv = customerLtv(customer.monthlyArpu, customer.riskTier);
+  const horizonMonths = matchedRule && matchedRule.contractMonths > 0 ? matchedRule.contractMonths : 24;
+  const discountPct = matchedRule?.discountPct ?? 0;
+  const dilutionGbp = customer.monthlyArpu * horizonMonths * (discountPct / 100);
+  const costToServe = matchedRule?.costPerContactGbp ?? 0;
+  const netRetainedGbp = ltv - dilutionGbp - costToServe;
 
   // Compute base score and final by walking contributions
   const baseScore = 0.5;
@@ -361,6 +375,14 @@ function CustomerDetail({ customer }: { customer: Customer }) {
             />
           </div>
         )}
+
+        {/* Customer LTV + dilution economics for the matched rule */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <Pill label="Customer LTV" value={formatGbp(ltv)} />
+          <Pill label="Proposed discount" value={`${discountPct.toFixed(0)}% · ${horizonMonths}mo`} />
+          <Pill label="Revenue dilution" value={`−${formatGbp(dilutionGbp)}`} tone={dilutionGbp > 0 ? "warn" : undefined} />
+          <Pill label="Net retained value" value={formatGbp(netRetainedGbp)} />
+        </div>
       </div>
 
       {/* Why this customer — plain-English drill-down of top + and − drivers */}

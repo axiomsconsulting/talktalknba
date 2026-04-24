@@ -50,6 +50,69 @@ export type Database = {
         }
         Relationships: []
       }
+      nba_rules: {
+        Row: {
+          channel: string
+          contract_months: number
+          cost_per_contact_gbp: number
+          created_at: string
+          description: string
+          discount_pct: number
+          display_order: number
+          eligible_packages: string[]
+          id: string
+          is_active: boolean
+          label: string
+          min_hold_seconds: number | null
+          min_loyalty_calls_90d: number | null
+          min_monthly_download_gb: number | null
+          min_ooc_days: number | null
+          min_speed_deficit_pct: number | null
+          trigger_key: string
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          contract_months?: number
+          cost_per_contact_gbp?: number
+          created_at?: string
+          description: string
+          discount_pct?: number
+          display_order?: number
+          eligible_packages?: string[]
+          id?: string
+          is_active?: boolean
+          label: string
+          min_hold_seconds?: number | null
+          min_loyalty_calls_90d?: number | null
+          min_monthly_download_gb?: number | null
+          min_ooc_days?: number | null
+          min_speed_deficit_pct?: number | null
+          trigger_key: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          contract_months?: number
+          cost_per_contact_gbp?: number
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          display_order?: number
+          eligible_packages?: string[]
+          id?: string
+          is_active?: boolean
+          label?: string
+          min_hold_seconds?: number | null
+          min_loyalty_calls_90d?: number | null
+          min_monthly_download_gb?: number | null
+          min_ooc_days?: number | null
+          min_speed_deficit_pct?: number | null
+          trigger_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

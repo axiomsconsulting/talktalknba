@@ -1,5 +1,6 @@
+import { useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, AlertTriangle, BadgePoundSterling, ShieldCheck } from "lucide-react";
+import { Users, AlertTriangle, BadgePoundSterling, ShieldCheck, Scissors, Wallet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
@@ -7,6 +8,13 @@ import { RoiSimulator } from "@/components/RoiSimulator";
 import { SensitivityPanel } from "@/components/SensitivityPanel";
 import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import { useScenarioStore } from "@/data/scenarioStore";
+import {
+  computeRuleFinancials,
+  summariseRuleFinancials,
+  customerLtv,
+} from "@/data/financials";
 import {
   ResponsiveContainer,
   PieChart,
@@ -36,11 +44,36 @@ export const Route = createFileRoute("/")({
 });
 
 function RoiPage() {
+  const { rules, loaded, load } = useNbaRulesStore();
+  const { successRate } = useScenarioStore();
+
+  useEffect(() => {
+    if (!loaded) load();
+  }, [loaded, load]);
+
   // Saved-revenue projection: incremental over baseline at default scenario
   const defaultSuccess = 0.18;
   const incrementalSavedCustomers =
     roiParams.highRiskVolume * (defaultSuccess - roiParams.baselineRetentionConversionRate);
   const projectedSavedRevenue = incrementalSavedCustomers * roiParams.averageAnnualArpuGbp;
+
+  // Portfolio financials driven by editable rules + scenario success rate
+  const monthlyArpu = roiParams.averageAnnualArpuGbp / 12;
+  const ruleFinancials = useMemo(
+    () =>
+      computeRuleFinancials(rules, {
+        highRiskVolume: roiParams.highRiskVolume,
+        averageMonthlyArpuGbp: monthlyArpu,
+        baselineRetentionConversionRate: roiParams.baselineRetentionConversionRate,
+        successRate,
+      }),
+    [rules, monthlyArpu, successRate],
+  );
+  const avgLtvPerSave = customerLtv(monthlyArpu, "High");
+  const portfolioTotals = useMemo(
+    () => summariseRuleFinancials(ruleFinancials, avgLtvPerSave),
+    [ruleFinancials, avgLtvPerSave],
+  );
 
   const segmentChartData = segmentSummary.map((s) => ({
     name: `${s.tier} Risk`,
@@ -99,6 +132,59 @@ function RoiPage() {
             trend={{
               value: `${formatNumber(incrementalSavedCustomers, { compact: true })} saves`,
               direction: "up",
+            }}
+          />
+        </div>
+
+        {/* Financial KPIs · driven by the editable NBA rules */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <KpiCard
+            label="Gross Retained Revenue"
+            value={formatGbp(portfolioTotals.grossRetainedGbp, { compact: true })}
+            sub={`${formatNumber(portfolioTotals.saved, { compact: true })} customers saved over contract horizon`}
+            icon={ShieldCheck}
+            accent="success"
+          />
+          <KpiCard
+            label="Revenue Dilution"
+            value={formatGbp(portfolioTotals.dilutionGbp, { compact: true })}
+            sub="Cost of discounts × ARPU × contract length"
+            icon={Scissors}
+            accent="risk"
+            trend={{
+              value:
+                portfolioTotals.grossRetainedGbp > 0
+                  ? `${((portfolioTotals.dilutionGbp / portfolioTotals.grossRetainedGbp) * 100).toFixed(0)}% of gross`
+                  : "—",
+              direction: "neutral",
+            }}
+          />
+          <KpiCard
+            label="Net Retained Revenue"
+            value={formatGbp(portfolioTotals.netRetainedGbp, { compact: true })}
+            sub="Gross − dilution − cost-to-serve"
+            icon={BadgePoundSterling}
+            accent="success"
+          />
+          <KpiCard
+            label="LTV Budget Used"
+            value={`${portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%`}
+            sub={`of ${formatGbp(portfolioTotals.totalLtvGbp, { compact: true })} saved-customer LTV`}
+            icon={Wallet}
+            accent="neutral"
+            trend={{
+              value:
+                portfolioTotals.ltvBudgetUsedPct < 25
+                  ? "Healthy headroom"
+                  : portfolioTotals.ltvBudgetUsedPct < 50
+                    ? "Within plan"
+                    : "Review pricing",
+              direction:
+                portfolioTotals.ltvBudgetUsedPct < 25
+                  ? "up"
+                  : portfolioTotals.ltvBudgetUsedPct < 50
+                    ? "neutral"
+                    : "down",
             }}
           />
         </div>
