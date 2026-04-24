@@ -221,8 +221,11 @@ export function PullJobCard({
   const etaMs =
     overall > 0 && active && overall < 100 ? Math.round((elapsedMs / overall) * (100 - overall)) : null;
 
+  type FileSummary = { rows?: number; bytes: number; format?: string; note?: string };
   const summary = job?.summary ?? {};
-  const summaryEntries = Object.entries(summary).filter(([k]) => !k.startsWith("_"));
+  const summaryEntries = Object.entries(summary).filter(
+    ([k]) => !k.startsWith("_"),
+  ) as Array<[string, FileSummary]>;
 
   const liveLine = active
     ? `Step ${job!.files_done + 1}/${job!.files_total} · ${job!.status} ${job!.current_kind ?? ""}${
