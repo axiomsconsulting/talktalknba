@@ -179,9 +179,9 @@ export function ApiTesterCard() {
           Score one customer — <code className="font-mono text-[12.5px] px-1 py-0.5 rounded bg-muted">POST /api/score-customer</code>
         </h2>
         <p className="text-[12.5px] text-muted-foreground">
-          Resolves the id against (1) live model output in <code className="font-mono">top_customers</code>, then (2) the active live data
-          snapshots, then (3) in-app personas. Returns the same risk score, SHAP waterfall and Next Best Action that
-          the Explainability page renders for that customer.
+          Resolves the id against (1) the active in-browser dataset (local upload), then (2) live model output in <code className="font-mono">top_customers</code>,
+          then (3) the active live data snapshots, then (4) in-app personas. Returns the same risk score,
+          SHAP waterfall and Next Best Action that the Explainability page renders for that customer.
         </p>
       </header>
 
