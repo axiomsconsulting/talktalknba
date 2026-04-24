@@ -165,8 +165,8 @@ export function ExternalTrainingKit() {
         </div>
         {!links ? (
           <p className="text-[12px] text-muted-foreground">
-            Each link is a 1-hour signed URL to the file pulled from Azure DevOps. Save them into a local{" "}
-            <code className="font-mono px-1 rounded bg-muted">./data/</code> folder.
+            Each link is a 1-hour signed URL to the file pulled from Azure DevOps. Save all four files into the{" "}
+            <strong>same folder as the notebooks</strong> (the notebooks default to <code className="font-mono px-1 rounded bg-muted">DATA = '.'</code>).
           </p>
         ) : (
           <ul className="divide-y divide-border">
