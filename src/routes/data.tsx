@@ -273,11 +273,14 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
           Upload extract
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">
-          Add customer_info, usage, or any related extract
+          Add customer_info, calls, cease, usage or any related extract
         </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Accepts .csv and .parquet up to 50 MB. customer_info uploads can replace the live
-          Explainability search; other files are stored as references.
+          Accepts .csv and .parquet up to 50 MB. <span className="font-medium text-foreground">customer_info</span>{" "}
+          replaces the live customer base; <span className="font-medium text-foreground">calls</span>,{" "}
+          <span className="font-medium text-foreground">cease</span> and{" "}
+          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers and
+          NBA triggers without replacing it.
         </p>
       </div>
 
