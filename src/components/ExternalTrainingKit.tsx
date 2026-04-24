@@ -5,6 +5,7 @@ import { useAuth } from "@/data/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TRAIN_IPYNB, SCORE_IPYNB, README_MD } from "@/data/trainingScripts";
+import { useLiveDataStore } from "@/data/liveDataStore";
 
 type SignedLinks = Record<string, { url: string; filename: string } | null>;
 
@@ -106,6 +107,9 @@ export function ExternalTrainingKit() {
       setMetricsFile(null);
       setTopFile(null);
       await refreshTopCount();
+      // Re-read the latest model_runs row so the Model page KPIs light up
+      // immediately on the next visit (no hard reload needed).
+      await useLiveDataStore.getState().load(true);
     } catch (e) {
       toast.error(`Import failed: ${(e as Error).message}`);
     } finally {
