@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/admin/connections/preview-azure")({
         } catch (e) {
           return jsonError(400, `Invalid body: ${(e as Error).message}`);
         }
-        const limit = parsed.limit ?? 10;
+        const limit = Math.min(parsed.limit ?? 10, 10);
 
         const { data: conn, error } = await supabaseAdmin
           .from("data_connections")
@@ -67,12 +67,26 @@ export const Route = createFileRoute("/api/admin/connections/preview-azure")({
         }
 
         try {
-          const bytes = await azureDownloadFile(cfg as AzureRepoConfig, "/" + relPath);
           const lower = relPath.toLowerCase();
+          const isCsv = lower.endsWith(".csv");
+          const isParquet = lower.endsWith(".parquet");
 
-          if (lower.endsWith(".csv")) {
+          // For CSV we only need a small window — 256 KB easily covers 10
+          // rows even with very wide columns. For parquet we still need the
+          // whole file because the footer with metadata sits at the end and
+          // the data pages are interleaved; we just cap the row decode.
+          const bytes = isCsv
+            ? await azureDownloadFile(cfg as AzureRepoConfig, "/" + relPath, { rangeBytes: 256 * 1024 })
+            : await azureDownloadFile(cfg as AzureRepoConfig, "/" + relPath);
+
+          if (isCsv) {
             const text = new TextDecoder().decode(bytes);
-            const out = parseCsv(text);
+            // Strip last (likely partial) line so we don't return a half row
+            const safeText = text.includes("\n")
+              ? text.slice(0, text.lastIndexOf("\n"))
+              : text;
+            const out = parseCsv(safeText);
+            const sample = out.rows.slice(0, limit);
             return jsonOk({
               ok: true,
               path: relPath,
@@ -81,11 +95,14 @@ export const Route = createFileRoute("/api/admin/connections/preview-azure")({
               total_rows: out.rows.length,
               column_count: out.headers.length,
               headers: out.headers,
-              sample_rows: out.rows.slice(0, limit),
+              sample_rows: sample,
+              note: `Showing first ${sample.length} rows from a ${(bytes.byteLength / 1024).toFixed(0)} KB sample of the file.`,
             });
           }
-          if (lower.endsWith(".parquet")) {
-            const out = await parseParquet(bytes, Math.max(limit, 10));
+          if (isParquet) {
+            // rowLimit=10 — decoder stops after 10 rows so even multi-GB
+            // parquet files preview in a couple of seconds.
+            const out = await parseParquet(bytes, limit);
             return jsonOk({
               ok: true,
               path: relPath,
@@ -95,6 +112,7 @@ export const Route = createFileRoute("/api/admin/connections/preview-azure")({
               column_count: out.headers.length,
               headers: out.headers,
               sample_rows: out.rows.slice(0, limit),
+              note: `Showing first ${Math.min(limit, out.rows.length)} of ${out.totalRows.toLocaleString()} rows.`,
             });
           }
           return jsonOk({
