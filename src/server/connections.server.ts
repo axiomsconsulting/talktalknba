@@ -254,7 +254,8 @@ export async function azureDownloadFile(cfg: AzureRepoConfig, path: string) {
 
 /** sha256 hex of a Uint8Array, using Web Crypto. */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const digest = await crypto.subtle.digest("SHA-256", buf);
   const arr = Array.from(new Uint8Array(digest));
   return arr.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
