@@ -948,6 +948,139 @@ function AzurePanel({
           </div>
         ) : null}
 
+        <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-sm font-medium">File preview</div>
+              <p className="text-xs text-muted-foreground">
+                Inspect the detected row count, column names and a 5-row sample for each mapped
+                file before running <span className="font-medium">Pull data now</span>.
+              </p>
+            </div>
+          </div>
+
+          {Object.keys(parsedFilesPreview).length === 0 ? (
+            <p className="text-xs text-muted-foreground">No file map saved yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(parsedFilesPreview).map(([kind, path]) => {
+                const p = previews[kind];
+                const isBusy = previewBusy === kind;
+                return (
+                  <div key={kind} className="rounded-md border bg-background p-3">
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge variant="outline" className="font-mono text-[10px]">
+                          {kind}
+                        </Badge>
+                        <span className="font-mono text-xs truncate">{path}</span>
+                        {p?.format ? (
+                          <Badge variant="secondary" className="text-[10px] uppercase">
+                            {p.format}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => previewFile(kind)}
+                        disabled={!conn || !!previewBusy}
+                      >
+                        {isBusy ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <PlayCircle className="size-3" />
+                        )}
+                        {p ? "Refresh" : "Preview"}
+                      </Button>
+                    </div>
+
+                    {p ? (
+                      p.note && !p.headers ? (
+                        <p className="mt-2 text-xs text-muted-foreground">{p.note}</p>
+                      ) : (
+                        <div className="mt-2 space-y-2">
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            <span>
+                              Rows:{" "}
+                              <span className="font-mono text-foreground">
+                                {p.total_rows?.toLocaleString() ?? "—"}
+                              </span>
+                            </span>
+                            <span>
+                              Cols:{" "}
+                              <span className="font-mono text-foreground">
+                                {p.column_count ?? p.headers?.length ?? "—"}
+                              </span>
+                            </span>
+                            <span>
+                              Bytes:{" "}
+                              <span className="font-mono text-foreground">
+                                {(p.bytes / 1024).toFixed(1)} KB
+                              </span>
+                            </span>
+                          </div>
+                          {p.headers && p.headers.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.headers.map((h) => (
+                                <span
+                                  key={h}
+                                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]"
+                                >
+                                  {h}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                          {p.sample_rows && p.sample_rows.length > 0 && p.headers ? (
+                            <div className="overflow-x-auto rounded border">
+                              <table className="w-full text-[11px]">
+                                <thead className="bg-muted/40">
+                                  <tr>
+                                    {p.headers.map((h) => (
+                                      <th
+                                        key={h}
+                                        className="text-left px-2 py-1 font-medium font-mono"
+                                      >
+                                        {h}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {p.sample_rows.map((row, i) => (
+                                    <tr key={i} className="border-t">
+                                      {row.map((cell, j) => (
+                                        <td
+                                          key={j}
+                                          className="px-2 py-1 font-mono align-top max-w-[200px] truncate"
+                                          title={cell == null ? "" : String(cell)}
+                                        >
+                                          {cell == null ? (
+                                            <span className="text-muted-foreground italic">
+                                              null
+                                            </span>
+                                          ) : (
+                                            String(cell)
+                                          )}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2 pt-2">
           <Button onClick={save} disabled={busy === "azure_repo"}>
             {busy === "azure_repo" ? (
