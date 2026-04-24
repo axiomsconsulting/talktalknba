@@ -673,9 +673,6 @@ function SegmentBreakdown() {
           </div>
         ))}
       </div>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
