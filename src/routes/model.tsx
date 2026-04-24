@@ -350,10 +350,13 @@ function ModelPage() {
             </header>
 
             <dl className="space-y-0 font-mono text-[12px]">
-              <Row k="model_type" v={stats.model_type} />
-              <Row k="n_estimators" v={String(h.n_estimators)} />
-              <Row k="max_depth" v={String(h.max_depth)} />
-              <Row k="random_state" v={String(h.random_state)} />
+              <Row k="model_type" v={(isLive && liveStats?.model_type) ? liveStats.model_type : stats.model_type} />
+              {h.n_estimators != null && <Row k="n_estimators" v={String(h.n_estimators)} />}
+              {h.max_depth != null && <Row k="max_depth" v={String(h.max_depth)} />}
+              {(h as { learning_rate?: number }).learning_rate != null && (
+                <Row k="learning_rate" v={String((h as { learning_rate?: number }).learning_rate)} />
+              )}
+              {h.random_state != null && <Row k="random_state" v={String(h.random_state)} />}
               <div className="my-3 border-t border-dashed border-border" />
               <Row k="train_size" v={num(s.train_size)} />
               <Row k="test_size" v={num(s.test_size)} />
