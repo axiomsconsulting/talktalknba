@@ -29,21 +29,16 @@ import {
 
 const VIEWS: Array<{ id: RoiViewMode; label: string; description: string }> = [
   {
-    id: "lift",
-    label: "Targeted lift over baseline",
-    description:
-      "Net £ saves attributable to the model — incremental over the 15% baseline retention rate.",
-  },
-  {
     id: "gross",
-    label: "Gross saves minus costs",
-    description: "Total revenue saved by the campaign minus the full campaign cost (call + budget).",
+    label: "Total retained revenue (net)",
+    description:
+      "Every saved customer's revenue (including those who would have stayed naturally), minus retention spend and outbound call cost.",
   },
   {
-    id: "compare",
-    label: "Top-decile vs random",
+    id: "lift",
+    label: "Incremental margin (model-only)",
     description:
-      "Compares ROI when targeting top-decile risk customers against a random sample of equal size.",
+      "Revenue we keep that we would have lost without the model — saves above the 15% no-model baseline, minus retention spend and call cost.",
   },
 ];
 
