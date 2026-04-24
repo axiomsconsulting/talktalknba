@@ -107,12 +107,26 @@ function DataPage() {
               <Database className="size-5" />
             </div>
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Active customer source
+              <div className="flex items-center gap-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  Active customer source
+                </div>
+                {source.kind === "uploaded" && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider",
+                      source.origin === "live"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    {source.origin === "live" ? "Live integration" : "Stored upload"}
+                  </span>
+                )}
               </div>
               <div className="text-base font-semibold text-foreground mt-0.5">
                 {source.kind === "mock" ? (
-                  <>Mock dataset · {customers.length} customers (6 personas + 50 generated)</>
+                  <>No source connected · showing mock dataset ({customers.length} customers · 6 personas + 50 generated)</>
                 ) : (
                   <>
                     {source.filename} · {customers.length} customers loaded
@@ -121,7 +135,13 @@ function DataPage() {
               </div>
               {source.kind === "uploaded" && (
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  Activated {new Date(source.uploadedAt).toLocaleString("en-GB")}
+                  {source.detail ?? source.filename} · activated{" "}
+                  {new Date(source.uploadedAt).toLocaleString("en-GB")}
+                </div>
+              )}
+              {source.kind === "mock" && (
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Upload an extract or pull from a live integration to replace these mock figures.
                 </div>
               )}
             </div>
