@@ -45,27 +45,26 @@ export const Route = createFileRoute("/api/public/hooks/poll-drive")({
         let seen = 0;
         try {
           await withConnectionRun("gdrive", async () => {
-            for (const sub of SUBFOLDERS) {
-              const folderId = await driveFindChildFolder(cfg.root_folder_id!, sub);
-              if (!folderId) continue;
-              const items = await driveListFolder(folderId);
-              for (const f of items) {
-                if (f.mimeType === "application/vnd.google-apps.folder") continue;
-                seen += 1;
-                await supabaseAdmin.from("data_source_files").upsert(
-                  {
-                    connection_id: conn.id,
-                    kind: sub,
-                    remote_id: f.id,
-                    remote_name: f.name,
-                    remote_modified_at: f.modifiedTime ?? null,
-                    remote_hash: f.md5Checksum ?? null,
-                    bytes: f.size ? Number(f.size) : null,
-                    last_seen_at: new Date().toISOString(),
-                  },
-                  { onConflict: "connection_id,kind,remote_id" },
-                );
-              }
+            // All files live in a single shared root folder — classify by name.
+            const items = await driveListFolder(cfg.root_folder_id!);
+            for (const f of items) {
+              if (f.mimeType === "application/vnd.google-apps.folder") continue;
+              const datasetKind = classifyDriveFileName(f.name);
+              if (!datasetKind) continue;
+              seen += 1;
+              await supabaseAdmin.from("data_source_files").upsert(
+                {
+                  connection_id: conn.id,
+                  kind: datasetKind,
+                  remote_id: f.id,
+                  remote_name: f.name,
+                  remote_modified_at: f.modifiedTime ?? null,
+                  remote_hash: f.md5Checksum ?? null,
+                  bytes: f.size ? Number(f.size) : null,
+                  last_seen_at: new Date().toISOString(),
+                },
+                { onConflict: "connection_id,kind,remote_id" },
+              );
             }
           });
         } catch (e) {
