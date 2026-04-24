@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Loader2, Send, Search, Copy, Database, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { ScoringInput, ScoringResult } from "@/data/scoring";
+import { scoreCustomer, type ScoringInput, type ScoringResult } from "@/data/scoring";
 import { allCustomers } from "@/data/customers";
+import { useCustomerStore } from "@/data/customerStore";
 
 type ApiResponse =
   | {
       ok: true;
-      source: "top_customers" | "live_snapshots" | "in_app_sample";
+      source: "top_customers" | "live_snapshots" | "in_app_sample" | "local_upload";
       source_detail: string;
       input: ScoringInput;
       result: ScoringResult;
@@ -80,6 +81,52 @@ export function ApiTesterCard() {
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState<ApiResponse | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const customers = useCustomerStore((s) => s.customers);
+  const source = useCustomerStore((s) => s.source);
+
+  const findLocal = (cid: string): ApiResponse | null => {
+    const lower = cid.toLowerCase();
+    const tail = lower.replace(/^tt-/, "");
+    const c = customers.find((x) => {
+      const xid = x.id.toLowerCase();
+      const xtail = xid.replace(/^tt-/, "");
+      return xid === lower || xtail === tail || xid.startsWith(lower) || xtail.startsWith(tail);
+    });
+    if (!c) return null;
+    const s = c.signals;
+    const input: ScoringInput = {
+      id: c.id,
+      name: c.name,
+      package: c.package,
+      tenureDays: c.tenureDays,
+      contractStatusRaw: c.contractStatus,
+      oocDays: s?.oocDays ?? 0,
+      ddCancel60: 0,
+      contractDdCancels: 0,
+      soldSpeedMbps: s?.soldSpeedMbps ?? 0,
+      lineSpeedMbps: s?.lineSpeedMbps ?? 0,
+      technology: s?.technology,
+      loyaltyCalls90d: s?.loyaltyCalls90d,
+      totalHoldSeconds: s?.totalHoldSeconds,
+      totalTalkSeconds: s?.totalTalkSeconds,
+      monthlyDownloadGb: s?.monthlyDownloadGb,
+      monthlyUploadGb: s?.monthlyUploadGb,
+      ceaseInsight: s?.ceaseInsight,
+      preferredChannel: s?.preferredChannel,
+      riskScoreOverride: c.riskScore,
+    };
+    const result = scoreCustomer(input);
+    const isUpload = source.kind === "uploaded";
+    return {
+      ok: true,
+      source: isUpload ? "local_upload" : "in_app_sample",
+      source_detail: isUpload
+        ? `Local upload · ${source.detail ?? source.filename}`
+        : "In-app personas / generated customers",
+      input,
+      result,
+    };
+  };
 
   const submit = async (id?: string) => {
     const cid = (id ?? customerId).trim();
@@ -90,6 +137,15 @@ export function ApiTesterCard() {
     setLoading(true);
     setResp(null);
     try {
+      // 1) Check the active in-browser dataset first (covers local uploads
+      //    that the server endpoint cannot see).
+      const local = findLocal(cid);
+      if (local) {
+        setResp(local);
+        if (id) setCustomerId(cid);
+        return;
+      }
+      // 2) Fall back to the server endpoint (top_customers / live snapshots / personas).
       const r = await fetch("/api/score-customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
