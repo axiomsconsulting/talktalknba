@@ -44,11 +44,36 @@ export const Route = createFileRoute("/")({
 });
 
 function RoiPage() {
+  const { rules, loaded, load } = useNbaRulesStore();
+  const { successRate } = useScenarioStore();
+
+  useEffect(() => {
+    if (!loaded) load();
+  }, [loaded, load]);
+
   // Saved-revenue projection: incremental over baseline at default scenario
   const defaultSuccess = 0.18;
   const incrementalSavedCustomers =
     roiParams.highRiskVolume * (defaultSuccess - roiParams.baselineRetentionConversionRate);
   const projectedSavedRevenue = incrementalSavedCustomers * roiParams.averageAnnualArpuGbp;
+
+  // Portfolio financials driven by editable rules + scenario success rate
+  const monthlyArpu = roiParams.averageAnnualArpuGbp / 12;
+  const ruleFinancials = useMemo(
+    () =>
+      computeRuleFinancials(rules, {
+        highRiskVolume: roiParams.highRiskVolume,
+        averageMonthlyArpuGbp: monthlyArpu,
+        baselineRetentionConversionRate: roiParams.baselineRetentionConversionRate,
+        successRate,
+      }),
+    [rules, monthlyArpu, successRate],
+  );
+  const avgLtvPerSave = customerLtv(monthlyArpu, "High");
+  const portfolioTotals = useMemo(
+    () => summariseRuleFinancials(ruleFinancials, avgLtvPerSave),
+    [ruleFinancials, avgLtvPerSave],
+  );
 
   const segmentChartData = segmentSummary.map((s) => ({
     name: `${s.tier} Risk`,
