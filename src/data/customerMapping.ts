@@ -312,8 +312,8 @@ export function mapCustomers(
     const riskTier = tierFromScore(score);
 
     out.push({
-      id: `TT-${rawId.slice(0, 8).toUpperCase()}`,
-      name: `Customer ${rawId.slice(0, 6).toUpperCase()}`,
+      id: rawId,
+      name: `Customer ${rawId.slice(0, 8).toUpperCase()}`,
       tenureDays,
       package: pkg,
       riskScore: Number(score.toFixed(3)),
