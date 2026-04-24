@@ -653,8 +653,15 @@ function EnrichmentStatusPanel() {
                   <div className="text-[11px] text-muted-foreground">{t.description}</div>
                 </div>
                 {active && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
-                    Active
+                  <span
+                    className={cn(
+                      "px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border shrink-0",
+                      t.source!.origin === "live"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    {t.source!.origin === "live" ? "Live · Active" : "Upload · Active"}
                   </span>
                 )}
               </div>
@@ -664,7 +671,8 @@ function EnrichmentStatusPanel() {
                     <span className="font-mono text-primary">{t.source!.filename}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t.size.toLocaleString()} customers enriched · activated {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
+                    {t.source!.detail ?? (t.source!.origin === "live" ? "Live integration" : "Stored upload")} · {t.size.toLocaleString()} customers enriched · activated{" "}
+                    {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-1.5">
                     {t.metrics.map((m) => (
