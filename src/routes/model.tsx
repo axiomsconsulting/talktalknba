@@ -30,6 +30,8 @@ import { KpiCard } from "@/components/KpiCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import stats from "@/data/modelStats.json";
+import { useLiveDataStore } from "@/data/liveDataStore";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
 
 export const Route = createFileRoute("/model")({
   component: ModelPage,
@@ -125,16 +127,31 @@ function ConfusionCell({
 }
 
 function ModelPage() {
-  const m = stats.performance_metrics;
-  const c = stats.confusion_matrix;
-  const h = stats.hyperparameters;
-  const s = stats.dataset_split;
+  const liveStats = useLiveDataStore((s) => s.stats);
+  const liveRun = useLiveDataStore((s) => s.run);
+  const isLive = !!(liveStats?.performance_metrics && liveStats.confusion_matrix);
+  const m = (isLive ? liveStats!.performance_metrics! : stats.performance_metrics) as typeof stats.performance_metrics;
+  const c = (isLive ? liveStats!.confusion_matrix! : stats.confusion_matrix) as typeof stats.confusion_matrix;
+  const h = (isLive && liveStats!.hyperparameters ? liveStats!.hyperparameters : stats.hyperparameters) as typeof stats.hyperparameters;
+  const s = (isLive && liveStats!.dataset_split ? liveStats!.dataset_split : stats.dataset_split) as typeof stats.dataset_split;
   const total = c.true_negatives + c.false_positives + c.false_negatives + c.true_positives;
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Model Validation"
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            Model Validation
+            <DataSourceBadge
+              isLive={isLive}
+              title={
+                isLive && liveRun?.finishedAt
+                  ? `Live — last training run ${new Date(liveRun.finishedAt).toLocaleString()}`
+                  : undefined
+              }
+            />
+          </span>
+        }
         title="Model Evaluation Metrics"
         description="Held-out test performance for the production churn classifier. Numbers are computed on the test split and refreshed with every model retrain."
       />

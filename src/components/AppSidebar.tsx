@@ -14,6 +14,7 @@ import {
   User as UserIcon,
   Shield,
   Palette,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import talktalkLogo from "@/assets/talktalk-logo.svg";
@@ -117,6 +118,16 @@ function UserMenu() {
             >
               <Palette className="size-4" />
               Branding & settings
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin/connections"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-foreground/80 hover:bg-foreground/5"
+            >
+              <Plug className="size-4" />
+              Live data connections
             </Link>
           )}
           <button

@@ -6,6 +6,7 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/data/auth";
 import { AuthGate } from "@/components/AuthGate";
 import { useBrandingStore, applyBrandingToDocument } from "@/data/brandingStore";
+import { useLiveDataStore } from "@/data/liveDataStore";
 
 function NotFoundComponent() {
   return (
@@ -111,10 +112,19 @@ function BrandingHydrator() {
   return null;
 }
 
+function LiveDataHydrator() {
+  const load = useLiveDataStore((s) => s.load);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  return null;
+}
+
 function RootComponent() {
   return (
     <AuthProvider>
       <BrandingHydrator />
+      <LiveDataHydrator />
       <AuthGate>
         <Outlet />
       </AuthGate>
