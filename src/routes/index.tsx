@@ -11,6 +11,7 @@ import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { useScenarioStore } from "@/data/scenarioStore";
+import { useDatasetProv, useRuleProv, useHasActiveCustomerSource } from "@/data/provenanceHooks";
 import {
   computeRuleFinancials,
   summariseRuleFinancials,
@@ -47,6 +48,9 @@ export const Route = createFileRoute("/")({
 function RoiPage() {
   const { rules, loaded, load } = useNbaRulesStore();
   const { successRate } = useScenarioStore();
+  const hasSource = useHasActiveCustomerSource();
+  const datasetProv = useDatasetProv("aggregated from customer dataset", "Aggregations over the active customer source");
+  const ruleProv = useRuleProv("rule-engine output", "Editable NBA rules × scenario success-rate × dataset volume");
 
   useEffect(() => {
     if (!loaded) load();
@@ -101,14 +105,15 @@ function RoiPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <KpiCard
             label="Total Customer Base"
-            value={formatNumber(roiParams.totalCustomerBase, { compact: true })}
+            value={hasSource ? formatNumber(roiParams.totalCustomerBase, { compact: true }) : null}
             sub={`${formatNumber(roiParams.totalCustomerBase)} accounts scored`}
             icon={Users}
             accent="neutral"
+            prov={datasetProv}
           />
           <KpiCard
             label="Customers at Risk"
-            value={formatNumber(roiParams.highRiskVolume, { compact: true })}
+            value={hasSource ? formatNumber(roiParams.highRiskVolume, { compact: true }) : null}
             sub="Top-tier model probability ≥ 0.65"
             icon={AlertTriangle}
             accent="risk"
@@ -116,17 +121,31 @@ function RoiPage() {
               value: `${((roiParams.highRiskVolume / roiParams.totalCustomerBase) * 100).toFixed(1)}% of base`,
               direction: "neutral",
             }}
+            prov={datasetProv}
           />
           <KpiCard
             label="Revenue at Risk"
-            value={formatGbp(roiParams.revenueAtRiskGbp, { compact: true })}
+            value={hasSource ? formatGbp(roiParams.revenueAtRiskGbp, { compact: true }) : null}
             sub={`${formatGbp(roiParams.averageAnnualArpuGbp)} avg annual ARPU`}
             icon={BadgePoundSterling}
             accent="risk"
+            prov={
+              hasSource
+                ? {
+                    kind: "rule",
+                    source: "Heuristic rule · Revenue at risk",
+                    formula: "high-risk customers × average annual ARPU",
+                    inputs: [
+                      { label: "High-risk volume", value: formatNumber(roiParams.highRiskVolume) },
+                      { label: "Avg annual ARPU", value: formatGbp(roiParams.averageAnnualArpuGbp) },
+                    ],
+                  }
+                : null
+            }
           />
           <KpiCard
             label="Saved Revenue Projection"
-            value={formatGbp(projectedSavedRevenue, { compact: true })}
+            value={hasSource ? formatGbp(projectedSavedRevenue, { compact: true }) : null}
             sub={`@ ${(defaultSuccess * 100).toFixed(0)}% intervention vs ${(roiParams.baselineRetentionConversionRate * 100).toFixed(0)}% baseline`}
             icon={ShieldCheck}
             accent="success"
@@ -134,6 +153,20 @@ function RoiPage() {
               value: `${formatNumber(incrementalSavedCustomers, { compact: true })} saves`,
               direction: "up",
             }}
+            prov={
+              hasSource
+                ? {
+                    kind: "rule",
+                    source: "Heuristic rule · Saved revenue projection",
+                    formula: "high-risk × (intervention success − baseline) × avg annual ARPU",
+                    inputs: [
+                      { label: "Intervention success", value: `${(defaultSuccess * 100).toFixed(0)}%` },
+                      { label: "Baseline conversion", value: `${(roiParams.baselineRetentionConversionRate * 100).toFixed(0)}%` },
+                      { label: "Incremental saves", value: formatNumber(Math.round(incrementalSavedCustomers)) },
+                    ],
+                  }
+                : null
+            }
           />
         </div>
 
@@ -141,14 +174,15 @@ function RoiPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <KpiCard
             label="Gross Retained Revenue"
-            value={formatGbp(portfolioTotals.grossRetainedGbp, { compact: true })}
+            value={hasSource ? formatGbp(portfolioTotals.grossRetainedGbp, { compact: true }) : null}
             sub={`${formatNumber(portfolioTotals.saved, { compact: true })} customers saved over contract horizon`}
             icon={ShieldCheck}
             accent="success"
+            prov={ruleProv}
           />
           <KpiCard
             label="Revenue Dilution"
-            value={formatGbp(portfolioTotals.dilutionGbp, { compact: true })}
+            value={hasSource ? formatGbp(portfolioTotals.dilutionGbp, { compact: true }) : null}
             sub="Cost of discounts × ARPU × contract length"
             icon={Scissors}
             accent="risk"
@@ -159,17 +193,19 @@ function RoiPage() {
                   : "—",
               direction: "neutral",
             }}
+            prov={ruleProv}
           />
           <KpiCard
             label="Net Retained Revenue"
-            value={formatGbp(portfolioTotals.netRetainedGbp, { compact: true })}
+            value={hasSource ? formatGbp(portfolioTotals.netRetainedGbp, { compact: true }) : null}
             sub="Gross − dilution − cost-to-serve"
             icon={BadgePoundSterling}
             accent="success"
+            prov={ruleProv}
           />
           <KpiCard
             label="LTV Budget Used"
-            value={`${portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%`}
+            value={hasSource ? `${portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%` : null}
             sub={`of ${formatGbp(portfolioTotals.totalLtvGbp, { compact: true })} saved-customer LTV`}
             icon={Wallet}
             accent="neutral"
