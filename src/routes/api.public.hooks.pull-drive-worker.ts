@@ -1,30 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  azureDownloadFile,
+  driveDownloadFile,
   parseCsv,
   parseParquet,
-  type AzureRepoConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getRequest } from "@tanstack/react-start/server";
 
 /**
- * Worker that processes ONE file from the oldest active pull_jobs row.
- * Driven by pg_cron every 30s. Also self-kicks after finishing one file so
- * multi-file pulls progress back-to-back without waiting for the next tick.
- *
- * Public endpoint — but only mutates internal pull_jobs / storage. No PII
- * leaves the worker. Concurrent ticks are made safe by an UPDATE…SET
- * status='downloading' guard on the chosen job before doing real work.
+ * Worker that processes ONE Drive file from the oldest active gdrive pull_jobs
+ * row. Driven by pg_cron and self-kicks after each file. Mirrors the Azure
+ * worker; differs only in transport (Drive REST alt=media) and storage prefix.
  */
-export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
+export const Route = createFileRoute("/api/public/hooks/pull-drive-worker")({
   server: {
     handlers: {
       POST: async () => {
-        // Find the oldest job that still has work to do
+        // Pick the oldest active job whose connection is gdrive.
+        const { data: gdriveConn } = await supabaseAdmin
+          .from("data_connections")
+          .select("id")
+          .eq("kind", "gdrive")
+          .maybeSingle();
+        if (!gdriveConn) return json(200, { idle: true, reason: "no gdrive connection" });
+
         const { data: job, error: jobErr } = await supabaseAdmin
           .from("pull_jobs")
           .select("*")
+          .eq("connection_id", gdriveConn.id)
           .in("status", ["queued", "downloading", "parsing", "uploading"])
           .order("started_at", { ascending: true })
           .limit(1)
@@ -32,13 +35,17 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
         if (jobErr) return json(500, { error: jobErr.message });
         if (!job) return json(200, { idle: true });
 
-        const pending = ((job.pending_files ?? []) as Array<{ kind: string; path: string }>).slice();
+        const pending = (
+          (job.pending_files ?? []) as Array<{ kind: string; path: string; remote_id: string }>
+        ).slice();
         const summary = (job.summary ?? {}) as Record<string, unknown> & {
           _config?: { customerLimit?: number | null };
           _customerIds?: string[];
         };
         const customerLimit = summary._config?.customerLimit ?? null;
-        const customerIds = new Set<string>((summary._customerIds ?? []).map((s) => s.toLowerCase()));
+        const customerIds = new Set<string>(
+          (summary._customerIds ?? []).map((s) => s.toLowerCase()),
+        );
 
         if (pending.length === 0) {
           await supabaseAdmin
@@ -50,21 +57,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
 
         const next = pending[0];
 
-        // Load connection config
-        const { data: conn } = await supabaseAdmin
-          .from("data_connections")
-          .select("id, config")
-          .eq("id", job.connection_id)
-          .maybeSingle();
-        if (!conn) {
-          await failJob(job.id, "Connection deleted");
-          return json(200, { jobId: job.id, status: "error" });
-        }
-        const cfg = conn.config as AzureRepoConfig;
-
         try {
-          // Mark file in flight with a human-readable note
-          const fileName = next.path.split("/").pop() ?? next.path;
           await supabaseAdmin
             .from("pull_jobs")
             .update({
@@ -74,34 +67,29 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               current_bytes_total: null,
               current_bytes_done: null,
               current_rows_read: 0,
-
             })
             .eq("id", job.id);
 
-          // Cancellation check #1
           if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
-          // Download (Azure REST returns full file — Worker has no streaming
-          // primitive that Azure speaks, so we measure bytes after fetch).
-          const bytes = await azureDownloadFile(cfg, "/" + next.path);
+          const bytes = await driveDownloadFile(next.remote_id);
           await supabaseAdmin
             .from("pull_jobs")
             .update({
               status: "parsing",
               current_bytes_total: bytes.byteLength,
               current_bytes_done: bytes.byteLength,
-
             })
             .eq("id", job.id);
 
-          // Cancellation check #2
           if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
-          // Archive raw file (overwrite — no per-run history, keeps storage flat)
-          const archivePath = `azure/${conn.id}/${next.kind}/${next.path.split("/").pop()}`;
-          const lower = next.path.toLowerCase();
+          const lower = (next.path ?? "").toLowerCase();
           const isCsv = lower.endsWith(".csv");
           const isParquet = lower.endsWith(".parquet");
+
+          // Archive the raw bytes for traceability
+          const archivePath = `gdrive/${gdriveConn.id}/${next.kind}/${next.path}`;
           await supabaseAdmin.storage
             .from("datasets")
             .upload(archivePath, new Blob([bytes as BlobPart]), {
@@ -113,7 +101,6 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
                   : "application/octet-stream",
             });
 
-          // Parse capped snapshot
           let parsedHeaders: string[] = [];
           let parsedRows: unknown[][] = [];
           let totalRows = 0;
@@ -154,7 +141,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
             return json(200, { jobId: job.id, status: "archived" });
           }
 
-          // ── Customer-coherent sampling ────────────────────────────────────
+          // ── Customer-coherent random sampling ─────────────────────────────
           let filteredRows = parsedRows;
           let filteredTotal = totalRows;
           let filterNote: string | undefined;
@@ -170,7 +157,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               filteredRows = sampled;
               filteredTotal = sampled.length;
               const ids: string[] = [];
-              for (const r of filteredRows) {
+              for (const r of sampled) {
                 const v = r[idColIdx];
                 if (v != null) ids.push(String(v).toLowerCase());
               }
@@ -193,17 +180,11 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
 
           await supabaseAdmin
             .from("pull_jobs")
-            .update({
-              status: "uploading",
-              current_rows_read: filteredTotal,
-
-            })
+            .update({ status: "uploading", current_rows_read: filteredTotal })
             .eq("id", job.id);
 
-          // Cancellation check #3
           if (await isCancelled(job.id)) return json(200, { jobId: job.id, status: "cancelled" });
 
-          // Snapshot for the live store
           summary[next.kind] = {
             rows: filteredTotal,
             bytes: bytes.byteLength,
@@ -211,7 +192,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
             ...(filterNote ? { note: filterNote } : {}),
           } as never;
           const snapshot = JSON.stringify({
-            source: "azure_repo",
+            source: "gdrive",
             remote: next.path,
             fetched_at: new Date().toISOString(),
             format,
@@ -222,7 +203,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
           await supabaseAdmin.storage
             .from("datasets")
             .upload(
-              `azure/${conn.id}/${next.kind}.json`,
+              `gdrive/${gdriveConn.id}/${next.kind}.json`,
               new Blob([snapshot], { type: "application/json" }),
               { upsert: true, contentType: "application/json" },
             );
@@ -232,9 +213,9 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               {
                 kind: next.kind,
                 origin: "live",
-                connection_id: conn.id,
+                connection_id: gdriveConn.id,
                 remote_name: next.path,
-                label: next.path.split("/").pop() ?? next.path,
+                label: next.path,
                 rows_count: filteredTotal,
                 activated_at: new Date().toISOString(),
               },
@@ -243,7 +224,6 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
           }
 
           await advanceJob(job.id, pending, summary);
-          // Kick self for the next file so the user doesn't wait 30s for cron.
           kickSelf();
           return json(200, { jobId: job.id, status: "file_done", file: next.path });
         } catch (e) {
@@ -262,7 +242,6 @@ function json(status: number, body: unknown) {
   });
 }
 
-/** Returns true if the job has been cancelled mid-flight. */
 async function isCancelled(jobId: string): Promise<boolean> {
   const { data } = await supabaseAdmin
     .from("pull_jobs")
@@ -272,12 +251,11 @@ async function isCancelled(jobId: string): Promise<boolean> {
   return data?.status === "cancelled";
 }
 
-/** Fire-and-forget: ask ourselves to process the next file immediately. */
 function kickSelf() {
   try {
     const req = getRequest();
     const origin = new URL(req.url).origin;
-    void fetch(`${origin}/api/public/hooks/pull-azure-worker`, {
+    void fetch(`${origin}/api/public/hooks/pull-drive-worker`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "{}",
@@ -285,13 +263,13 @@ function kickSelf() {
       /* cron will pick it up on the next tick */
     });
   } catch {
-    /* no request context — not fatal, cron will tick */
+    /* no request context */
   }
 }
 
 async function advanceJob(
   jobId: string,
-  pending: Array<{ kind: string; path: string }>,
+  pending: Array<{ kind: string; path: string; remote_id: string }>,
   summary: Record<string, unknown>,
 ) {
   const remaining = pending.slice(1);
