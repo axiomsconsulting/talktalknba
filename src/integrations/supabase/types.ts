@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_data_sources: {
+        Row: {
+          activated_at: string
+          activated_by: string | null
+          connection_id: string | null
+          dataset_id: string | null
+          kind: string
+          label: string
+          origin: string
+          remote_name: string | null
+          rows_count: number | null
+          source_file_id: string | null
+        }
+        Insert: {
+          activated_at?: string
+          activated_by?: string | null
+          connection_id?: string | null
+          dataset_id?: string | null
+          kind: string
+          label: string
+          origin: string
+          remote_name?: string | null
+          rows_count?: number | null
+          source_file_id?: string | null
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string | null
+          connection_id?: string | null
+          dataset_id?: string | null
+          kind?: string
+          label?: string
+          origin?: string
+          remote_name?: string | null
+          rows_count?: number | null
+          source_file_id?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           accent_color: string

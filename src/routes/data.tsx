@@ -107,12 +107,26 @@ function DataPage() {
               <Database className="size-5" />
             </div>
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Active customer source
+              <div className="flex items-center gap-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  Active customer source
+                </div>
+                {source.kind === "uploaded" && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider",
+                      source.origin === "live"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    {source.origin === "live" ? "Live integration" : "Stored upload"}
+                  </span>
+                )}
               </div>
               <div className="text-base font-semibold text-foreground mt-0.5">
                 {source.kind === "mock" ? (
-                  <>Mock dataset · {customers.length} customers (6 personas + 50 generated)</>
+                  <>No source connected · showing mock dataset ({customers.length} customers · 6 personas + 50 generated)</>
                 ) : (
                   <>
                     {source.filename} · {customers.length} customers loaded
@@ -121,7 +135,13 @@ function DataPage() {
               </div>
               {source.kind === "uploaded" && (
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  Activated {new Date(source.uploadedAt).toLocaleString("en-GB")}
+                  {source.detail ?? source.filename} · activated{" "}
+                  {new Date(source.uploadedAt).toLocaleString("en-GB")}
+                </div>
+              )}
+              {source.kind === "mock" && (
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Upload an extract or pull from a live integration to replace these mock figures.
                 </div>
               )}
             </div>
@@ -249,16 +269,25 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
         filename: staged.file.name,
         rowsAggregated: staged.rows.length,
         uploadedAt: new Date().toISOString(),
+        origin: "upload" as const,
+        detail: `Stored upload · ${staged.file.name}`,
       };
+      const persist = useCustomerStore.getState().persistActive;
       if (activateAfterUpload && staged.kind === "customer_info") {
         const mapped = mapCustomers(staged.rows, mapping);
-        if (mapped.length > 0) setActive(mapped, staged.file.name);
+        if (mapped.length > 0) {
+          setActive(mapped, staged.file.name, "upload", `Stored upload · ${staged.file.name}`);
+          await persist({ kind: "customer_info", origin: "upload", label: staged.file.name, rows: mapped.length });
+        }
       } else if (staged.kind === "calls") {
         applyCalls(aggregateCalls(staged.rows), src);
+        await persist({ kind: "calls", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       } else if (staged.kind === "cease") {
         applyCease(aggregateCease(staged.rows), src);
+        await persist({ kind: "cease", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       } else if (staged.kind === "usage") {
         applyUsage(aggregateUsage(staged.rows), src);
+        await persist({ kind: "usage", origin: "upload", label: staged.file.name, rows: staged.rows.length });
       }
 
       setStaged(null);
@@ -624,8 +653,15 @@ function EnrichmentStatusPanel() {
                   <div className="text-[11px] text-muted-foreground">{t.description}</div>
                 </div>
                 {active && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
-                    Active
+                  <span
+                    className={cn(
+                      "px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border shrink-0",
+                      t.source!.origin === "live"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    {t.source!.origin === "live" ? "Live · Active" : "Upload · Active"}
                   </span>
                 )}
               </div>
@@ -635,7 +671,8 @@ function EnrichmentStatusPanel() {
                     <span className="font-mono text-primary">{t.source!.filename}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t.size.toLocaleString()} customers enriched · activated {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
+                    {t.source!.detail ?? (t.source!.origin === "live" ? "Live integration" : "Stored upload")} · {t.size.toLocaleString()} customers enriched · activated{" "}
+                    {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-1.5">
                     {t.metrics.map((m) => (
@@ -859,22 +896,33 @@ function DatasetTable({
       const file = new File([data], d.filename, { type: data.type });
       const { rows } = await parseFile(file);
 
+      const persist = useCustomerStore.getState().persistActive;
       if (d.kind === "customer_info") {
         const mapped = mapCustomers(rows, DEFAULT_MAPPING);
         if (mapped.length === 0) {
           alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
           return;
         }
-        setActive(mapped, d.filename);
+        setActive(mapped, d.filename, "upload", `Stored upload · ${d.filename}`);
+        await persist({ kind: "customer_info", origin: "upload", label: d.filename, rows: mapped.length, datasetId: d.id });
       } else {
         const src = {
           filename: d.filename,
           rowsAggregated: rows.length,
           uploadedAt: new Date().toISOString(),
+          origin: "upload" as const,
+          detail: `Stored upload · ${d.filename}`,
         };
-        if (d.kind === "calls") applyCalls(aggregateCalls(rows), src);
-        else if (d.kind === "cease") applyCease(aggregateCease(rows), src);
-        else if (d.kind === "usage") applyUsage(aggregateUsage(rows), src);
+        if (d.kind === "calls") {
+          applyCalls(aggregateCalls(rows), src);
+          await persist({ kind: "calls", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        } else if (d.kind === "cease") {
+          applyCease(aggregateCease(rows), src);
+          await persist({ kind: "cease", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        } else if (d.kind === "usage") {
+          applyUsage(aggregateUsage(rows), src);
+          await persist({ kind: "usage", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        }
       }
     } catch (err) {
       alert(`Activation failed: ${(err as Error).message}`);

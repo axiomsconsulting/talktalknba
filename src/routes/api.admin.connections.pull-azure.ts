@@ -80,6 +80,23 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
                     upsert: true,
                     contentType: "application/json",
                   });
+
+                // Mark this kind as actively sourced from a live integration so
+                // the UI banner persists across reloads & devices.
+                if (["customer_info", "calls", "cease", "usage"].includes(datasetKind)) {
+                  await supabaseAdmin.from("active_data_sources").upsert(
+                    {
+                      kind: datasetKind,
+                      origin: "live",
+                      connection_id: conn.id,
+                      remote_name: relPath,
+                      label: relPath.split("/").pop() ?? relPath,
+                      rows_count: parsed.rows.length,
+                      activated_at: new Date().toISOString(),
+                    },
+                    { onConflict: "kind" },
+                  );
+                }
               } else {
                 // Parquet: archive only, surface to the trainer.
                 summary[datasetKind] = {
