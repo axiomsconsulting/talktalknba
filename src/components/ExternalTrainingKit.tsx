@@ -88,10 +88,16 @@ export function ExternalTrainingKit() {
     }
     setImporting(true);
     try {
+      // NaN/Infinity are not legal JSON. Replace bare tokens with null so
+      // notebooks that emitted them (older runs) still import cleanly.
+      const safeParse = (raw: string) =>
+        JSON.parse(
+          raw.replace(/\bNaN\b/g, "null").replace(/-?\bInfinity\b/g, "null"),
+        );
       const payload: Record<string, unknown> = {};
-      if (metricsFile) payload.metrics = JSON.parse(await metricsFile.text());
+      if (metricsFile) payload.metrics = safeParse(await metricsFile.text());
       if (topFile) {
-        const top = JSON.parse(await topFile.text());
+        const top = safeParse(await topFile.text());
         // Accept either { customers: [...] } or a bare array
         payload.top_customers = Array.isArray(top) ? top : (top.customers ?? []);
       }
