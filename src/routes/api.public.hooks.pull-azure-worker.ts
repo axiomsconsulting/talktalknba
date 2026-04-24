@@ -166,9 +166,9 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
             if (idColIdx === -1) {
               filterNote = "customer_info missing unique_customer_identifier — limit not applied";
             } else {
-              const cap = Math.min(customerLimit, parsedRows.length);
-              filteredRows = parsedRows.slice(0, cap);
-              filteredTotal = filteredRows.length;
+              const sampled = reservoirSample(parsedRows, customerLimit);
+              filteredRows = sampled;
+              filteredTotal = sampled.length;
               const ids: string[] = [];
               for (const r of filteredRows) {
                 const v = r[idColIdx];
@@ -176,7 +176,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               }
               for (const id of ids) customerIds.add(id);
               summary._customerIds = Array.from(customerIds);
-              filterNote = `Sampled first ${filteredTotal} of ${totalRows} customers`;
+              filterNote = `Randomly sampled ${filteredTotal} of ${totalRows} customers`;
             }
           } else if (next.kind !== "customer_info" && customerIds.size > 0) {
             if (idColIdx === -1) {

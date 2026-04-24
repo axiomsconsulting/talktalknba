@@ -23,6 +23,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminConnectionsRouteImport } from './routes/admin.connections'
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
 import { Route as ApiPublicIngestArtefactsRouteImport } from './routes/api.public.ingest.artefacts'
+import { Route as ApiPublicHooksPullDriveWorkerRouteImport } from './routes/api.public.hooks.pull-drive-worker'
 import { Route as ApiPublicHooksPullAzureWorkerRouteImport } from './routes/api.public.hooks.pull-azure-worker'
 import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public.hooks.poll-drive'
 import { Route as ApiAdminTrainingKitRouteImport } from './routes/api.admin.training.kit'
@@ -105,6 +106,12 @@ const ApiPublicIngestArtefactsRoute =
   ApiPublicIngestArtefactsRouteImport.update({
     id: '/api/public/ingest/artefacts',
     path: '/api/public/ingest/artefacts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPullDriveWorkerRoute =
+  ApiPublicHooksPullDriveWorkerRouteImport.update({
+    id: '/api/public/hooks/pull-drive-worker',
+    path: '/api/public/hooks/pull-drive-worker',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksPullAzureWorkerRoute =
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
   '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
+  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesByTo {
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
   '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
+  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRoutesById {
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
   '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
   '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
+  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
 export interface FileRouteTypes {
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
     | '/api/public/hooks/pull-azure-worker'
+    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
     | '/api/public/hooks/pull-azure-worker'
+    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/ingest/artefacts'
   id:
     | '__root__'
@@ -345,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/admin/training/kit'
     | '/api/public/hooks/poll-drive'
     | '/api/public/hooks/pull-azure-worker'
+    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesById: FileRoutesById
 }
@@ -374,6 +387,7 @@ export interface RootRouteChildren {
   ApiAdminTrainingKitRoute: typeof ApiAdminTrainingKitRoute
   ApiPublicHooksPollDriveRoute: typeof ApiPublicHooksPollDriveRoute
   ApiPublicHooksPullAzureWorkerRoute: typeof ApiPublicHooksPullAzureWorkerRoute
+  ApiPublicHooksPullDriveWorkerRoute: typeof ApiPublicHooksPullDriveWorkerRoute
   ApiPublicIngestArtefactsRoute: typeof ApiPublicIngestArtefactsRoute
 }
 
@@ -475,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ingest/artefacts'
       fullPath: '/api/public/ingest/artefacts'
       preLoaderRoute: typeof ApiPublicIngestArtefactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/pull-drive-worker': {
+      id: '/api/public/hooks/pull-drive-worker'
+      path: '/api/public/hooks/pull-drive-worker'
+      fullPath: '/api/public/hooks/pull-drive-worker'
+      preLoaderRoute: typeof ApiPublicHooksPullDriveWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/pull-azure-worker': {
@@ -590,6 +611,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminTrainingKitRoute: ApiAdminTrainingKitRoute,
   ApiPublicHooksPollDriveRoute: ApiPublicHooksPollDriveRoute,
   ApiPublicHooksPullAzureWorkerRoute: ApiPublicHooksPullAzureWorkerRoute,
+  ApiPublicHooksPullDriveWorkerRoute: ApiPublicHooksPullDriveWorkerRoute,
   ApiPublicIngestArtefactsRoute: ApiPublicIngestArtefactsRoute,
 }
 export const routeTree = rootRouteImport
