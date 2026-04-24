@@ -20,6 +20,7 @@ import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { customerLtv } from "@/data/financials";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
 
 export const Route = createFileRoute("/explainability")({
   head: () => ({
@@ -85,6 +86,8 @@ function ExplainabilityPage() {
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
+        <TopImpactedCustomers />
+
         {/* Global feature importance */}
         <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
           <div className="px-5 sm:px-7 py-5 border-b border-border flex items-start justify-between gap-4">
