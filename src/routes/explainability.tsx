@@ -320,6 +320,47 @@ function CustomerDetail({ customer }: { customer: Customer }) {
           <Pill label="Contract" value={customer.contractStatus} />
           <Pill label="ARPU" value={`£${customer.monthlyArpu}/mo`} />
         </div>
+
+        {customer.signals && (
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <Pill
+              label="Loyalty calls (90d)"
+              value={`${customer.signals.loyaltyCalls90d}`}
+              tone={customer.signals.loyaltyCalls90d >= 2 ? "warn" : undefined}
+            />
+            <Pill
+              label="Total hold"
+              value={`${Math.round(customer.signals.totalHoldSeconds / 60)} min`}
+              tone={customer.signals.totalHoldSeconds > 1800 ? "warn" : undefined}
+            />
+            <Pill
+              label="OOC days"
+              value={`${customer.signals.oocDays}`}
+              tone={customer.signals.oocDays > 60 ? "warn" : undefined}
+            />
+            <Pill
+              label="Line vs sold"
+              value={
+                customer.signals.soldSpeedMbps > 0
+                  ? `${customer.signals.lineSpeedMbps}/${customer.signals.soldSpeedMbps} Mbps`
+                  : "—"
+              }
+              tone={
+                customer.signals.soldSpeedMbps > 0 &&
+                (customer.signals.soldSpeedMbps - customer.signals.lineSpeedMbps) /
+                  customer.signals.soldSpeedMbps >
+                  0.25
+                  ? "warn"
+                  : undefined
+              }
+            />
+            <Pill
+              label="Usage / mo"
+              value={`${customer.signals.monthlyDownloadGb} GB`}
+              tone={customer.signals.monthlyDownloadGb > 800 ? "warn" : undefined}
+            />
+          </div>
+        )}
       </div>
 
       <div className="p-5 sm:p-7">
