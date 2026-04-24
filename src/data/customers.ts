@@ -422,37 +422,6 @@ function generateCustomers(): Customer[] {
   return customers;
 }
 
-// Decide which Next Best Action a customer should receive based on their
-// behavioural signals. The rules mirror the four NBA triggers documented on
-// the Strategy page so the explainability and strategy views stay in sync.
-// NOTE: declared as `const` rather than `function` so module-init code that
-// runs at the top of this file (generateCustomers) can rely on it being
-// initialised before use under Vite's ESM dev runtime.
-export const deriveNbaTrigger = (input: {
-  riskTier: RiskTier;
-  contractStatus: Customer["contractStatus"];
-  signals?: Partial<BehavioralSignals>;
-  package: string;
-}): NbaTriggerKey => {
-  const { riskTier, contractStatus, signals = {}, package: pkg } = input;
-  const speedDeficit =
-    signals.soldSpeedMbps && signals.lineSpeedMbps
-      ? (signals.soldSpeedMbps - signals.lineSpeedMbps) / signals.soldSpeedMbps
-      : 0;
-  const isHeavyUser =
-    (signals.monthlyDownloadGb ?? 0) > 800 &&
-    /Fibre 35|Fibre 65|ADSL|Essentials/i.test(pkg);
-
-  if (riskTier === "Low") return "suppress";
-  if (signals.ceaseInsight === "CompetitorDeals") return "competitor_match";
-  if ((signals.loyaltyCalls90d ?? 0) >= 2 || (signals.totalHoldSeconds ?? 0) > 1800) {
-    return "loyalty_save_desk";
-  }
-  if (speedDeficit > 0.25 || /ADSL|Fibre 35/i.test(pkg)) return "free_tech_upgrade";
-  if (isHeavyUser) return "rightsize_email";
-  if (riskTier === "High" && contractStatus === "Out of contract") return "loyalty_save_desk";
-  return "nurture";
-};
 
 export const NBA_TRIGGERS: Record<
   NbaTriggerKey,
