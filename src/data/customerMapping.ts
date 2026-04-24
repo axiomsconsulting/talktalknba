@@ -424,3 +424,135 @@ export function aggregateUsage(rows: RawCustomerRow[]): Map<string, UsageEnrichm
 export function detectColumns(sample: RawCustomerRow): string[] {
   return Object.keys(sample);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smart auto-mapping — detect likely columns by matching known aliases.
+// Picks the best column from the supplied schema for each model field.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Aliases for each FieldMapping key. Order matters — earlier patterns are
+ * preferred. Patterns are matched against the lowercase column name with
+ * spaces / dashes / underscores normalised to a single space.
+ */
+const MAPPING_ALIASES: Record<keyof FieldMapping, RegExp[]> = {
+  id: [
+    /^unique[_ ]?customer[_ ]?identifier$/,
+    /^customer[_ ]?id$/,
+    /^account[_ ]?(id|number)$/,
+    /\bcustomer[_ ]?key\b/,
+    /\buci\b/,
+  ],
+  package: [
+    /^crm[_ ]?package[_ ]?name$/,
+    /^package[_ ]?name$/,
+    /\bpackage\b/,
+    /\bproduct[_ ]?name\b/,
+    /\btariff\b/,
+  ],
+  tenureDays: [
+    /^tenure[_ ]?days$/,
+    /\btenure\b.*\bday/,
+    /\bdays?[_ ]?on[_ ]?network\b/,
+    /\bcustomer[_ ]?age\b/,
+  ],
+  contractStatus: [
+    /^contract[_ ]?status$/,
+    /\bcontract[_ ]?state\b/,
+    /\bcontract[_ ]?type\b/,
+  ],
+  oocDays: [
+    /^ooc[_ ]?days$/,
+    /^out[_ ]?of[_ ]?contract[_ ]?days$/,
+    /\bdays?[_ ]?ooc\b/,
+    /\bdays?[_ ]?out[_ ]?of[_ ]?contract\b/,
+  ],
+  ddCancel60: [
+    /^dd[_ ]?cancel[_ ]?60[_ ]?day$/,
+    /\bdd[_ ]?cancel.*60\b/,
+    /\bdirect[_ ]?debit.*60\b/,
+    /\brecent[_ ]?dd[_ ]?cancel\b/,
+  ],
+  contractDdCancels: [
+    /^contract[_ ]?dd[_ ]?cancels$/,
+    /\bdd[_ ]?cancels?\b/,
+    /\bdirect[_ ]?debit[_ ]?cancels?\b/,
+  ],
+  speed: [
+    /^speed$/,
+    /^sold[_ ]?speed$/,
+    /^headline[_ ]?speed$/,
+    /\bpackage[_ ]?speed\b/,
+  ],
+  lineSpeed: [
+    /^line[_ ]?speed$/,
+    /^realised[_ ]?speed$/,
+    /^delivered[_ ]?speed$/,
+    /^avg[_ ]?download[_ ]?mbs?$/,
+    /\bsync[_ ]?speed\b/,
+  ],
+  technology: [
+    /^technology$/,
+    /^access[_ ]?tech\b/,
+    /\btech[_ ]?type\b/,
+  ],
+  arpuOverride: [
+    /^arpu$/,
+    /^monthly[_ ]?arpu$/,
+    /\brevenue[_ ]?per[_ ]?user\b/,
+    /\bbill[_ ]?amount\b/,
+  ],
+  riskScoreOverride: [
+    /^risk[_ ]?score$/,
+    /^churn[_ ]?score$/,
+    /^propensity[_ ]?score$/,
+    /\bchurn[_ ]?probability\b/,
+  ],
+};
+
+function normalise(col: string): string {
+  return col.toLowerCase().replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Build a FieldMapping by matching column names against alias patterns.
+ * Falls back to DEFAULT_MAPPING values when nothing matches.
+ */
+export function smartMapping(columns: string[]): FieldMapping {
+  const normCols = columns.map((c) => ({ raw: c, norm: normalise(c) }));
+  const out: Record<string, string | undefined> = { ...DEFAULT_MAPPING };
+
+  (Object.keys(MAPPING_ALIASES) as Array<keyof FieldMapping>).forEach((key) => {
+    const patterns = MAPPING_ALIASES[key];
+    let match: string | undefined;
+    for (const p of patterns) {
+      const hit = normCols.find((c) => p.test(c.norm));
+      if (hit) {
+        match = hit.raw;
+        break;
+      }
+    }
+    if (match) out[key] = match;
+    else if (!columns.includes(out[key] as string)) out[key] = undefined;
+  });
+
+  return out as FieldMapping;
+}
+
+/**
+ * Detect what kind of file this is (customer_info, usage, calls, cease, other)
+ * from its column signature.
+ */
+export type FileKind = "customer_info" | "usage" | "calls" | "cease" | "other";
+
+export function detectKindFromColumns(columns: string[]): FileKind {
+  const norm = new Set(columns.map(normalise));
+  const has = (re: RegExp) => [...norm].some((c) => re.test(c));
+
+  if (has(/\bhold[_ ]?time/) || has(/\btalk[_ ]?time/) || has(/\bcall[_ ]?type/)) return "calls";
+  if (has(/\breason[_ ]?description[_ ]?insight\b/) || has(/\bcease[_ ]?reason\b/) || has(/\bcease[_ ]?date\b/)) return "cease";
+  if (has(/\busage[_ ]?download/) || has(/\busage[_ ]?upload/) || has(/\bdownload[_ ]?mbs?\b/)) return "usage";
+  if (has(/^ooc[_ ]?days$/) || has(/\btenure[_ ]?days\b/) || has(/^crm[_ ]?package[_ ]?name$/) || has(/\bcontract[_ ]?status\b/)) return "customer_info";
+  return "other";
+}
+

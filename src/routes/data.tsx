@@ -11,6 +11,11 @@ import {
   RefreshCw,
   AlertTriangle,
   Eye,
+  Sparkles,
+  Zap,
+  Phone,
+  XOctagon,
+  Activity,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -20,17 +25,24 @@ import {
   DEFAULT_MAPPING,
   detectColumns,
   mapCustomers,
+  smartMapping,
+  detectKindFromColumns,
+  aggregateCalls,
+  aggregateCease,
+  aggregateUsage,
   type FieldMapping,
+  type FileKind,
   type RawCustomerRow,
 } from "@/data/customerMapping";
 import { useCustomerStore } from "@/data/customerStore";
 import { allCustomers as defaultCustomers } from "@/data/customers";
 import { cn } from "@/lib/utils";
 
+
 type DatasetRow = {
   id: string;
   filename: string;
-  kind: "customer_info" | "usage" | "other";
+  kind: FileKind;
   storage_path: string;
   row_count: number | null;
   byte_size: number | null;
@@ -38,6 +50,7 @@ type DatasetRow = {
   is_active: boolean;
   uploaded_at: string;
 };
+
 
 export const Route = createFileRoute("/data")({
   head: () => ({
@@ -125,6 +138,8 @@ function DataPage() {
 
         <UploadCard onUploaded={refresh} />
 
+        <EnrichmentStatusPanel />
+
         <DatasetTable
           datasets={datasets}
           loading={loading}
@@ -145,7 +160,7 @@ type StagedFile = {
   file: File;
   rows: RawCustomerRow[];
   columns: string[];
-  kind: "customer_info" | "usage" | "other";
+  kind: FileKind;
 };
 
 function UploadCard({ onUploaded }: { onUploaded: () => void }) {
@@ -155,14 +170,21 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activateAfterUpload, setActivateAfterUpload] = useState(true);
+  const [autoMatchedFields, setAutoMatchedFields] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const setActive = useCustomerStore((s) => s.setActive);
+  const applyCalls = useCustomerStore((s) => s.applyCalls);
+  const applyCease = useCustomerStore((s) => s.applyCease);
+  const applyUsage = useCustomerStore((s) => s.applyUsage);
 
-  function detectKind(name: string): StagedFile["kind"] {
-    const n = name.toLowerCase();
-    if (n.includes("customer")) return "customer_info";
+  function detectKind(file: File, columns: string[]): FileKind {
+    // Filename hints first, then column-signature fallback.
+    const n = file.name.toLowerCase();
+    if (n.includes("calls")) return "calls";
+    if (n.includes("cease")) return "cease";
     if (n.includes("usage")) return "usage";
-    return "other";
+    if (n.includes("customer")) return "customer_info";
+    return detectKindFromColumns(columns);
   }
 
   async function handleFile(file: File) {
@@ -172,19 +194,20 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
     try {
       const { rows, columns } = await parseFile(file);
       if (rows.length === 0) throw new Error("File contains no rows.");
-      setStaged({ file, rows, columns, kind: detectKind(file.name) });
-      // Pre-fill mapping with whatever columns exist
-      const m = { ...DEFAULT_MAPPING };
-      const lookup = new Set(columns);
-      (Object.keys(m) as Array<keyof FieldMapping>).forEach((k) => {
-        const v = m[k];
-        if (typeof v === "string" && !lookup.has(v)) {
-          // try fuzzy match
-          const match = columns.find((c) => c.toLowerCase() === String(v).toLowerCase());
-          if (match) (m as Record<string, string>)[k] = match;
-        }
-      });
-      setMapping(m);
+      const kind = detectKind(file, columns);
+      setStaged({ file, rows, columns, kind });
+
+      if (kind === "customer_info") {
+        // Smart auto-mapping: pre-fill from alias matches against the schema.
+        const m = smartMapping(columns);
+        setMapping(m);
+        const matchCount = (Object.keys(m) as Array<keyof FieldMapping>).filter(
+          (k) => m[k] && columns.includes(m[k] as string)
+        ).length;
+        setAutoMatchedFields(matchCount);
+      } else {
+        setAutoMatchedFields(0);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -222,10 +245,21 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       });
       if (insErr) throw insErr;
 
-      // Activate immediately if it's a customer_info file
+      // Apply to the in-memory store based on file kind
+      const src = {
+        filename: staged.file.name,
+        rowsAggregated: staged.rows.length,
+        uploadedAt: new Date().toISOString(),
+      };
       if (activateAfterUpload && staged.kind === "customer_info") {
         const mapped = mapCustomers(staged.rows, mapping);
         if (mapped.length > 0) setActive(mapped, staged.file.name);
+      } else if (staged.kind === "calls") {
+        applyCalls(aggregateCalls(staged.rows), src);
+      } else if (staged.kind === "cease") {
+        applyCease(aggregateCease(staged.rows), src);
+      } else if (staged.kind === "usage") {
+        applyUsage(aggregateUsage(staged.rows), src);
       }
 
       setStaged(null);
@@ -238,6 +272,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
     }
   }
 
+
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div className="px-5 sm:px-7 py-5 border-b border-border">
@@ -245,11 +280,14 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
           Upload extract
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">
-          Add customer_info, usage, or any related extract
+          Add customer_info, calls, cease, usage or any related extract
         </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Accepts .csv and .parquet up to 50 MB. customer_info uploads can replace the live
-          Explainability search; other files are stored as references.
+          Accepts .csv and .parquet up to 50 MB. <span className="font-medium text-foreground">customer_info</span>{" "}
+          replaces the live customer base; <span className="font-medium text-foreground">calls</span>,{" "}
+          <span className="font-medium text-foreground">cease</span> and{" "}
+          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers and
+          NBA triggers without replacing it.
         </p>
       </div>
 
@@ -315,6 +353,16 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
                     {(staged.file.size / 1024).toFixed(1)} KB · detected as{" "}
                     <span className="font-mono text-foreground">{staged.kind}</span>
                   </div>
+                  {staged.kind === "customer_info" && autoMatchedFields > 0 && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success)]/10 text-[var(--success)] text-[10px] font-semibold uppercase tracking-wider border border-[var(--success)]/20">
+                      <Sparkles className="size-3" /> Smart-mapped {autoMatchedFields}/12 fields
+                    </div>
+                  )}
+                  {staged.kind !== "customer_info" && staged.kind !== "other" && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wider border border-primary/20">
+                      <Zap className="size-3" /> Will enrich active customer base
+                    </div>
+                  )}
                 </div>
               </div>
               <button
@@ -341,21 +389,24 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
               />
             )}
 
+            {(staged.kind === "calls" || staged.kind === "cease" || staged.kind === "usage") && (
+              <EnrichmentPreview kind={staged.kind} columns={staged.columns} rows={staged.rows} />
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-border">
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={activateAfterUpload}
-                  disabled={staged.kind !== "customer_info"}
+                  disabled={staged.kind === "other"}
                   onChange={(e) => setActivateAfterUpload(e.target.checked)}
                   className="size-4 accent-primary"
                 />
-                Activate as live customer source after upload
-                {staged.kind !== "customer_info" && (
-                  <span className="text-[11px] text-muted-foreground">
-                    (only customer_info files can be activated)
-                  </span>
-                )}
+                {staged.kind === "customer_info"
+                  ? "Activate as live customer source after upload"
+                  : staged.kind === "other"
+                    ? "Store as reference only"
+                    : `Apply ${staged.kind} enrichment to active customers`}
               </label>
               <button
                 onClick={commit}
@@ -372,6 +423,157 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enrichment preview — small summary for calls / cease / usage uploads
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EnrichmentPreview({
+  kind,
+  columns,
+  rows,
+}: {
+  kind: "calls" | "cease" | "usage";
+  columns: string[];
+  rows: RawCustomerRow[];
+}) {
+  const summary = useMemo(() => {
+    if (kind === "calls") {
+      const m = aggregateCalls(rows);
+      let totalLoyalty = 0;
+      let totalHold = 0;
+      for (const v of m.values()) {
+        totalLoyalty += v.loyaltyCalls90d;
+        totalHold += v.totalHoldSeconds;
+      }
+      return [
+        { label: "Unique customers", value: m.size.toLocaleString() },
+        { label: "Loyalty calls (sum)", value: totalLoyalty.toLocaleString() },
+        { label: "Total hold time", value: `${Math.round(totalHold / 60).toLocaleString()} min` },
+      ];
+    }
+    if (kind === "cease") {
+      const m = aggregateCease(rows);
+      const insights: Record<string, number> = {};
+      for (const v of m.values()) insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
+      const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
+      return [
+        { label: "Unique customers", value: m.size.toLocaleString() },
+        { label: "Distinct insights", value: Object.keys(insights).length.toString() },
+        { label: "Top reason", value: top ? `${top[0]} · ${top[1]}` : "—" },
+      ];
+    }
+    const m = aggregateUsage(rows);
+    let totalDl = 0;
+    for (const v of m.values()) totalDl += v.monthlyDownloadGb;
+    return [
+      { label: "Unique customers", value: m.size.toLocaleString() },
+      { label: "Avg download / mo", value: m.size ? `${Math.round(totalDl / m.size)} GB` : "0 GB" },
+      { label: "Aggregated rows", value: rows.length.toLocaleString() },
+    ];
+  }, [kind, rows]);
+
+  const Icon = kind === "calls" ? Phone : kind === "cease" ? XOctagon : Activity;
+
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <div className="px-4 py-3 bg-[var(--surface-sunken)] border-b border-border flex items-center gap-2">
+        <Icon className="size-4 text-primary" />
+        <div className="text-sm font-semibold text-foreground capitalize">{kind} aggregation preview</div>
+        <div className="text-[11px] text-muted-foreground ml-auto">
+          {columns.length} columns · {rows.length.toLocaleString()} rows
+        </div>
+      </div>
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {summary.map((r) => (
+          <div key={r.label} className="rounded-md border border-border bg-card px-3 py-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {r.label}
+            </div>
+            <div className="mt-0.5 text-base font-semibold text-foreground tabular-nums">{r.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enrichment status — shows which calls/cease/usage extracts are live
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EnrichmentStatusPanel() {
+  const callsSource = useCustomerStore((s) => s.callsSource);
+  const ceaseSource = useCustomerStore((s) => s.ceaseSource);
+  const usageSource = useCustomerStore((s) => s.usageSource);
+  const callsMap = useCustomerStore((s) => s.callsMap);
+  const ceaseMap = useCustomerStore((s) => s.ceaseMap);
+  const usageMap = useCustomerStore((s) => s.usageMap);
+  const clear = useCustomerStore((s) => s.clearEnrichment);
+
+  const tiles = [
+    { kind: "calls" as const, icon: Phone, title: "calls.csv", description: "Loyalty calls, hold time, talk time, preferred channel", source: callsSource, size: callsMap.size },
+    { kind: "cease" as const, icon: XOctagon, title: "cease.csv", description: "Reason-description insight (e.g. CompetitorDeals)", source: ceaseSource, size: ceaseMap.size },
+    { kind: "usage" as const, icon: Activity, title: "usage.parquet", description: "Monthly download / upload vs package capacity", source: usageSource, size: usageMap.size },
+  ];
+
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+      <div className="px-5 sm:px-7 py-5 border-b border-border">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+          Behavioural enrichment
+        </div>
+        <h2 className="mt-1 text-lg font-semibold text-foreground">Calls · cease · usage signals</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Drop the corresponding extract above and it will be aggregated by customer ID and
+          layered onto the SHAP waterfall and NBA trigger derivation.
+        </p>
+      </div>
+      <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {tiles.map((t) => {
+          const Icon = t.icon;
+          const active = !!t.source;
+          return (
+            <div
+              key={t.kind}
+              className={cn(
+                "rounded-lg border p-4 flex flex-col gap-2",
+                active ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-[var(--surface-sunken)]/40"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className={cn("size-9 rounded-md flex items-center justify-center", active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-foreground truncate">{t.title}</div>
+                  <div className="text-[11px] text-muted-foreground">{t.description}</div>
+                </div>
+              </div>
+              {active ? (
+                <>
+                  <div className="text-[11px] text-foreground truncate">
+                    <span className="font-mono text-primary">{t.source!.filename}</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {t.size.toLocaleString()} customers enriched · {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
+                  </div>
+                  <button onClick={() => clear(t.kind)} className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start">
+                    <Trash2 className="size-3" /> Clear enrichment
+                  </button>
+                </>
+              ) : (
+                <div className="text-[11px] text-muted-foreground italic">
+                  No {t.kind} extract loaded — upload one above to enrich the customer base.
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

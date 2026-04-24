@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
 import { RoiSimulator } from "@/components/RoiSimulator";
 import { SensitivityPanel } from "@/components/SensitivityPanel";
+import { PerTriggerSensitivityPanel } from "@/components/PerTriggerSensitivityPanel";
 import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
@@ -194,6 +195,9 @@ function RoiPage() {
 
         {/* Sensitivity analysis */}
         <SensitivityPanel />
+
+        {/* Per-NBA-trigger sensitivity */}
+        <PerTriggerSensitivityPanel />
 
         {/* Risk distribution */}
         <div className="grid lg:grid-cols-3 gap-5">
