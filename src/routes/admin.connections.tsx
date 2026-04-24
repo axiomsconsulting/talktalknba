@@ -308,6 +308,20 @@ function ConnectionsAdminPage() {
     }
   };
 
+  const cancelPull = async () => {
+    if (!pullJob) return;
+    setBusy("azure_repo-cancel");
+    try {
+      await callServer(`/api/admin/connections/cancel-pull`, { jobId: pullJob.id });
+      toast.success("Pull cancelled");
+      await refreshPullJob(pullJob.id);
+    } catch (e) {
+      toast.error(`Cancel failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const trigger = async () => {
     setBusy("retrain");
     try {
