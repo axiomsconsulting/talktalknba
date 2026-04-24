@@ -101,8 +101,9 @@ function RoiPage() {
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
         {/* KPI row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           <KpiCard
+            compact
             label="Total Customer Base"
             value={hasSource ? formatNumber(roiParams.totalCustomerBase, { compact: true }) : null}
             sub={`${formatNumber(roiParams.totalCustomerBase)} accounts scored`}
@@ -111,6 +112,7 @@ function RoiPage() {
             prov={datasetProv}
           />
           <KpiCard
+            compact
             label="Customers at Risk"
             value={hasSource ? formatNumber(roiParams.highRiskVolume, { compact: true }) : null}
             sub="Top-tier model probability ≥ 0.65"
@@ -123,6 +125,7 @@ function RoiPage() {
             prov={datasetProv}
           />
           <KpiCard
+            compact
             label="Revenue at Risk"
             value={hasSource ? formatGbp(roiParams.revenueAtRiskGbp, { compact: true }) : null}
             sub={`${formatGbp(roiParams.averageAnnualArpuGbp)} avg annual ARPU`}
@@ -143,6 +146,7 @@ function RoiPage() {
             }
           />
           <KpiCard
+            compact
             label="Saved Revenue Projection"
             value={hasSource ? formatGbp(projectedSavedRevenue, { compact: true }) : null}
             sub={`@ ${(defaultSuccess * 100).toFixed(0)}% intervention vs ${(roiParams.baselineRetentionConversionRate * 100).toFixed(0)}% baseline`}
@@ -170,8 +174,9 @@ function RoiPage() {
         </div>
 
         {/* Financial KPIs · driven by the editable NBA rules */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           <KpiCard
+            compact
             label="Gross Retained Revenue"
             value={hasSource ? formatGbp(portfolioTotals.grossRetainedGbp, { compact: true }) : null}
             sub={`${formatNumber(portfolioTotals.saved, { compact: true })} customers saved over contract horizon`}
@@ -180,6 +185,7 @@ function RoiPage() {
             prov={ruleProv}
           />
           <KpiCard
+            compact
             label="Revenue Dilution"
             value={hasSource ? formatGbp(portfolioTotals.dilutionGbp, { compact: true }) : null}
             sub="Cost of discounts × ARPU × contract length"
@@ -195,6 +201,7 @@ function RoiPage() {
             prov={ruleProv}
           />
           <KpiCard
+            compact
             label="Net Retained Revenue"
             value={hasSource ? formatGbp(portfolioTotals.netRetainedGbp, { compact: true }) : null}
             sub="Gross − dilution − cost-to-serve"
@@ -203,6 +210,7 @@ function RoiPage() {
             prov={ruleProv}
           />
           <KpiCard
+            compact
             label="LTV Budget Used"
             value={hasSource ? `${portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%` : null}
             sub={`of ${formatGbp(portfolioTotals.totalLtvGbp, { compact: true })} saved-customer LTV`}
