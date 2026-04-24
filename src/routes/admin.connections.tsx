@@ -14,6 +14,8 @@ import {
   ExternalLink,
   Cpu,
   Plug,
+  GitBranch,
+  Download,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
