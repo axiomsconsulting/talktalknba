@@ -13,6 +13,7 @@ import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as NbaRulesRouteImport } from './routes/nba-rules'
+import { Route as ModelRouteImport } from './routes/model'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
@@ -38,6 +39,11 @@ const ProductsRoute = ProductsRouteImport.update({
 const NbaRulesRoute = NbaRulesRouteImport.update({
   id: '/nba-rules',
   path: '/nba-rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelRoute = ModelRouteImport.update({
+  id: '/model',
+  path: '/model',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
+  '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
+  '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
+  '/model': typeof ModelRoute
   '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/data'
     | '/explainability'
     | '/login'
+    | '/model'
     | '/nba-rules'
     | '/products'
     | '/reset-password'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/data'
     | '/explainability'
     | '/login'
+    | '/model'
     | '/nba-rules'
     | '/products'
     | '/reset-password'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/data'
     | '/explainability'
     | '/login'
+    | '/model'
     | '/nba-rules'
     | '/products'
     | '/reset-password'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   DataRoute: typeof DataRoute
   ExplainabilityRoute: typeof ExplainabilityRoute
   LoginRoute: typeof LoginRoute
+  ModelRoute: typeof ModelRoute
   NbaRulesRoute: typeof NbaRulesRoute
   ProductsRoute: typeof ProductsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/nba-rules'
       fullPath: '/nba-rules'
       preLoaderRoute: typeof NbaRulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/model': {
+      id: '/model'
+      path: '/model'
+      fullPath: '/model'
+      preLoaderRoute: typeof ModelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataRoute: DataRoute,
   ExplainabilityRoute: ExplainabilityRoute,
   LoginRoute: LoginRoute,
+  ModelRoute: ModelRoute,
   NbaRulesRoute: NbaRulesRoute,
   ProductsRoute: ProductsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
