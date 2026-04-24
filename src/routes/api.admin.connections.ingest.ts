@@ -4,8 +4,8 @@ import {
   jsonOk,
   requireAdmin,
   withConnectionRun,
-  driveFindChildFolder,
   driveListFolder,
+  classifyDriveFileName,
   databricksRunSql,
   azureListRepoItems,
   azureDownloadFile,
@@ -13,8 +13,6 @@ import {
   type AzureRepoConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const SUBFOLDERS = ["customer_info", "calls", "cease", "usage", "model_artefacts"] as const;
 
 export const Route = createFileRoute("/api/admin/connections/ingest")({
   server: {
