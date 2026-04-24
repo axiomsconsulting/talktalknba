@@ -19,6 +19,21 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
           return resp instanceof Response ? resp : jsonError(500, String(resp));
         }
 
+        // Optional body: { customerLimit: number | null }
+        // null/0/missing → pull everything (today's behaviour). Positive int →
+        // sample that many customer_info rows and filter calls/cease/usage to
+        // the same unique customer IDs so files stay self-consistent and the
+        // worker stays well under the per-tick CPU budget.
+        let customerLimit: number | null = null;
+        try {
+          const body = (await request.json()) as { customerLimit?: number | null };
+          if (body && typeof body.customerLimit === "number" && Number.isFinite(body.customerLimit) && body.customerLimit > 0) {
+            customerLimit = Math.floor(body.customerLimit);
+          }
+        } catch {
+          /* no body, default = pull everything */
+        }
+
         const { data: conn, error } = await supabaseAdmin
           .from("data_connections")
           .select("id, kind, config")
@@ -39,7 +54,22 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
           .in("status", ["queued", "downloading", "parsing", "uploading"])
           .lt("updated_at", new Date(Date.now() - 10 * 60_000).toISOString());
 
-        const pending = Object.entries(cfg.files).map(([kind, path]) => ({ kind, path }));
+        // customer_info MUST run first when limiting — it produces the
+        // canonical ID set the worker uses to filter the other files.
+        const ORDER = ["customer_info", "calls", "cease", "usage"];
+        const pending = Object.entries(cfg.files)
+          .map(([kind, path]) => ({ kind, path }))
+          .sort((a, b) => {
+            const ai = ORDER.indexOf(a.kind);
+            const bi = ORDER.indexOf(b.kind);
+            const av = ai === -1 ? 99 : ai;
+            const bv = bi === -1 ? 99 : bi;
+            return av - bv;
+          });
+
+        const initialSummary: Record<string, unknown> = {
+          _config: { customerLimit },
+        };
 
         const { data: job, error: jobErr } = await supabaseAdmin
           .from("pull_jobs")
@@ -50,6 +80,7 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
             files_done: 0,
             pending_files: pending as never,
             triggered_by: userId,
+            summary: initialSummary as never,
           })
           .select("id")
           .single();
@@ -68,7 +99,7 @@ export const Route = createFileRoute("/api/admin/connections/pull-azure")({
           /* cron will pick it up */
         }
 
-        return jsonOk({ jobId: job.id, status: "queued", filesTotal: pending.length }, 202);
+        return jsonOk({ jobId: job.id, status: "queued", filesTotal: pending.length, customerLimit }, 202);
       },
     },
   },

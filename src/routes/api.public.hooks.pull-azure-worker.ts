@@ -32,10 +32,12 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
         if (!job) return json(200, { idle: true });
 
         const pending = ((job.pending_files ?? []) as Array<{ kind: string; path: string }>).slice();
-        const summary = (job.summary ?? {}) as Record<
-          string,
-          { rows?: number; bytes: number; format: "csv" | "parquet" | "raw"; note?: string }
-        >;
+        const summary = (job.summary ?? {}) as Record<string, unknown> & {
+          _config?: { customerLimit?: number | null };
+          _customerIds?: string[];
+        };
+        const customerLimit = summary._config?.customerLimit ?? null;
+        const customerIds = new Set<string>((summary._customerIds ?? []).map((s) => s.toLowerCase()));
 
         if (pending.length === 0) {
           await supabaseAdmin
@@ -126,7 +128,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
                 bytes: bytes.byteLength,
                 format: "parquet",
                 note: `Parquet decode failed: ${(e as Error).message}`,
-              };
+              } as never;
               await advanceJob(job.id, pending, summary);
               return json(200, { jobId: job.id, status: "skipped" });
             }
@@ -135,26 +137,73 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               bytes: bytes.byteLength,
               format: "raw",
               note: "Unrecognised extension — archived only",
-            };
+            } as never;
             await advanceJob(job.id, pending, summary);
             return json(200, { jobId: job.id, status: "archived" });
           }
 
+          // ── Customer-coherent sampling ────────────────────────────────────
+          // For customer_info: pick the first N rows (or all, if no limit) and
+          // remember their unique_customer_identifier values for the rest of
+          // the pull. For calls/cease/usage: filter to the chosen IDs so the
+          // four files describe the same customer set and the worker stays
+          // well under the per-tick CPU budget.
+          let filteredRows = parsedRows;
+          let filteredTotal = totalRows;
+          let filterNote: string | undefined;
+          const idColIdx = parsedHeaders.findIndex(
+            (h) => h.toLowerCase() === "unique_customer_identifier",
+          );
+
+          if (next.kind === "customer_info" && customerLimit && customerLimit > 0) {
+            if (idColIdx === -1) {
+              filterNote = "customer_info missing unique_customer_identifier — limit not applied";
+            } else {
+              const cap = Math.min(customerLimit, parsedRows.length);
+              filteredRows = parsedRows.slice(0, cap);
+              filteredTotal = filteredRows.length;
+              const ids: string[] = [];
+              for (const r of filteredRows) {
+                const v = r[idColIdx];
+                if (v != null) ids.push(String(v).toLowerCase());
+              }
+              for (const id of ids) customerIds.add(id);
+              summary._customerIds = Array.from(customerIds);
+              filterNote = `Sampled first ${filteredTotal} of ${totalRows} customers`;
+            }
+          } else if (next.kind !== "customer_info" && customerIds.size > 0) {
+            if (idColIdx === -1) {
+              filterNote = `${next.kind} missing unique_customer_identifier — kept all rows`;
+            } else {
+              filteredRows = parsedRows.filter((r) => {
+                const v = r[idColIdx];
+                return v != null && customerIds.has(String(v).toLowerCase());
+              });
+              filteredTotal = filteredRows.length;
+              filterNote = `Filtered to ${filteredTotal} of ${totalRows} rows for ${customerIds.size} sampled customers`;
+            }
+          }
+
           await supabaseAdmin
             .from("pull_jobs")
-            .update({ status: "uploading", current_rows_read: totalRows })
+            .update({ status: "uploading", current_rows_read: filteredTotal })
             .eq("id", job.id);
 
           // Snapshot for the live store
-          summary[next.kind] = { rows: totalRows, bytes: bytes.byteLength, format };
+          summary[next.kind] = {
+            rows: filteredTotal,
+            bytes: bytes.byteLength,
+            format,
+            ...(filterNote ? { note: filterNote } : {}),
+          } as never;
           const snapshot = JSON.stringify({
             source: "azure_repo",
             remote: next.path,
             fetched_at: new Date().toISOString(),
             format,
-            total_rows: totalRows,
+            total_rows: filteredTotal,
             headers: parsedHeaders,
-            rows: parsedRows.slice(0, 50_000),
+            rows: filteredRows.slice(0, 50_000),
           });
           await supabaseAdmin.storage
             .from("datasets")
@@ -172,7 +221,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
                 connection_id: conn.id,
                 remote_name: next.path,
                 label: next.path.split("/").pop() ?? next.path,
-                rows_count: totalRows,
+                rows_count: filteredTotal,
                 activated_at: new Date().toISOString(),
               },
               { onConflict: "kind" },

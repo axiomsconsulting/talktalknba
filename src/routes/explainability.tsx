@@ -1,6 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Brain, Search, Sparkles, ArrowRight, Zap, TrendingUp, TrendingDown, MessageCircleQuestion } from "lucide-react";
+import {
+  Brain,
+  Search,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  MessageCircleQuestion,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,7 +29,7 @@ import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/
 import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { customerLtv } from "@/data/financials";
-import { useEffect } from "react";
+import { hydrateLiveCustomers } from "@/data/liveCustomerHydrator";
 import { cn } from "@/lib/utils";
 import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
 
@@ -47,7 +58,12 @@ function ExplainabilityPage() {
   const source = useCustomerStore((s) => s.source);
   const { rules, loaded, load } = useNbaRulesStore();
   useEffect(() => { if (!loaded) load(); }, [loaded, load]);
+  // Pull active datasets from storage into the store on mount so the page
+  // shows real customers (not the bundled personas) after a hard refresh.
+  useEffect(() => { void hydrateLiveCustomers(); }, []);
+
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
 
   const importanceData = useMemo(
@@ -74,6 +90,28 @@ function ExplainabilityPage() {
         (c.persona ?? "").toLowerCase().includes(q)
     );
   }, [query, allCustomers]);
+
+  const PAGE_SIZE = 5;
+  const pageCount = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+  // Reset/clamp page whenever the filtered set changes size.
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(0);
+  }, [pageCount, page]);
+  // Reset page to 0 on a new search query.
+  useEffect(() => { setPage(0); }, [query]);
+
+  const visibleCustomers = useMemo(
+    () => filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredCustomers, page],
+  );
+
+  // Auto-select the first real customer once live data lands so the detail
+  // panel mirrors the active dataset rather than a stale persona.
+  useEffect(() => {
+    if (allCustomers.length > 0 && !allCustomers.some((c) => c.id === selectedId)) {
+      setSelectedId(allCustomers[0].id);
+    }
+  }, [allCustomers, selectedId]);
 
   const selected = allCustomers.find((c) => c.id === selectedId) ?? allCustomers[0] ?? personas[0];
 
@@ -199,7 +237,7 @@ function ExplainabilityPage() {
                   No customers match "{query}".
                 </div>
               )}
-              {filteredCustomers.map((c) => (
+              {visibleCustomers.map((c) => (
                 <CustomerRow
                   key={c.id}
                   customer={c}
@@ -208,6 +246,33 @@ function ExplainabilityPage() {
                 />
               ))}
             </div>
+            {filteredCustomers.length > 0 && (
+              <div className="border-t border-border bg-muted/20 px-4 py-2 flex items-center justify-between gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-3" /> Prev
+                </button>
+                <div className="text-muted-foreground tabular-nums">
+                  Page <span className="font-semibold text-foreground">{page + 1}</span> of{" "}
+                  <span className="font-semibold text-foreground">{pageCount}</span>{" "}
+                  <span className="text-muted-foreground/70">
+                    · showing {visibleCustomers.length} of {filteredCustomers.length}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={page >= pageCount - 1}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next <ChevronRight className="size-3" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Detail panel */}
@@ -252,7 +317,12 @@ function CustomerRow({
               </span>
             )}
           </div>
-          <div className="text-[11px] font-mono text-muted-foreground mt-0.5">{customer.id}</div>
+          <div
+            className="text-[11px] font-mono text-muted-foreground mt-0.5 break-all line-clamp-3 leading-snug"
+            title={customer.id}
+          >
+            {customer.id}
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
             {customer.package} · {customer.region}
           </div>
