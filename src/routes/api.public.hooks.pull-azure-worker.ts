@@ -32,10 +32,12 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
         if (!job) return json(200, { idle: true });
 
         const pending = ((job.pending_files ?? []) as Array<{ kind: string; path: string }>).slice();
-        const summary = (job.summary ?? {}) as Record<
-          string,
-          { rows?: number; bytes: number; format: "csv" | "parquet" | "raw"; note?: string }
-        >;
+        const summary = (job.summary ?? {}) as Record<string, unknown> & {
+          _config?: { customerLimit?: number | null };
+          _customerIds?: string[];
+        };
+        const customerLimit = summary._config?.customerLimit ?? null;
+        const customerIds = new Set<string>((summary._customerIds ?? []).map((s) => s.toLowerCase()));
 
         if (pending.length === 0) {
           await supabaseAdmin
