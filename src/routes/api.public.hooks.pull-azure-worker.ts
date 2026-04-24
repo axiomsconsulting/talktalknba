@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               current_bytes_total: null,
               current_bytes_done: null,
               current_rows_read: 0,
-              error: `Downloading ${next.kind}: ${fileName}…`,
+
             })
             .eq("id", job.id);
 
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
               status: "parsing",
               current_bytes_total: bytes.byteLength,
               current_bytes_done: bytes.byteLength,
-              error: `Parsing ${next.kind} (${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB)…`,
+
             })
             .eq("id", job.id);
 
@@ -196,7 +196,7 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
             .update({
               status: "uploading",
               current_rows_read: filteredTotal,
-              error: `Uploading ${next.kind} snapshot (${filteredTotal.toLocaleString()} rows)…`,
+
             })
             .eq("id", job.id);
 
