@@ -287,13 +287,32 @@ function CustomerDetail({ customer, rules }: { customer: Customer; rules: import
   const costToServe = matchedRule?.costPerContactGbp ?? 0;
   const netRetainedGbp = ltv - dilutionGbp - costToServe;
 
-  // Compute base score and final by walking contributions
+  // Compute base score and final by walking contributions.
+  // Behavioural risk drivers (loyalty calls, hold time, OOC days, speed deficit,
+  // usage vs package) lead the waterfall — these are the most actionable signals.
+  const BEHAVIOURAL_ORDER = [
+    "loyalty_calls",
+    "total_hold_time",
+    "ooc_days",
+    "speed_deficit",
+    "usage_overflow",
+    "avg_download_mbs",
+    "cease_competitor",
+  ];
+  const orderedShap = [...customer.shap].sort((a, b) => {
+    const ai = BEHAVIOURAL_ORDER.indexOf(a.feature);
+    const bi = BEHAVIOURAL_ORDER.indexOf(b.feature);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return Math.abs(b.impact) - Math.abs(a.impact);
+  });
   const baseScore = 0.5;
-  const positives = customer.shap.filter((s) => s.impact > 0);
-  const negatives = customer.shap.filter((s) => s.impact < 0);
-  const totalImpact = customer.shap.reduce((s, c) => s + c.impact, 0);
+  const positives = orderedShap.filter((s) => s.impact > 0);
+  const negatives = orderedShap.filter((s) => s.impact < 0);
+  const totalImpact = orderedShap.reduce((s, c) => s + c.impact, 0);
   const finalScore = Math.max(0, Math.min(1, baseScore + totalImpact));
-  const maxAbs = Math.max(...customer.shap.map((s) => Math.abs(s.impact)));
+  const maxAbs = Math.max(...orderedShap.map((s) => Math.abs(s.impact)));
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
