@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiScoreCustomerRouteImport } from './routes/api.score-customer'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminConnectionsRouteImport } from './routes/admin.connections'
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
@@ -85,6 +86,11 @@ const DataRoute = DataRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScoreCustomerRoute = ApiScoreCustomerRouteImport.update({
+  id: '/api/score-customer',
+  path: '/api/score-customer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/admin/branding': typeof AdminBrandingRoute
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/branding'
     | '/admin/connections'
     | '/admin/users'
+    | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
@@ -375,6 +387,7 @@ export interface RootRouteChildren {
   AdminBrandingRoute: typeof AdminBrandingRoute
   AdminConnectionsRoute: typeof AdminConnectionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  ApiScoreCustomerRoute: typeof ApiScoreCustomerRoute
   ApiAdminConnectionsCancelPullRoute: typeof ApiAdminConnectionsCancelPullRoute
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
   ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
@@ -461,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/score-customer': {
+      id: '/api/score-customer'
+      path: '/api/score-customer'
+      fullPath: '/api/score-customer'
+      preLoaderRoute: typeof ApiScoreCustomerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
@@ -599,6 +619,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBrandingRoute: AdminBrandingRoute,
   AdminConnectionsRoute: AdminConnectionsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  ApiScoreCustomerRoute: ApiScoreCustomerRoute,
   ApiAdminConnectionsCancelPullRoute: ApiAdminConnectionsCancelPullRoute,
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
   ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
