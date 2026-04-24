@@ -10,12 +10,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
-  driveFindChildFolder,
   driveListFolder,
+  classifyDriveFileName,
   withConnectionRun,
 } from "@/server/connections.server";
-
-const SUBFOLDERS = ["customer_info", "calls", "cease", "usage", "model_artefacts"] as const;
 
 function j(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
