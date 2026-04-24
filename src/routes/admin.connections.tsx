@@ -102,6 +102,23 @@ type ModelRun = {
   error: string | null;
 };
 
+type PullJob = {
+  id: string;
+  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error";
+  files_total: number;
+  files_done: number;
+  current_kind: string | null;
+  current_file: string | null;
+  current_bytes_total: number | null;
+  current_bytes_done: number | null;
+  current_rows_read: number | null;
+  started_at: string;
+  updated_at: string;
+  finished_at: string | null;
+  summary: Record<string, { rows?: number; bytes: number; format?: string; note?: string }> | null;
+  error: string | null;
+};
+
 const FIXED_SUBFOLDERS: Array<{ key: keyof GDriveSubfolders; label: string }> = [
   { key: "customer_info", label: "customer_info/" },
   { key: "calls", label: "calls/" },
