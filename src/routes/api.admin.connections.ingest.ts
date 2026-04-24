@@ -4,8 +4,8 @@ import {
   jsonOk,
   requireAdmin,
   withConnectionRun,
-  driveFindChildFolder,
   driveListFolder,
+  classifyDriveFileName,
   databricksRunSql,
   azureListRepoItems,
   azureDownloadFile,
@@ -13,8 +13,6 @@ import {
   type AzureRepoConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const SUBFOLDERS = ["customer_info", "calls", "cease", "usage", "model_artefacts"] as const;
 
 export const Route = createFileRoute("/api/admin/connections/ingest")({
   server: {
@@ -46,29 +44,28 @@ export const Route = createFileRoute("/api/admin/connections/ingest")({
             if (kind === "gdrive") {
               const cfg = (conn.config ?? {}) as { root_folder_id?: string };
               if (!cfg.root_folder_id) throw new Error("root_folder_id missing");
-              for (const sub of SUBFOLDERS) {
-                const folderId = await driveFindChildFolder(cfg.root_folder_id, sub);
-                if (!folderId) continue;
-                const items = await driveListFolder(folderId);
-                for (const f of items) {
-                  if (f.mimeType === "application/vnd.google-apps.folder") continue;
-                  filesSeen += 1;
-                  await supabaseAdmin
-                    .from("data_source_files")
-                    .upsert(
-                      {
-                        connection_id: conn.id,
-                        kind: sub,
-                        remote_id: f.id,
-                        remote_name: f.name,
-                        remote_modified_at: f.modifiedTime ?? null,
-                        remote_hash: f.md5Checksum ?? null,
-                        bytes: f.size ? Number(f.size) : null,
-                        last_seen_at: new Date().toISOString(),
-                      },
-                      { onConflict: "connection_id,kind,remote_id" },
-                    );
-                }
+              // All files live in a single shared root folder — classify by name.
+              const items = await driveListFolder(cfg.root_folder_id);
+              for (const f of items) {
+                if (f.mimeType === "application/vnd.google-apps.folder") continue;
+                const datasetKind = classifyDriveFileName(f.name);
+                if (!datasetKind) continue;
+                filesSeen += 1;
+                await supabaseAdmin
+                  .from("data_source_files")
+                  .upsert(
+                    {
+                      connection_id: conn.id,
+                      kind: datasetKind,
+                      remote_id: f.id,
+                      remote_name: f.name,
+                      remote_modified_at: f.modifiedTime ?? null,
+                      remote_hash: f.md5Checksum ?? null,
+                      bytes: f.size ? Number(f.size) : null,
+                      last_seen_at: new Date().toISOString(),
+                    },
+                    { onConflict: "connection_id,kind,remote_id" },
+                  );
               }
             } else if (kind === "databricks") {
               const cfg = (conn.config ?? {}) as {

@@ -118,29 +118,57 @@ export async function driveFindChildFolder(
   return json.files?.[0]?.id ?? null;
 }
 
-/** List files inside a folder. */
-export async function driveListFolder(folderId: string) {
+export type DriveFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: string;
+  modifiedTime?: string;
+  md5Checksum?: string;
+};
+
+/** List files inside a folder, following pagination. */
+export async function driveListFolder(folderId: string): Promise<DriveFile[]> {
   const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-  const res = await fetch(
-    `${GATEWAY_URLS.drive}/files?q=${q}&fields=files(id,name,mimeType,size,modifiedTime,md5Checksum)&pageSize=200`,
-    { headers },
-  );
-  if (!res.ok) {
-    const text = await res.text();
-    throw jsonError(res.status, `Drive list failed: ${text}`);
-  }
-  const json = (await res.json()) as {
-    files?: Array<{
-      id: string;
-      name: string;
-      mimeType: string;
-      size?: string;
-      modifiedTime?: string;
-      md5Checksum?: string;
-    }>;
-  };
-  return json.files ?? [];
+  const out: DriveFile[] = [];
+  let pageToken: string | undefined;
+  do {
+    const url =
+      `${GATEWAY_URLS.drive}/files?q=${q}` +
+      `&fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)` +
+      `&pageSize=1000` +
+      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const text = await res.text();
+      throw jsonError(res.status, `Drive list failed: ${text}`);
+    }
+    const json = (await res.json()) as {
+      files?: DriveFile[];
+      nextPageToken?: string;
+    };
+    if (json.files) out.push(...json.files);
+    pageToken = json.nextPageToken;
+  } while (pageToken);
+  return out;
+}
+
+/** Classify a Drive file name into a dataset kind based on filename keywords.
+ *  All files live in a single shared folder (no subfolders), so we infer the
+ *  dataset from the name. Returns null when the file doesn't match any kind. */
+export function classifyDriveFileName(
+  name: string,
+): "customer_info" | "calls" | "cease" | "usage" | "model_artefacts" | null {
+  const n = name.toLowerCase();
+  // Order matters — check more specific patterns first.
+  if (/(model[_-]?artefact|model[_-]?artifact|\.pkl$|\.joblib$|\.onnx$|model_metrics|top_50_customers)/i.test(n))
+    return "model_artefacts";
+  if (/cease/.test(n)) return "cease";
+  if (/(call|loyalty[_-]?call)/.test(n)) return "calls";
+  if (/(usage|speed[_-]?test|broadband)/.test(n)) return "usage";
+  if (/(customer[_-]?info|customers?\b|profile)/.test(n)) return "customer_info";
+  return null;
 }
 
 /** Run a Databricks SQL query and wait briefly for the result. */
