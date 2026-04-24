@@ -153,7 +153,7 @@ type StagedFile = {
   file: File;
   rows: RawCustomerRow[];
   columns: string[];
-  kind: "customer_info" | "usage" | "other";
+  kind: FileKind;
 };
 
 function UploadCard({ onUploaded }: { onUploaded: () => void }) {
@@ -163,14 +163,21 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activateAfterUpload, setActivateAfterUpload] = useState(true);
+  const [autoMatchedFields, setAutoMatchedFields] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const setActive = useCustomerStore((s) => s.setActive);
+  const applyCalls = useCustomerStore((s) => s.applyCalls);
+  const applyCease = useCustomerStore((s) => s.applyCease);
+  const applyUsage = useCustomerStore((s) => s.applyUsage);
 
-  function detectKind(name: string): StagedFile["kind"] {
-    const n = name.toLowerCase();
-    if (n.includes("customer")) return "customer_info";
+  function detectKind(file: File, columns: string[]): FileKind {
+    // Filename hints first, then column-signature fallback.
+    const n = file.name.toLowerCase();
+    if (n.includes("calls")) return "calls";
+    if (n.includes("cease")) return "cease";
     if (n.includes("usage")) return "usage";
-    return "other";
+    if (n.includes("customer")) return "customer_info";
+    return detectKindFromColumns(columns);
   }
 
   async function handleFile(file: File) {
@@ -180,19 +187,20 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
     try {
       const { rows, columns } = await parseFile(file);
       if (rows.length === 0) throw new Error("File contains no rows.");
-      setStaged({ file, rows, columns, kind: detectKind(file.name) });
-      // Pre-fill mapping with whatever columns exist
-      const m = { ...DEFAULT_MAPPING };
-      const lookup = new Set(columns);
-      (Object.keys(m) as Array<keyof FieldMapping>).forEach((k) => {
-        const v = m[k];
-        if (typeof v === "string" && !lookup.has(v)) {
-          // try fuzzy match
-          const match = columns.find((c) => c.toLowerCase() === String(v).toLowerCase());
-          if (match) (m as Record<string, string>)[k] = match;
-        }
-      });
-      setMapping(m);
+      const kind = detectKind(file, columns);
+      setStaged({ file, rows, columns, kind });
+
+      if (kind === "customer_info") {
+        // Smart auto-mapping: pre-fill from alias matches against the schema.
+        const m = smartMapping(columns);
+        setMapping(m);
+        const matchCount = (Object.keys(m) as Array<keyof FieldMapping>).filter(
+          (k) => m[k] && columns.includes(m[k] as string)
+        ).length;
+        setAutoMatchedFields(matchCount);
+      } else {
+        setAutoMatchedFields(0);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -230,10 +238,21 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       });
       if (insErr) throw insErr;
 
-      // Activate immediately if it's a customer_info file
+      // Apply to the in-memory store based on file kind
+      const src = {
+        filename: staged.file.name,
+        rowsAggregated: staged.rows.length,
+        uploadedAt: new Date().toISOString(),
+      };
       if (activateAfterUpload && staged.kind === "customer_info") {
         const mapped = mapCustomers(staged.rows, mapping);
         if (mapped.length > 0) setActive(mapped, staged.file.name);
+      } else if (staged.kind === "calls") {
+        applyCalls(aggregateCalls(staged.rows), src);
+      } else if (staged.kind === "cease") {
+        applyCease(aggregateCease(staged.rows), src);
+      } else if (staged.kind === "usage") {
+        applyUsage(aggregateUsage(staged.rows), src);
       }
 
       setStaged(null);
@@ -245,6 +264,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       setUploading(false);
     }
   }
+
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
