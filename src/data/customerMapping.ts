@@ -6,7 +6,8 @@
 //   dd_cancel_60_day, ooc_days, technology, speed, line_speed, sales_channel,
 //   crm_package_name, tenure_days
 
-import type { Customer, SHAPContribution } from "./customers";
+import type { BehavioralSignals, Customer, SHAPContribution } from "./customers";
+import { deriveNbaTrigger } from "./customers";
 import type { RiskTier } from "./nba";
 
 export type RawCustomerRow = Record<string, string | number | null | undefined>;
