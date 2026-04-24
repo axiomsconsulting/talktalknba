@@ -1227,6 +1227,7 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
   if (!job) return null;
   const active = isPullActive(job);
   const failed = job.status === "error";
+  const cancelled = job.status === "cancelled";
   const done = job.status === "done";
 
   // Per-file percentage = bytes_done / bytes_total (only meaningful while parsing/uploading)
@@ -1250,16 +1251,26 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
     overall > 0 && active && overall < 100 ? Math.round((elapsedMs / overall) * (100 - overall)) : null;
 
   const summary = job.summary ?? {};
-  const summaryEntries = Object.entries(summary);
+  const summaryEntries = Object.entries(summary).filter(([k]) => !k.startsWith("_"));
+
+  // Build a friendly real-time status line
+  const fileNum = job.files_done + (active ? 1 : 0);
+  const liveLine = active
+    ? `Step ${fileNum}/${job.files_total} · ${job.status} ${job.current_kind ?? ""}${
+        job.current_file ? ` · ${job.current_file.split("/").pop()}` : ""
+      }`
+    : null;
 
   return (
     <div
       className={`mt-3 rounded-lg border ${
         failed
           ? "border-destructive/30 bg-destructive/5"
-          : done
-            ? "border-success/30 bg-success/5"
-            : "border-primary/30 bg-primary/5"
+          : cancelled
+            ? "border-amber-500/30 bg-amber-500/5"
+            : done
+              ? "border-success/30 bg-success/5"
+              : "border-primary/30 bg-primary/5"
       } p-4 space-y-3`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1270,11 +1281,11 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
           <div className="text-sm font-medium mt-0.5">
             {failed
               ? `Failed: ${job.error ?? "unknown error"}`
-              : done
-                ? `Completed — ${job.files_done}/${job.files_total} files`
-                : `${job.status} · ${job.current_kind ?? ""} ${
-                    job.current_file ? `· ${job.current_file.split("/").pop()}` : ""
-                  }`}
+              : cancelled
+                ? `Cancelled — ${job.files_done}/${job.files_total} files completed`
+                : done
+                  ? `Completed — ${job.files_done}/${job.files_total} files`
+                  : liveLine}
           </div>
         </div>
         <div className="text-right text-xs text-muted-foreground tabular-nums">
