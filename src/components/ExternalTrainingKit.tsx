@@ -214,7 +214,7 @@ export function ExternalTrainingKit() {
             <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
               model_metrics.json
             </div>
-            <div className="text-xs text-muted-foreground mb-1">From <code className="font-mono">train.py</code></div>
+            <div className="text-xs text-muted-foreground mb-1">From <code className="font-mono">train.ipynb</code></div>
             <input
               type="file"
               accept="application/json,.json"
@@ -228,7 +228,7 @@ export function ExternalTrainingKit() {
             <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
               top_50_customers.json
             </div>
-            <div className="text-xs text-muted-foreground mb-1">From <code className="font-mono">score_top50.py</code></div>
+            <div className="text-xs text-muted-foreground mb-1">From <code className="font-mono">score_top50.ipynb</code></div>
             <input
               type="file"
               accept="application/json,.json"
