@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customer_datasets: {
+        Row: {
+          byte_size: number | null
+          filename: string
+          id: string
+          is_active: boolean
+          kind: string
+          notes: string | null
+          row_count: number | null
+          storage_path: string
+          uploaded_at: string
+        }
+        Insert: {
+          byte_size?: number | null
+          filename: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          notes?: string | null
+          row_count?: number | null
+          storage_path: string
+          uploaded_at?: string
+        }
+        Update: {
+          byte_size?: number | null
+          filename?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          notes?: string | null
+          row_count?: number | null
+          storage_path?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
