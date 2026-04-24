@@ -11,6 +11,11 @@ import {
   RefreshCw,
   AlertTriangle,
   Eye,
+  Sparkles,
+  Zap,
+  Phone,
+  XOctagon,
+  Activity,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
