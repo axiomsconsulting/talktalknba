@@ -821,6 +821,7 @@ function AzurePanel({
   onSave,
   onIngest,
   onPull,
+  onCancel,
   pullJob,
 }: {
   conn?: Connection;
@@ -828,6 +829,7 @@ function AzurePanel({
   onSave: (patch: Partial<Connection>) => void;
   onIngest: () => void;
   onPull: () => void;
+  onCancel: () => void;
   pullJob: PullJob | null;
 }) {
   const cfg = (conn?.config as AzureRepoConfig | undefined) ?? {};
