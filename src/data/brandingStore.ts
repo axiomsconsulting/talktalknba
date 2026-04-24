@@ -6,6 +6,7 @@ export interface AppSettings {
   app_name: string;
   app_description: string;
   logo_url: string | null;
+  favicon_url: string | null;
   primary_color: string;
   accent_color: string;
   gradient_css: string;
