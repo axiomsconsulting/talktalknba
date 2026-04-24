@@ -500,7 +500,7 @@ export const SCORE_IPYNB = notebook([
   md(
     "## 6 · Build the top-50 records",
     "",
-    "`expected_save_gbp` is a placeholder estimate (`prob × £25 ARPU × 12 months × 50% success`); the schema does not carry ARPU so we use a flat assumption."
+    "Categorical features (e.g. `technology = 'FTTP'`, `crm_package_name`) are kept as **strings** in the exported `features` payload — they are only encoded to integer codes for the model itself. `expected_save_gbp` is a placeholder estimate (`prob × £25 ARPU × 12 months × 50% success`); the schema does not carry ARPU so we use a flat assumption."
   ),
   code(
     "top = df.nlargest(50, 'churn_prob')[[ID, 'churn_prob'] + features].reset_index()",
