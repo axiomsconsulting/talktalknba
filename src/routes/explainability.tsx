@@ -44,6 +44,8 @@ export const Route = createFileRoute("/explainability")({
 function ExplainabilityPage() {
   const allCustomers = useCustomerStore((s) => s.customers);
   const source = useCustomerStore((s) => s.source);
+  const { rules, loaded, load } = useNbaRulesStore();
+  useEffect(() => { if (!loaded) load(); }, [loaded, load]);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
 
