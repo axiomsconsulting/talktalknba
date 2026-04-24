@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Brain, Workflow, Database, PackageOpen } from "lucide-react";
+import { LayoutDashboard, Brain, Workflow, Database, PackageOpen, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import talktalkLogo from "@/assets/talktalk-logo.svg";
 
@@ -21,6 +21,12 @@ const NAV_ITEMS = [
     label: "NBA Strategy",
     sub: "Architecture & treatments",
     icon: Workflow,
+  },
+  {
+    to: "/nba-rules",
+    label: "NBA Rules",
+    sub: "Discounts, thresholds, cost",
+    icon: Settings2,
   },
   {
     to: "/products",
