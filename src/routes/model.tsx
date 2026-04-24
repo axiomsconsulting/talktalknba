@@ -425,11 +425,11 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
   const data = buildRocCurve(auc);
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-sm)]">
-      <header className="flex flex-wrap items-end justify-between gap-3 mb-5">
+      <header className="flex flex-wrap items-end justify-between gap-3 mb-3">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-foreground">ROC Curve</h2>
-          <p className="text-[12.5px] text-muted-foreground mt-0.5">
-            Trade-off between true-positive rate and false-positive rate across all decision thresholds.
+          <p className="text-[12.5px] text-muted-foreground mt-0.5 max-w-3xl">
+            Each point on the curve is a different decision threshold. Sliding the threshold down moves us right along the curve — we catch more real churners (TPR ↑) but also flag more loyal customers as risky (FPR ↑). The dashed diagonal is a coin flip; the further the curve bows toward the top-left, the better the model is at separating churners from stayers.
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5">
