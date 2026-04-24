@@ -184,31 +184,6 @@ export function RoiSimulator() {
             onChange={setCallCost}
           />
 
-          <div className="rounded-lg bg-card border border-border p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-              <Users className="size-3" /> Targeted at this scenario
-            </div>
-            <div className="space-y-2.5 text-sm">
-              <Stat label="Customers contacted" value={formatNumber(totals.totalContacted, { compact: true })} />
-              <Stat label="Customers saved" value={formatNumber(totals.totalSaved, { compact: true })} />
-              <Stat
-                label="Net ROI · targeted"
-                value={formatGbp(totals.totalTargetedNet, { compact: true })}
-                emphasis
-              />
-              <Stat
-                label="Net ROI · random"
-                value={formatGbp(totals.totalRandomNet, { compact: true })}
-                muted
-              />
-              <div className="pt-2 mt-2 border-t border-border flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Model uplift</span>
-                <span className="font-semibold text-[var(--success)]">
-                  {formatGbp(totals.totalTargetedNet - totals.totalRandomNet, { compact: true })}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Chart */}
