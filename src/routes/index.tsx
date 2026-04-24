@@ -136,6 +136,59 @@ function RoiPage() {
           />
         </div>
 
+        {/* Financial KPIs · driven by the editable NBA rules */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <KpiCard
+            label="Gross Retained Revenue"
+            value={formatGbp(portfolioTotals.grossRetainedGbp, { compact: true })}
+            sub={`${formatNumber(portfolioTotals.saved, { compact: true })} customers saved over contract horizon`}
+            icon={ShieldCheck}
+            accent="success"
+          />
+          <KpiCard
+            label="Revenue Dilution"
+            value={formatGbp(portfolioTotals.dilutionGbp, { compact: true })}
+            sub="Cost of discounts × ARPU × contract length"
+            icon={Scissors}
+            accent="risk"
+            trend={{
+              value:
+                portfolioTotals.grossRetainedGbp > 0
+                  ? `${((portfolioTotals.dilutionGbp / portfolioTotals.grossRetainedGbp) * 100).toFixed(0)}% of gross`
+                  : "—",
+              direction: "neutral",
+            }}
+          />
+          <KpiCard
+            label="Net Retained Revenue"
+            value={formatGbp(portfolioTotals.netRetainedGbp, { compact: true })}
+            sub="Gross − dilution − cost-to-serve"
+            icon={BadgePoundSterling}
+            accent="success"
+          />
+          <KpiCard
+            label="LTV Budget Used"
+            value={`${portfolioTotals.ltvBudgetUsedPct.toFixed(1)}%`}
+            sub={`of ${formatGbp(portfolioTotals.totalLtvGbp, { compact: true })} saved-customer LTV`}
+            icon={Wallet}
+            accent="neutral"
+            trend={{
+              value:
+                portfolioTotals.ltvBudgetUsedPct < 25
+                  ? "Healthy headroom"
+                  : portfolioTotals.ltvBudgetUsedPct < 50
+                    ? "Within plan"
+                    : "Review pricing",
+              direction:
+                portfolioTotals.ltvBudgetUsedPct < 25
+                  ? "up"
+                  : portfolioTotals.ltvBudgetUsedPct < 50
+                    ? "neutral"
+                    : "down",
+            }}
+          />
+        </div>
+
         {/* Simulator */}
         <RoiSimulator />
 
