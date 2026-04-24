@@ -18,6 +18,8 @@ export const Route = createFileRoute("/admin/branding")({
   component: BrandingPage,
 });
 
+type LogoKind = "logo" | "favicon";
+
 function BrandingPage() {
   const { isAdmin, loading } = useAuth();
   const { settings, load, save } = useBrandingStore();
