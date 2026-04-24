@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/data/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TRAIN_PY, SCORE_PY, README_MD } from "@/data/trainingScripts";
+import { TRAIN_IPYNB, SCORE_IPYNB, README_MD } from "@/data/trainingScripts";
 
 type SignedLinks = Record<string, { url: string; filename: string } | null>;
 
@@ -134,20 +134,21 @@ export function ExternalTrainingKit() {
           1 · Download the scripts
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => downloadText("train.py", TRAIN_PY, "text/x-python")}>
-            <FileCode className="size-3.5" /> train.py
+          <Button size="sm" variant="outline" onClick={() => downloadText("train.ipynb", TRAIN_IPYNB, "application/x-ipynb+json")}>
+            <FileCode className="size-3.5" /> train.ipynb
           </Button>
-          <Button size="sm" variant="outline" onClick={() => downloadText("score_top50.py", SCORE_PY, "text/x-python")}>
-            <FileCode className="size-3.5" /> score_top50.py
+          <Button size="sm" variant="outline" onClick={() => downloadText("score_top50.ipynb", SCORE_IPYNB, "application/x-ipynb+json")}>
+            <FileCode className="size-3.5" /> score_top50.ipynb
           </Button>
           <Button size="sm" variant="outline" onClick={() => downloadText("README.md", README_MD, "text/markdown")}>
             <FileJson className="size-3.5" /> README.md
           </Button>
         </div>
         <p className="mt-2 text-[11.5px] text-muted-foreground">
-          Run order on your laptop: <code className="font-mono px-1 py-0.5 rounded bg-muted">pip install pandas pyarrow scikit-learn xgboost</code>{" "}
-          → <code className="font-mono px-1 py-0.5 rounded bg-muted">python train.py</code>{" "}
-          → <code className="font-mono px-1 py-0.5 rounded bg-muted">python score_top50.py</code>.
+          Setup: <code className="font-mono px-1 py-0.5 rounded bg-muted">pip install pandas numpy scikit-learn pyarrow fastparquet xgboost</code>{" "}
+          (macOS also: <code className="font-mono px-1 py-0.5 rounded bg-muted">brew install libomp</code>). Drop the four pulled data files
+          into the same folder as the notebooks, then run <code className="font-mono px-1 py-0.5 rounded bg-muted">train.ipynb</code> followed by{" "}
+          <code className="font-mono px-1 py-0.5 rounded bg-muted">score_top50.ipynb</code>.
         </p>
       </div>
 
@@ -164,8 +165,8 @@ export function ExternalTrainingKit() {
         </div>
         {!links ? (
           <p className="text-[12px] text-muted-foreground">
-            Each link is a 1-hour signed URL to the file pulled from Azure DevOps. Save them into a local{" "}
-            <code className="font-mono px-1 rounded bg-muted">./data/</code> folder.
+            Each link is a 1-hour signed URL to the file pulled from Azure DevOps. Save all four files into the{" "}
+            <strong>same folder as the notebooks</strong> (the notebooks default to <code className="font-mono px-1 rounded bg-muted">DATA = '.'</code>).
           </p>
         ) : (
           <ul className="divide-y divide-border">
