@@ -605,34 +605,35 @@ function SegmentBreakdown() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-3 gap-3">
         {SEGMENT_GROUPS.map((group) => (
-          <div key={group.title} className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          <div key={group.title} className="rounded-xl border border-border bg-background/40 p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 truncate">
               {group.title}
             </div>
-            <div className="h-[200px]">
+            <div className="h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={group.rows}
                   layout="vertical"
-                  margin={{ top: 4, right: 8, bottom: 4, left: 4 }}
-                  barCategoryGap="22%"
+                  margin={{ top: 2, right: 4, bottom: 2, left: 0 }}
+                  barCategoryGap="18%"
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis
                     type="number"
                     domain={[0, 1]}
                     tickFormatter={(v) => `${Math.round(v * 100)}%`}
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 9 }}
                     stroke="var(--muted-foreground)"
                   />
                   <YAxis
                     type="category"
                     dataKey="segment"
-                    width={130}
-                    tick={{ fontSize: 11 }}
+                    width={78}
+                    tick={{ fontSize: 9 }}
                     stroke="var(--muted-foreground)"
+                    interval={0}
                   />
                   <RTooltip
                     cursor={{ fill: "var(--muted)" }}
@@ -640,7 +641,7 @@ function SegmentBreakdown() {
                       background: "var(--popover)",
                       border: "1px solid var(--border)",
                       borderRadius: 8,
-                      fontSize: 12,
+                      fontSize: 11,
                     }}
                     formatter={(value: number, name) => [
                       `${(Number(value) * 100).toFixed(1)}%`,
@@ -648,27 +649,30 @@ function SegmentBreakdown() {
                     ]}
                   />
                   <Legend
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: 11 }}
+                    iconSize={6}
+                    wrapperStyle={{ fontSize: 10 }}
                     formatter={(v) => (v === "precision" ? "Precision" : "Recall")}
                   />
-                  <Bar dataKey="precision" fill="var(--primary)" radius={[0, 3, 3, 0]} />
+                  <Bar dataKey="precision" fill="var(--primary)" radius={[0, 2, 2, 0]} />
                   <Bar
                     dataKey="recall"
                     fill="var(--talktalk-lime, var(--primary))"
-                    radius={[0, 3, 3, 0]}
+                    radius={[0, 2, 2, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 space-y-1 text-[11px] text-muted-foreground">
+            <div className="mt-2 space-y-0.5 text-[10px] text-muted-foreground">
               {group.rows.map((r) => (
-                <div key={r.segment} className="flex justify-between">
+                <div key={r.segment} className="flex justify-between gap-2">
                   <span className="truncate">{r.segment}</span>
-                  <span className="tabular-nums">{num(r.volume)} customers</span>
+                  <span className="tabular-nums shrink-0">{num(r.volume)}</span>
                 </div>
               ))}
             </div>
+          </div>
+        ))}
+      </div>
           </div>
         ))}
       </div>
