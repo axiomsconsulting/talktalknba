@@ -270,13 +270,22 @@ function CustomerRow({
   );
 }
 
-function CustomerDetail({ customer }: { customer: Customer }) {
+function CustomerDetail({ customer, rules }: { customer: Customer; rules: import("@/data/nbaRulesStore").NbaRule[] }) {
   const tierColor =
     customer.riskTier === "High"
       ? "var(--risk-high)"
       : customer.riskTier === "Medium"
         ? "var(--risk-medium)"
         : "var(--risk-low)";
+
+  // Customer LTV + dilution from the matched NBA rule
+  const matchedRule = rules.find((r) => r.triggerKey === (customer.nbaTrigger ?? "nurture"));
+  const ltv = customerLtv(customer.monthlyArpu, customer.riskTier);
+  const horizonMonths = matchedRule && matchedRule.contractMonths > 0 ? matchedRule.contractMonths : 24;
+  const discountPct = matchedRule?.discountPct ?? 0;
+  const dilutionGbp = customer.monthlyArpu * horizonMonths * (discountPct / 100);
+  const costToServe = matchedRule?.costPerContactGbp ?? 0;
+  const netRetainedGbp = ltv - dilutionGbp - costToServe;
 
   // Compute base score and final by walking contributions
   const baseScore = 0.5;
