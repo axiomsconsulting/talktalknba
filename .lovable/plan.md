@@ -1,60 +1,49 @@
-## Problem
+## Why metrics don't show even though they're stored
 
-In the **NBA Scenario Simulator** the three view-mode buttons are statistician's labels — they don't say what a retention or finance lead actually wants to know:
+I confirmed the data is in the database:
 
-| Today                        | What it actually computes (per the code)                                                  |
-|------------------------------|--------------------------------------------------------------------------------------------|
-| Targeted lift over baseline  | Net £ from **incremental** saves only (saves above the 15% no-model baseline) − all costs |
-| Gross saves minus costs      | Net £ from **all** saves (including ones that would have stayed anyway) − all costs       |
-| Top-decile vs random         | Same as "Gross", but the chart re-orients around the model-vs-random comparison           |
+- `model_runs` has one `status='success'` row with a 7,305-byte `metrics` JSON containing `performance_metrics`, `confusion_matrix`, `hyperparameters`, `dataset_split`, `roc_curve`, `segment_metrics`, `feature_importance` — exactly what the Model page expects.
 
-The labels also overlap with the comparison table directly underneath (which already shows "Top-decile vs random"), so the third button feels redundant.
+But the page still shows blank KPIs because of a **load-order bug** in the live-data hydrator:
 
-## What changes
+1. `LiveDataHydrator` lives in `src/routes/__root.tsx` and runs on app boot, **before** `AuthGate` lets the user sign in.
+2. On that first call, `supabase.auth.getSession()` returns no session, so the `model_runs` RLS policy (`is_active_user(auth.uid())`) blocks the read and the query returns `null`.
+3. `liveDataStore.load()` then sets `loaded: true` with `stats: null`.
+4. Every subsequent call to `load()` short-circuits on `if (get().loading || get().loaded) return;` — so after sign-in, after a fresh import, or on a route change, the store **never refetches**.
+5. `model.tsx` derives `isLive = !!(liveStats?.performance_metrics && liveStats.confusion_matrix)`. With `liveStats === null`, `isLive` is false and every KPI renders as `null` (blank).
 
-### 1. Rename the three view modes in retention-industry language
+The "Import results" flow inserts straight into `model_runs` via the admin endpoint, so the row is there — but nothing tells the client store to re-read it.
 
-Replace the toggle labels and tooltips with telco-retention terminology a Head of Retention or CFO uses day-to-day:
+## Fix
 
-| Old label                       | New label                          | Plain-English description shown under the chart                                                 |
-|---------------------------------|------------------------------------|--------------------------------------------------------------------------------------------------|
-| Targeted lift over baseline     | **Incremental margin (model-only)** | Revenue we keep that we would have lost without the model, minus retention spend & call cost.   |
-| Gross saves minus costs         | **Total retained revenue (net)**    | Every saved customer's revenue (incl. natural saves), minus retention spend & call cost.        |
-| Top-decile vs random            | _removed_ (it's the same maths as "Total retained revenue" — the comparison already lives in the table below) |
+Three small, surgical changes — no schema change, no UI redesign.
 
-Keep two view-modes only — `lift` and `gross`. Remove the `compare` mode from the store and the toggle. The model-vs-random bars and the comparison table stay visible in **both** view-modes (they are the most-asked question), so no information is lost.
+### 1. `src/data/liveDataStore.ts` — make `load()` refetchable
 
-### 2. Surface the headline scenario figure at a glance
+- Add a `force?: boolean` parameter that bypasses the `loaded` short-circuit.
+- Re-running the query is cheap (single row, indexed) so we can also drop the unconditional gate when called explicitly.
+- Keep the implicit on-mount call idempotent (still skips when already loading or already populated with non-null stats).
 
-Today the most important number for a retention lead — "**how much money does this scenario make us at the chosen sliders?**" — is buried in a small card on the left. Promote a single hero KPI strip directly under the simulator title with the four numbers that matter for a scenario run:
+### 2. `src/routes/__root.tsx` — re-hydrate when auth state changes
 
-```text
-┌─ Net retained revenue ─┬─ Customers we save ─┬─ Cost per saved customer ─┬─ Uplift vs random ─┐
-│  £4.2M                 │  18,400             │  £36                       │  +£1.8M            │
-└────────────────────────┴─────────────────────┴────────────────────────────┴────────────────────┘
-```
+- In `LiveDataHydrator`, also subscribe to `useAuth()` (or a `session`/`isAdmin` selector) and call `load(true)` whenever the user transitions from signed-out → signed-in. This is the missing trigger that currently leaves the store stuck on the failed pre-auth read.
 
-These four are the only ones a finance/retention lead needs in a scenario discussion:
-- **Net retained revenue** — bottom line for the chosen scenario
-- **Customers we save** — operational volume to staff for
-- **Cost per saved customer** — efficiency check vs ARPU/LTV
-- **Uplift vs random** — the model's contribution (proves why we use it)
+### 3. `src/components/ExternalTrainingKit.tsx` — refresh after import
 
-### 3. Tidy the surrounding clutter
+- After a successful `submitImport()`, call `useLiveDataStore.getState().load(true)` (alongside the existing `refreshTopCount()`). This way the Model page lights up immediately on the next visit without needing a hard reload.
 
-- Drop the existing 5-row "Targeted at this scenario" mini-card on the left (its contents are now in the hero strip).
-- Keep the slider column (Budget, Success rate, Call cost) as-is — those are the three levers and they're already industry-standard.
-- Keep the per-decile bar chart and the top-decile-vs-random table — both are the visual proof of the headline numbers.
-- Tooltip on each KPI explains the formula (consistent with the existing provenance/tally policy).
+### Optional polish (only if trivial)
 
-## Files
+- Add a tiny "Refresh" affordance on the Model page header that calls `load(true)` — useful if a user opens the page in another tab after a teammate runs training. Not required to fix the bug.
 
-- `src/data/scenarioStore.ts` — drop the `"compare"` mode; default `view` to `"gross"` (renamed *Total retained revenue*).
-- `src/components/RoiSimulator.tsx` — relabel toggle, drop third button, promote the four headline KPIs into a hero strip, remove the old "Targeted at this scenario" mini-card.
-- `src/components/SensitivityPanel.tsx` and `PerTriggerSensitivityPanel.tsx` — no behaviour change; these already consume `view` and will continue to read `"lift"` or `"gross"`.
+## Files touched
 
-## Out of scope
+- `src/data/liveDataStore.ts`
+- `src/routes/__root.tsx`
+- `src/components/ExternalTrainingKit.tsx`
 
-- The sliders themselves. They are already telco-standard (per-saved-customer budget, success rate, cost per outbound dial) and the user did not ask to change them.
-- The per-rule financial breakdown table at the bottom of the simulator.
-- The Sensitivity grid below.
+## Verification after implementation
+
+1. Hard-reload `/model` while signed in → KPI tiles populate from the stored run (Accuracy, Precision, Recall, F1, ROC-AUC, confusion matrix, hyperparameters, ROC curve, segment breakdown).
+2. Re-import `model_metrics.json` → tiles update without a manual reload.
+3. Sign out and back in → tiles still populate (no stale `loaded: true` lockout).
