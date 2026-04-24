@@ -208,7 +208,7 @@ function ExplainabilityPage() {
           </div>
 
           {/* Detail panel */}
-          <CustomerDetail customer={selected} />
+          <CustomerDetail customer={selected} rules={rules} />
         </div>
       </div>
     </AppShell>
