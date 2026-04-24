@@ -68,7 +68,24 @@ export async function withConnectionRun<T>(
       .eq("kind", kind);
     return out;
   } catch (e) {
-    const msg = (e as Error)?.message ?? String(e);
+    let msg: string;
+    if (e instanceof Response) {
+      // jsonError throws a Response — read its body so we capture the real reason.
+      try {
+        const body = await e.clone().text();
+        msg = `HTTP ${e.status}: ${body.slice(0, 500)}`;
+      } catch {
+        msg = `HTTP ${e.status}`;
+      }
+    } else if (e instanceof Error) {
+      msg = e.message;
+    } else {
+      try {
+        msg = JSON.stringify(e);
+      } catch {
+        msg = String(e);
+      }
+    }
     await supabaseAdmin
       .from("data_connections")
       .update({ last_status: "error", last_error: msg, last_run_at: new Date().toISOString() })
