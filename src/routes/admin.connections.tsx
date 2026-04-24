@@ -1134,6 +1134,8 @@ function AzurePanel({
           )}
         </div>
 
+        <PullProgress job={pullJob} disabled={!!busy} />
+
         <div className="flex flex-wrap gap-2 pt-2">
           <Button onClick={save} disabled={busy === "azure_repo"}>
             {busy === "azure_repo" ? (
@@ -1146,13 +1148,13 @@ function AzurePanel({
           <Button variant="outline" onClick={onIngest} disabled={!conn || !!busy}>
             <RefreshCcw className="size-4" /> Index files
           </Button>
-          <Button onClick={onPull} disabled={!conn || !!busy}>
-            {busy === "azure_repo-pull" ? (
+          <Button onClick={onPull} disabled={!conn || !!busy || isPullActive(pullJob)}>
+            {busy === "azure_repo-pull" || isPullActive(pullJob) ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <Download className="size-4" />
             )}
-            Pull data now
+            {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
           </Button>
         </div>
       </CardContent>
