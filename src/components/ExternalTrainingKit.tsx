@@ -150,15 +150,18 @@ export function ExternalTrainingKit() {
           <Button size="sm" variant="outline" onClick={() => downloadText("score_top50.ipynb", SCORE_IPYNB, "application/x-ipynb+json")}>
             <FileCode className="size-3.5" /> score_top50.ipynb
           </Button>
+          <Button size="sm" variant="outline" onClick={() => downloadText("score_offline_offers.ipynb", OFFER_IPYNB, "application/x-ipynb+json")}>
+            <FileCode className="size-3.5" /> score_offline_offers.ipynb
+          </Button>
           <Button size="sm" variant="outline" onClick={() => downloadText("README.md", README_MD, "text/markdown")}>
             <FileJson className="size-3.5" /> README.md
           </Button>
         </div>
         <p className="mt-2 text-[11.5px] text-muted-foreground">
-          Setup: <code className="font-mono px-1 py-0.5 rounded bg-muted">pip install pandas numpy scikit-learn pyarrow fastparquet xgboost</code>{" "}
+          Setup: <code className="font-mono px-1 py-0.5 rounded bg-muted">pip install pandas numpy scikit-learn pyarrow fastparquet xgboost requests</code>{" "}
           (macOS also: <code className="font-mono px-1 py-0.5 rounded bg-muted">brew install libomp</code>). Drop the four pulled data files
-          into the same folder as the notebooks, then run <code className="font-mono px-1 py-0.5 rounded bg-muted">train.ipynb</code> followed by{" "}
-          <code className="font-mono px-1 py-0.5 rounded bg-muted">score_top50.ipynb</code>.
+          into the same folder as the notebooks. Run <code className="font-mono px-1 py-0.5 rounded bg-muted">train.ipynb</code> → <code className="font-mono px-1 py-0.5 rounded bg-muted">score_top50.ipynb</code> for the model;
+          run <code className="font-mono px-1 py-0.5 rounded bg-muted">score_offline_offers.ipynb</code> to produce a full <code className="font-mono px-1 py-0.5 rounded bg-muted">offline_offers.csv</code> using the same in-app NBA algorithm and live eligibility rules.
         </p>
       </div>
 
