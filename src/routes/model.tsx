@@ -161,38 +161,85 @@ function ModelPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <KpiCard
             label="Accuracy"
-            value={pct(m.accuracy)}
+            value={isLive ? pct(m.accuracy) : null}
             sub="Overall correctness"
             icon={Target}
             accent="primary"
+            prov={
+              isLive
+                ? {
+                    kind: "model",
+                    source: liveRun?.databricksRunId
+                      ? `Trained model · run ${liveRun.databricksRunId}`
+                      : "Trained model · most recent successful run",
+                    formula: "(TP + TN) / total predictions on held-out test set",
+                  }
+                : null
+            }
           />
           <KpiCard
             label="Precision"
-            value={pct(m.precision)}
+            value={isLive ? pct(m.precision) : null}
             sub="Of predicted churners"
             icon={Crosshair}
             accent="primary"
+            prov={
+              isLive
+                ? {
+                    kind: "model",
+                    source: "Trained model · test split",
+                    formula: "TP / (TP + FP)",
+                  }
+                : null
+            }
           />
           <KpiCard
             label="Recall"
-            value={pct(m.recall)}
+            value={isLive ? pct(m.recall) : null}
             sub="Of actual churners caught"
             icon={Activity}
             accent="success"
+            prov={
+              isLive
+                ? {
+                    kind: "model",
+                    source: "Trained model · test split",
+                    formula: "TP / (TP + FN)",
+                  }
+                : null
+            }
           />
           <KpiCard
             label="F1-Score"
-            value={pct(m.f1_score)}
+            value={isLive ? pct(m.f1_score) : null}
             sub="Precision · Recall balance"
             icon={GitBranch}
             accent="primary"
+            prov={
+              isLive
+                ? {
+                    kind: "model",
+                    source: "Trained model · test split",
+                    formula: "2 · (precision · recall) / (precision + recall)",
+                  }
+                : null
+            }
           />
           <KpiCard
             label="ROC-AUC"
-            value={m.roc_auc.toFixed(4)}
+            value={isLive ? m.roc_auc.toFixed(4) : null}
             sub="Ranking quality"
             icon={BarChart3}
             accent="success"
+            prov={
+              isLive
+                ? {
+                    kind: "model",
+                    source: "Trained model · test split",
+                    formula: "Area under the ROC curve (TPR vs FPR sweep)",
+                  }
+                : null
+            }
           />
         </div>
 
