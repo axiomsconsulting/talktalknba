@@ -1300,7 +1300,7 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full transition-all ${
-              failed ? "bg-destructive" : done ? "bg-success" : "bg-primary"
+              failed ? "bg-destructive" : cancelled ? "bg-amber-500" : done ? "bg-success" : "bg-primary"
             }`}
             style={{ width: `${overall}%` }}
           />
