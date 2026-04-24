@@ -820,9 +820,9 @@ function AzurePanel({
         <CardDescription>
           Pull <code>cease.csv</code>, <code>calls.csv</code>, <code>customer_info.parquet</code>{" "}
           and <code>usage.parquet</code> directly from a Git repo on{" "}
-          <span className="font-medium">dev.azure.com</span>. CSVs are parsed in-app and snapshotted
-          to the datasets bucket; parquet files are archived and handed off to the trainer (they
-          need a real Spark/DuckDB runtime to decode at scale).
+          <span className="font-medium">dev.azure.com</span>. CSVs and Parquet files are both
+          parsed in-app (Parquet via the <code>hyparquet</code> pure-JS decoder) and snapshotted
+          to the datasets bucket — no Databricks round-trip required for the live store.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
