@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as NbaRulesRouteImport } from './routes/nba-rules'
 import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const StrategyRoute = StrategyRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NbaRulesRoute = NbaRulesRouteImport.update({
+  id: '/nba-rules',
+  path: '/nba-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplainabilityRoute = ExplainabilityRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
@@ -60,21 +68,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
+  '/nba-rules': typeof NbaRulesRoute
   '/products': typeof ProductsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/data' | '/explainability' | '/products' | '/strategy'
+  fullPaths:
+    | '/'
+    | '/data'
+    | '/explainability'
+    | '/nba-rules'
+    | '/products'
+    | '/strategy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/data' | '/explainability' | '/products' | '/strategy'
-  id: '__root__' | '/' | '/data' | '/explainability' | '/products' | '/strategy'
+  to:
+    | '/'
+    | '/data'
+    | '/explainability'
+    | '/nba-rules'
+    | '/products'
+    | '/strategy'
+  id:
+    | '__root__'
+    | '/'
+    | '/data'
+    | '/explainability'
+    | '/nba-rules'
+    | '/products'
+    | '/strategy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DataRoute: typeof DataRoute
   ExplainabilityRoute: typeof ExplainabilityRoute
+  NbaRulesRoute: typeof NbaRulesRoute
   ProductsRoute: typeof ProductsRoute
   StrategyRoute: typeof StrategyRoute
 }
@@ -93,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nba-rules': {
+      id: '/nba-rules'
+      path: '/nba-rules'
+      fullPath: '/nba-rules'
+      preLoaderRoute: typeof NbaRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explainability': {
@@ -123,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DataRoute: DataRoute,
   ExplainabilityRoute: ExplainabilityRoute,
+  NbaRulesRoute: NbaRulesRoute,
   ProductsRoute: ProductsRoute,
   StrategyRoute: StrategyRoute,
 }
