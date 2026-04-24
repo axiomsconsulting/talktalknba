@@ -151,10 +151,14 @@ function ModelPage() {
                   : undefined
               }
             />
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              <Cpu className="size-3" />
+              {(isLive && liveStats?.model_type) ? liveStats.model_type : stats.model_type}
+            </span>
           </span>
         }
         title="Model Evaluation Metrics"
-        description="Held-out test performance for the production churn classifier. Numbers are computed on the test split and refreshed with every model retrain."
+        description="Held-out test performance for the production churn classifier. The offline trainer compares RandomForest and XGBoost and exports whichever scores the higher ROC-AUC — the badge above shows which one is currently active."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
