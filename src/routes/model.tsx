@@ -42,7 +42,7 @@ export const Route = createFileRoute("/model")({
       {
         name: "description",
         content:
-          "Random Forest churn classifier validation: accuracy, precision, recall, F1, ROC-AUC, confusion matrix, and hyperparameters.",
+          "Churn classifier validation (RandomForest or XGBoost — selected at training time): accuracy, precision, recall, F1, ROC-AUC, confusion matrix, and hyperparameters.",
       },
     ],
   }),
