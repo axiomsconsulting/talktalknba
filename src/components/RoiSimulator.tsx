@@ -11,7 +11,7 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { Info, Target, Coins, PoundSterling, Users, Layers } from "lucide-react";
+import { Info, Target, Coins, PoundSterling, Users, Layers, TrendingUp, BadgePoundSterling, Sparkles } from "lucide-react";
 import { roiParams, formatGbp, formatNumber } from "@/data/nba";
 import { cn } from "@/lib/utils";
 import {
@@ -29,21 +29,16 @@ import {
 
 const VIEWS: Array<{ id: RoiViewMode; label: string; description: string }> = [
   {
-    id: "lift",
-    label: "Targeted lift over baseline",
-    description:
-      "Net £ saves attributable to the model — incremental over the 15% baseline retention rate.",
-  },
-  {
     id: "gross",
-    label: "Gross saves minus costs",
-    description: "Total revenue saved by the campaign minus the full campaign cost (call + budget).",
+    label: "Total retained revenue (net)",
+    description:
+      "Every saved customer's revenue (including those who would have stayed naturally), minus retention spend and outbound call cost.",
   },
   {
-    id: "compare",
-    label: "Top-decile vs random",
+    id: "lift",
+    label: "Incremental margin (model-only)",
     description:
-      "Compares ROI when targeting top-decile risk customers against a random sample of equal size.",
+      "Revenue we keep that we would have lost without the model — saves above the 15% no-model baseline, minus retention spend and call cost.",
   },
 ];
 
@@ -119,7 +114,7 @@ export function RoiSimulator() {
           </div>
           <h2 className="mt-1 text-lg font-semibold text-foreground">NBA Scenario Simulator</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Adjust the levers to see how spend, success rate, and channel cost change net ROI per decile.
+            Move the three retention levers below to see what each scenario delivers in net retained revenue.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 p-1 rounded-lg bg-muted border border-border">
@@ -133,12 +128,24 @@ export function RoiSimulator() {
                   ? "bg-card text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
+              title={v.description}
             >
               {v.label}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Hero KPI strip — at-a-glance answers for a scenario discussion */}
+      <HeroKpiStrip
+        net={totals.totalTargetedNet}
+        savedCustomers={totals.totalSaved}
+        contacted={totals.totalContacted}
+        budget={budget}
+        callCost={callCost}
+        uplift={totals.totalTargetedNet - totals.totalRandomNet}
+        viewLabel={VIEWS.find((v) => v.id === view)?.label ?? ""}
+      />
 
       <div className="grid lg:grid-cols-[1fr_2fr] divide-y lg:divide-y-0 lg:divide-x divide-border">
         {/* Sliders */}
@@ -177,31 +184,6 @@ export function RoiSimulator() {
             onChange={setCallCost}
           />
 
-          <div className="rounded-lg bg-card border border-border p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-              <Users className="size-3" /> Targeted at this scenario
-            </div>
-            <div className="space-y-2.5 text-sm">
-              <Stat label="Customers contacted" value={formatNumber(totals.totalContacted, { compact: true })} />
-              <Stat label="Customers saved" value={formatNumber(totals.totalSaved, { compact: true })} />
-              <Stat
-                label="Net ROI · targeted"
-                value={formatGbp(totals.totalTargetedNet, { compact: true })}
-                emphasis
-              />
-              <Stat
-                label="Net ROI · random"
-                value={formatGbp(totals.totalRandomNet, { compact: true })}
-                muted
-              />
-              <div className="pt-2 mt-2 border-t border-border flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Model uplift</span>
-                <span className="font-semibold text-[var(--success)]">
-                  {formatGbp(totals.totalTargetedNet - totals.totalRandomNet, { compact: true })}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Chart */}
@@ -480,29 +462,113 @@ function SliderControl({
   );
 }
 
-function Stat({
-  label,
-  value,
-  emphasis,
-  muted,
+/* ----------------------------------------------------------------- */
+/*  Hero KPI strip — at-a-glance answers for a scenario discussion.   */
+/* ----------------------------------------------------------------- */
+
+function HeroKpiStrip({
+  net,
+  savedCustomers,
+  contacted,
+  budget,
+  callCost,
+  uplift,
+  viewLabel,
 }: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-  muted?: boolean;
+  net: number;
+  savedCustomers: number;
+  contacted: number;
+  budget: number;
+  callCost: number;
+  uplift: number;
+  viewLabel: string;
 }) {
+  const totalCampaignCost = contacted * callCost + savedCustomers * budget;
+  const costPerSave = savedCustomers > 0 ? totalCampaignCost / savedCustomers : 0;
+  const upliftPositive = uplift >= 0;
+
+  const items: Array<{
+    label: string;
+    value: string;
+    sub: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: "primary" | "neutral" | "success";
+    title: string;
+  }> = [
+    {
+      label: viewLabel,
+      value: formatGbp(net, { compact: true }),
+      sub: `vs random: ${upliftPositive ? "+" : ""}${formatGbp(uplift, { compact: true })}`,
+      icon: BadgePoundSterling,
+      tone: "primary",
+      title:
+        "The bottom-line for the chosen sliders. Calculated as revenue from saved customers minus retention spend (call cost + per-saved budget).",
+    },
+    {
+      label: "Customers we save",
+      value: formatNumber(savedCustomers, { compact: true }),
+      sub: `out of ${formatNumber(contacted, { compact: true })} contacted`,
+      icon: Users,
+      tone: "neutral",
+      title:
+        "Saved = at-risk customers who accept the intervention, given the chosen success rate.",
+    },
+    {
+      label: "Cost per saved customer",
+      value: formatGbp(costPerSave, { compact: true }),
+      sub: `${formatGbp(totalCampaignCost, { compact: true })} total spend`,
+      icon: Coins,
+      tone: "neutral",
+      title:
+        "All-in cost (calls + per-saved budget) divided by customers saved. Compare to ARPU to sanity-check the deal.",
+    },
+    {
+      label: "Uplift from the model",
+      value: `${upliftPositive ? "+" : ""}${formatGbp(uplift, { compact: true })}`,
+      sub: "vs targeting the same volume randomly",
+      icon: upliftPositive ? TrendingUp : Sparkles,
+      tone: upliftPositive ? "success" : "neutral",
+      title:
+        "Net retained revenue from model-led targeting minus the same-cohort-size random campaign. This is the model's contribution to the P&L.",
+    },
+  ];
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "font-semibold tabular-nums",
-          emphasis && "text-primary text-base",
-          muted && "text-muted-foreground"
-        )}
-      >
-        {value}
-      </span>
+    <div className="px-5 sm:px-7 py-4 border-b border-border bg-[var(--surface-sunken)]/50">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {items.map((it) => {
+          const Icon = it.icon;
+          const toneClass =
+            it.tone === "primary"
+              ? "border-primary/30 bg-primary/5"
+              : it.tone === "success"
+                ? "border-[var(--success)]/30 bg-[var(--success)]/5"
+                : "border-border bg-card";
+          const valueClass =
+            it.tone === "primary"
+              ? "text-primary"
+              : it.tone === "success"
+                ? "text-[var(--success)]"
+                : "text-foreground";
+          return (
+            <div
+              key={it.label}
+              className={cn("rounded-lg border p-3", toneClass)}
+              title={it.title}
+            >
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Icon className="size-3.5" />
+                <span className="truncate">{it.label}</span>
+              </div>
+              <div className={cn("mt-1.5 text-2xl font-semibold tabular-nums", valueClass)}>
+                {it.value}
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">{it.sub}</div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
