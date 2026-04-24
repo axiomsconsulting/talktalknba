@@ -30,6 +30,7 @@ import { Route as ApiAdminTrainingImportRouteImport } from './routes/api.admin.t
 import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
 import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.admin.connections.retrain'
 import { Route as ApiAdminConnectionsPullStatusRouteImport } from './routes/api.admin.connections.pull-status'
+import { Route as ApiAdminConnectionsPullDriveRouteImport } from './routes/api.admin.connections.pull-drive'
 import { Route as ApiAdminConnectionsPullAzureRouteImport } from './routes/api.admin.connections.pull-azure'
 import { Route as ApiAdminConnectionsPreviewAzureRouteImport } from './routes/api.admin.connections.preview-azure'
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
@@ -144,6 +145,12 @@ const ApiAdminConnectionsPullStatusRoute =
     path: '/api/admin/connections/pull-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminConnectionsPullDriveRoute =
+  ApiAdminConnectionsPullDriveRouteImport.update({
+    id: '/api/admin/connections/pull-drive',
+    path: '/api/admin/connections/pull-drive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminConnectionsPullAzureRoute =
   ApiAdminConnectionsPullAzureRouteImport.update({
     id: '/api/admin/connections/pull-azure',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
+  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
@@ -325,6 +337,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
+    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/test'
@@ -353,6 +366,7 @@ export interface RootRouteChildren {
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
   ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
   ApiAdminConnectionsPullAzureRoute: typeof ApiAdminConnectionsPullAzureRoute
+  ApiAdminConnectionsPullDriveRoute: typeof ApiAdminConnectionsPullDriveRoute
   ApiAdminConnectionsPullStatusRoute: typeof ApiAdminConnectionsPullStatusRoute
   ApiAdminConnectionsRetrainRoute: typeof ApiAdminConnectionsRetrainRoute
   ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
@@ -512,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsPullStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/pull-drive': {
+      id: '/api/admin/connections/pull-drive'
+      path: '/api/admin/connections/pull-drive'
+      fullPath: '/api/admin/connections/pull-drive'
+      preLoaderRoute: typeof ApiAdminConnectionsPullDriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/connections/pull-azure': {
       id: '/api/admin/connections/pull-azure'
       path: '/api/admin/connections/pull-azure'
@@ -561,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
   ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
   ApiAdminConnectionsPullAzureRoute: ApiAdminConnectionsPullAzureRoute,
+  ApiAdminConnectionsPullDriveRoute: ApiAdminConnectionsPullDriveRoute,
   ApiAdminConnectionsPullStatusRoute: ApiAdminConnectionsPullStatusRoute,
   ApiAdminConnectionsRetrainRoute: ApiAdminConnectionsRetrainRoute,
   ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
