@@ -415,25 +415,28 @@ function CustomerDetail({ customer }: { customer: Customer }) {
             <ArrowRight className="size-3.5" />
             Recommended Next Best Action
           </div>
-          <div className="mt-2 text-sm text-foreground leading-relaxed">
-            {recommendAction(customer)}
-          </div>
+          {(() => {
+            const triggerKey = customer.nbaTrigger ?? "nurture";
+            const t = NBA_TRIGGERS[triggerKey];
+            return (
+              <div className="mt-2 space-y-2">
+                <div className="text-sm font-semibold text-foreground">{t.label}</div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.description}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-card border border-border text-muted-foreground">
+                    {t.channel}
+                  </span>
+                  <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-primary/10 border border-primary/20 text-primary">
+                    {t.offer}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
   );
-}
-
-function recommendAction(c: Customer): string {
-  if (c.riskTier === "High" && c.contractStatus === "Out of contract")
-    return "Proactive save call from a senior agent within 48h. Authorised to offer 20% loyalty discount and a 24-month re-contract.";
-  if (c.riskTier === "High")
-    return "Triage to retention squad. Lead with a service-quality fix (engineer dispatch / speed review), then pivot to value reinforcement.";
-  if (c.riskTier === "Medium" && c.package.includes("Fibre 65"))
-    return "Email-led upgrade campaign to Fibre 150 / Full Fibre. Include speed comparison and price hold for 12 months.";
-  if (c.riskTier === "Medium")
-    return "Personalised retention email — annual account review with usage insights and bill explainer.";
-  return "Suppress from outbound. Maintain in nurture sequences only — outbound contact would erode satisfaction.";
 }
 
 function Pill({ label, value, tone }: { label: string; value: string; tone?: "warn" }) {
