@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -16,17 +16,21 @@ import {
   Phone,
   XOctagon,
   Activity,
+  HardDrive,
+  Cloud,
+  ExternalLink,
+  PlayCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { parseFile } from "@/data/parseFile";
 import {
   DEFAULT_MAPPING,
-  detectColumns,
+  detectKindFromColumns,
   mapCustomers,
   smartMapping,
-  detectKindFromColumns,
   aggregateCalls,
   aggregateCease,
   aggregateUsage,
@@ -37,6 +41,7 @@ import {
 import { useCustomerStore } from "@/data/customerStore";
 import { allCustomers as defaultCustomers } from "@/data/customers";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 
 type DatasetRow = {
@@ -51,6 +56,15 @@ type DatasetRow = {
   uploaded_at: string;
 };
 
+type ConnectionRow = {
+  id: string;
+  kind: "databricks" | "gdrive" | "azure_repo";
+  name: string;
+  enabled: boolean;
+  last_run_at: string | null;
+  last_status: "pending" | "running" | "success" | "error" | null;
+  config: Record<string, unknown>;
+};
 
 export const Route = createFileRoute("/data")({
   head: () => ({
@@ -59,107 +73,167 @@ export const Route = createFileRoute("/data")({
       {
         name: "description",
         content:
-          "Upload customer_info.parquet or CSV extracts to override the mock customer list. Map columns, store raw files, and activate any version on demand.",
+          "Pick a customer data source — Sample, Local upload, Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
       },
       { property: "og:title", content: "Data Library — TalkTalk NBA" },
       {
         property: "og:description",
         content:
-          "Centralised dataset library for the TalkTalk NBA showcase. Stores raw uploads and powers the live Explainability search.",
+          "Centralised data control plane: choose between sample, uploaded, Google Drive or Databricks sources and see which signals are live.",
       },
     ],
   }),
   component: DataPage,
 });
 
+type SourceKey = "sample" | "upload" | "gdrive" | "databricks";
+
 function DataPage() {
   const [datasets, setDatasets] = useState<DatasetRow[]>([]);
+  const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const { customers, source, setActive, reset } = useCustomerStore();
+  const { customers, source, reset } = useCustomerStore();
+  const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
 
   async function refresh() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("customer_datasets")
-      .select("*")
-      .order("uploaded_at", { ascending: false });
-    if (!error && data) setDatasets(data as DatasetRow[]);
+    const [{ data: dsets }, { data: conns }] = await Promise.all([
+      supabase.from("customer_datasets").select("*").order("uploaded_at", { ascending: false }),
+      supabase.from("data_connections").select("id, kind, name, enabled, last_run_at, last_status, config"),
+    ]);
+    if (dsets) setDatasets(dsets as DatasetRow[]);
+    if (conns) setConnections(conns as ConnectionRow[]);
     setLoading(false);
   }
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
+
+  // Keep tabs in sync if the active source changes elsewhere
+  useEffect(() => {
+    setSelectedSource(deriveInitialSource(source));
+  }, [source.kind, (source as { detail?: string }).detail]);
+
+  const gdriveConn = connections.find((c) => c.kind === "gdrive");
+  const dbxConn = connections.find((c) => c.kind === "databricks");
+
+  // Derive which source is currently powering the customer base
+  const activeSourceKey: SourceKey = useMemo(() => {
+    if (source.kind === "mock") return "sample";
+    const detail = (source as { detail?: string }).detail ?? "";
+    if (detail.toLowerCase().includes("google drive")) return "gdrive";
+    if (detail.toLowerCase().includes("databricks")) return "databricks";
+    if ((source as { origin?: string }).origin === "live") {
+      // Best-effort: live but unknown provenance — show as gdrive if connected
+      return gdriveConn?.enabled ? "gdrive" : "databricks";
+    }
+    return "upload";
+  }, [source, gdriveConn?.enabled]);
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Data · Library"
-        title="Customer dataset library"
-        description="Upload real extracts to replace the mock customer list. Files are stored centrally; you can switch between datasets at any time and the Explainability search will reflect the change."
+        eyebrow="Data · Control plane"
+        title="Customer data sources"
+        description="Choose where the dashboard reads from — sample data, a local upload, Google Drive or Databricks. Behavioural enrichment cards show which signals are live."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
-        {/* Active source banner */}
-        <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Database className="size-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                  Active customer source
-                </div>
-                {source.kind === "uploaded" && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider",
-                      source.origin === "live"
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                        : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                    )}
-                  >
-                    {source.origin === "live" ? "Live integration" : "Stored upload"}
-                  </span>
-                )}
-              </div>
-              <div className="text-base font-semibold text-foreground mt-0.5">
-                {source.kind === "mock" ? (
-                  <>No source connected · showing mock dataset ({customers.length} customers · 6 personas + 50 generated)</>
-                ) : (
-                  <>
-                    {source.filename} · {customers.length} customers loaded
-                  </>
-                )}
-              </div>
-              {source.kind === "uploaded" && (
-                <div className="text-[11px] text-muted-foreground mt-0.5">
-                  {source.detail ?? source.filename} · activated{" "}
-                  {new Date(source.uploadedAt).toLocaleString("en-GB")}
-                </div>
-              )}
-              {source.kind === "mock" && (
-                <div className="text-[11px] text-muted-foreground mt-0.5">
-                  Upload an extract or pull from a live integration to replace these mock figures.
-                </div>
-              )}
-            </div>
-          </div>
-          {source.kind !== "mock" && (
-            <button
-              onClick={reset}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60"
-            >
-              <RefreshCw className="size-3.5" /> Restore mock dataset
-            </button>
-          )}
-        </div>
+        {/* 1) ACTIVE SOURCES OVERVIEW */}
+        <ActiveSourcesOverview
+          activeSourceKey={activeSourceKey}
+          customerCount={customers.length}
+          source={source}
+          gdriveConn={gdriveConn}
+          dbxConn={dbxConn}
+          onReset={reset}
+          onJump={(k) => setSelectedSource(k)}
+        />
 
-        <UploadCard onUploaded={refresh} />
-
+        {/* 2) BEHAVIOURAL ENRICHMENT CARDS (top, always visible) */}
         <EnrichmentStatusPanel />
 
+        {/* 3) SOURCE PICKER + INLINE CONFIGURATION */}
+        <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+          <div className="px-5 sm:px-7 py-5 border-b border-border">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              Configure source
+            </div>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">
+              Pick a source and configure it
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Each tab below is a self-contained configuration surface. Activating a dataset from
+              any source will swap the live customer base and refresh enrichment.
+            </p>
+          </div>
+
+          <Tabs
+            value={selectedSource}
+            onValueChange={(v) => setSelectedSource(v as SourceKey)}
+            className="px-5 sm:px-7 py-5"
+          >
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full gap-2 h-auto bg-muted/40 p-1">
+              <SourceTab
+                value="sample"
+                icon={Sparkles}
+                label="Sample data"
+                active={activeSourceKey === "sample"}
+              />
+              <SourceTab
+                value="upload"
+                icon={UploadCloud}
+                label="Local upload"
+                active={activeSourceKey === "upload"}
+              />
+              <SourceTab
+                value="gdrive"
+                icon={HardDrive}
+                label="Google Drive"
+                active={activeSourceKey === "gdrive"}
+                statusOk={!!gdriveConn?.enabled}
+              />
+              <SourceTab
+                value="databricks"
+                icon={Cloud}
+                label="Databricks"
+                active={activeSourceKey === "databricks"}
+                statusOk={!!dbxConn?.enabled}
+              />
+            </TabsList>
+
+            <TabsContent value="sample" className="mt-5">
+              <SamplePanel
+                isActive={activeSourceKey === "sample"}
+                onActivate={reset}
+                customerCount={customers.length}
+              />
+            </TabsContent>
+
+            <TabsContent value="upload" className="mt-5">
+              <UploadCard onUploaded={refresh} />
+            </TabsContent>
+
+            <TabsContent value="gdrive" className="mt-5">
+              <LiveConnectionPanel
+                kind="gdrive"
+                conn={gdriveConn}
+                onChanged={refresh}
+              />
+            </TabsContent>
+
+            <TabsContent value="databricks" className="mt-5">
+              <LiveConnectionPanel
+                kind="databricks"
+                conn={dbxConn}
+                onChanged={refresh}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* 4) STORED DATASET LIBRARY (shared by all sources) */}
         <DatasetTable
           datasets={datasets}
           loading={loading}
@@ -168,6 +242,453 @@ function DataPage() {
         />
       </div>
     </AppShell>
+  );
+}
+
+function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState>["source"]): SourceKey {
+  if (source.kind === "mock") return "sample";
+  const detail = (source as { detail?: string }).detail ?? "";
+  if (detail.toLowerCase().includes("google drive")) return "gdrive";
+  if (detail.toLowerCase().includes("databricks")) return "databricks";
+  return "upload";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Active sources overview — quick status of all 4 sources at a glance
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ActiveSourcesOverview({
+  activeSourceKey,
+  customerCount,
+  source,
+  gdriveConn,
+  dbxConn,
+  onReset,
+  onJump,
+}: {
+  activeSourceKey: SourceKey;
+  customerCount: number;
+  source: ReturnType<typeof useCustomerStore.getState>["source"];
+  gdriveConn: ConnectionRow | undefined;
+  dbxConn: ConnectionRow | undefined;
+  onReset: () => void;
+  onJump: (k: SourceKey) => void;
+}) {
+  const cards: Array<{
+    key: SourceKey;
+    icon: typeof Sparkles;
+    title: string;
+    subtitle: string;
+    status: "active" | "configured" | "available" | "not_configured";
+  }> = [
+    {
+      key: "sample",
+      icon: Sparkles,
+      title: "Sample data",
+      subtitle: "6 personas + 50 generated customers",
+      status: activeSourceKey === "sample" ? "active" : "available",
+    },
+    {
+      key: "upload",
+      icon: UploadCloud,
+      title: "Local upload",
+      subtitle:
+        activeSourceKey === "upload" && source.kind === "uploaded"
+          ? source.filename
+          : "CSV / Parquet, drop & map",
+      status: activeSourceKey === "upload" ? "active" : "available",
+    },
+    {
+      key: "gdrive",
+      icon: HardDrive,
+      title: "Google Drive",
+      subtitle: gdriveConn?.enabled
+        ? `Connected · ${gdriveConn.name}`
+        : "Not configured",
+      status:
+        activeSourceKey === "gdrive"
+          ? "active"
+          : gdriveConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+    {
+      key: "databricks",
+      icon: Cloud,
+      title: "Databricks",
+      subtitle: dbxConn?.enabled
+        ? `Connected · ${dbxConn.name}`
+        : "Not configured",
+      status:
+        activeSourceKey === "databricks"
+          ? "active"
+          : dbxConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+  ];
+
+  const activeLabel =
+    activeSourceKey === "sample"
+      ? "Sample data"
+      : activeSourceKey === "upload"
+        ? "Local upload"
+        : activeSourceKey === "gdrive"
+          ? "Google Drive"
+          : "Databricks";
+
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+      <div className="px-5 sm:px-7 py-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Database className="size-5" />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              Active customer source
+            </div>
+            <div className="text-base font-semibold text-foreground mt-0.5">
+              {activeLabel} · {customerCount.toLocaleString()} customers loaded
+            </div>
+            {source.kind === "uploaded" ? (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {(source as { detail?: string }).detail ?? source.filename} · activated{" "}
+                {new Date(source.uploadedAt).toLocaleString("en-GB")}
+              </div>
+            ) : (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Showing bundled sample dataset — switch to a real source below to override.
+              </div>
+            )}
+          </div>
+        </div>
+        {activeSourceKey !== "sample" && (
+          <button
+            onClick={onReset}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60"
+          >
+            <RefreshCw className="size-3.5" /> Restore sample
+          </button>
+        )}
+      </div>
+
+      <div className="p-5 sm:p-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {cards.map((c) => {
+          const Icon = c.icon;
+          const isActive = c.status === "active";
+          return (
+            <button
+              key={c.key}
+              onClick={() => onJump(c.key)}
+              className={cn(
+                "text-left rounded-lg border p-3 flex flex-col gap-2 transition-colors",
+                isActive
+                  ? "border-primary/40 bg-primary/5 shadow-[var(--shadow-sm)]"
+                  : "border-border hover:border-primary/30 hover:bg-muted/40",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "size-8 rounded-md flex items-center justify-center",
+                    isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <Icon className="size-4" />
+                </div>
+                <div className="text-sm font-semibold text-foreground truncate">{c.title}</div>
+              </div>
+              <div className="text-[11px] text-muted-foreground line-clamp-2">{c.subtitle}</div>
+              <SourceStatusPill status={c.status} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SourceStatusPill({
+  status,
+}: {
+  status: "active" | "configured" | "available" | "not_configured";
+}) {
+  const map: Record<typeof status, { label: string; cls: string }> = {
+    active: {
+      label: "Active",
+      cls: "border-primary/40 bg-primary/10 text-primary",
+    },
+    configured: {
+      label: "Connected",
+      cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    },
+    available: {
+      label: "Available",
+      cls: "border-border bg-muted/40 text-muted-foreground",
+    },
+    not_configured: {
+      label: "Not configured",
+      cls: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    },
+  };
+  const v = map[status];
+  return (
+    <span
+      className={cn(
+        "self-start inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+        v.cls,
+      )}
+    >
+      {v.label}
+    </span>
+  );
+}
+
+function SourceTab({
+  value,
+  icon: Icon,
+  label,
+  active,
+  statusOk,
+}: {
+  value: SourceKey;
+  icon: typeof Sparkles;
+  label: string;
+  active: boolean;
+  statusOk?: boolean;
+}) {
+  return (
+    <TabsTrigger
+      value={value}
+      className="data-[state=active]:bg-card data-[state=active]:shadow-[var(--shadow-sm)] data-[state=active]:text-foreground gap-2 py-2.5"
+    >
+      <Icon className="size-4" />
+      <span className="font-medium">{label}</span>
+      {active && (
+        <span className="ml-1 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded bg-primary/15 text-primary border border-primary/30">
+          Active
+        </span>
+      )}
+      {!active && statusOk && (
+        <span className="ml-1 size-1.5 rounded-full bg-emerald-500 shrink-0" />
+      )}
+    </TabsTrigger>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sample panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SamplePanel({
+  isActive,
+  onActivate,
+  customerCount,
+}: {
+  isActive: boolean;
+  onActivate: () => void;
+  customerCount: number;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Sparkles className="size-5" />
+        </div>
+        <div>
+          <div className="text-base font-semibold text-foreground">Bundled sample dataset</div>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            6 hand-crafted personas plus 50 procedurally generated customers covering OOC,
+            speed-deficit, loyalty-call and DD-cancel cohorts. Use this as a safe playground
+            for the dashboards before connecting real data.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { label: "Personas", value: "6" },
+          { label: "Generated", value: "50" },
+          { label: "Total loaded", value: customerCount.toLocaleString() },
+          { label: "Cost", value: "Free" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-md border border-border bg-card px-3 py-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {s.label}
+            </div>
+            <div className="mt-0.5 text-base font-semibold text-foreground tabular-nums">
+              {s.value}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={onActivate}
+          disabled={isActive}
+          className={cn(
+            "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold",
+            isActive
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-gradient-to-r from-primary to-primary-deep text-primary-foreground shadow-[var(--shadow-glow)]",
+          )}
+        >
+          <CheckCircle2 className="size-4" />
+          {isActive ? "Sample data is active" : "Activate sample data"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live connection panel — shared between Google Drive & Databricks
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LiveConnectionPanel({
+  kind,
+  conn,
+  onChanged,
+}: {
+  kind: "gdrive" | "databricks";
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState<"test" | "ingest" | null>(null);
+  const Icon = kind === "gdrive" ? HardDrive : Cloud;
+  const label = kind === "gdrive" ? "Google Drive" : "Databricks";
+
+  async function run(action: "test" | "ingest") {
+    setBusy(action);
+    try {
+      const path = action === "test" ? "/api/admin/connections/test" : "/api/admin/connections/ingest";
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind }),
+      });
+      const json = (await res.json()) as { error?: string; message?: string; files?: number };
+      if (!res.ok) throw new Error(json.error ?? `${action} failed`);
+      toast.success(
+        action === "test"
+          ? `${label} connection ok`
+          : json.message ?? `Ingested ${json.files ?? 0} file(s) from ${label}`,
+      );
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!conn) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="size-10 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <AlertTriangle className="size-5" />
+          </div>
+          <div>
+            <div className="text-base font-semibold text-foreground">{label} not configured</div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {kind === "gdrive"
+                ? "Connect a shared Google Drive folder containing your customer_info, calls, cease, usage and model artefact files."
+                : "Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables."}
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/admin/connections"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold bg-gradient-to-r from-primary to-primary-deep text-primary-foreground shadow-[var(--shadow-glow)]"
+        >
+          <Settings2 className="size-4" /> Configure {label}
+          <ExternalLink className="size-3.5" />
+        </Link>
+      </div>
+    );
+  }
+
+  const lastRun = conn.last_run_at ? new Date(conn.last_run_at).toLocaleString("en-GB") : "Never";
+  const cfgSummary =
+    kind === "gdrive"
+      ? `Root folder: ${(conn.config as { root_folder_url?: string; root_folder_id?: string }).root_folder_url ??
+          (conn.config as { root_folder_id?: string }).root_folder_id ??
+          "—"}`
+      : `Workspace: ${(conn.config as { host?: string }).host ?? "—"} · warehouse ${
+          (conn.config as { warehouse_id?: string }).warehouse_id ?? "—"
+        }`;
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Icon className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-base font-semibold text-foreground">{conn.name}</div>
+            <span
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+                conn.enabled
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+              )}
+            >
+              {conn.enabled ? "Enabled" : "Disabled"}
+            </span>
+            {conn.last_status && (
+              <span
+                className={cn(
+                  "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+                  conn.last_status === "success"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : conn.last_status === "error"
+                      ? "border-[var(--risk-high)]/40 bg-[var(--risk-high)]/10 text-[var(--risk-high)]"
+                      : "border-border bg-muted/40 text-muted-foreground",
+                )}
+              >
+                Last: {conn.last_status}
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 break-all">{cfgSummary}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Last run: {lastRun}</div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+        <button
+          onClick={() => run("test")}
+          disabled={!!busy}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 disabled:opacity-60"
+        >
+          {busy === "test" ? <Loader2 className="size-3.5 animate-spin" /> : <PlayCircle className="size-3.5" />}
+          Test connection
+        </button>
+        <button
+          onClick={() => run("ingest")}
+          disabled={!!busy}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-primary/30 text-primary hover:bg-primary/5 disabled:opacity-60"
+        >
+          {busy === "ingest" ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+          Pull now
+        </button>
+        <Link
+          to="/admin/connections"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 ml-auto"
+        >
+          <Settings2 className="size-3.5" /> Advanced configure
+          <ExternalLink className="size-3" />
+        </Link>
+      </div>
+
+      <div className="text-[11px] text-muted-foreground">
+        Pulled files land in the <span className="font-medium text-foreground">Stored datasets</span>{" "}
+        library below — activate any version to swap the live customer base or refresh enrichment.
+      </div>
+    </div>
   );
 }
 
@@ -197,7 +718,6 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const applyUsage = useCustomerStore((s) => s.applyUsage);
 
   function detectKind(file: File, columns: string[]): FileKind {
-    // Filename hints first, then column-signature fallback.
     const n = file.name.toLowerCase();
     if (n.includes("calls")) return "calls";
     if (n.includes("cease")) return "cease";
@@ -217,11 +737,10 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       setStaged({ file, rows, columns, kind });
 
       if (kind === "customer_info") {
-        // Smart auto-mapping: pre-fill from alias matches against the schema.
         const m = smartMapping(columns);
         setMapping(m);
         const matchCount = (Object.keys(m) as Array<keyof FieldMapping>).filter(
-          (k) => m[k] && columns.includes(m[k] as string)
+          (k) => m[k] && columns.includes(m[k] as string),
         ).length;
         setAutoMatchedFields(matchCount);
       } else {
@@ -264,7 +783,6 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       });
       if (insErr) throw insErr;
 
-      // Apply to the in-memory store based on file kind
       const src = {
         filename: staged.file.name,
         rowsAggregated: staged.rows.length,
@@ -300,48 +818,39 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
     }
   }
 
-
   return (
-    <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
-      <div className="px-5 sm:px-7 py-5 border-b border-border">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-          Upload extract
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 overflow-hidden">
+      <div className="px-5 sm:px-6 py-4 border-b border-border">
+        <div className="text-sm font-semibold text-foreground">
+          Upload customer_info, calls, cease, usage or a related extract
         </div>
-        <h2 className="mt-1 text-lg font-semibold text-foreground">
-          Add customer_info, calls, cease, usage or any related extract
-        </h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Accepts .csv and .parquet up to 50 MB. <span className="font-medium text-foreground">customer_info</span>{" "}
-          replaces the live customer base; <span className="font-medium text-foreground">calls</span>,{" "}
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Accepts .csv and .parquet up to 50 MB.{" "}
+          <span className="font-medium text-foreground">customer_info</span> replaces the live
+          customer base; <span className="font-medium text-foreground">calls</span>,{" "}
           <span className="font-medium text-foreground">cease</span> and{" "}
-          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers and
-          NBA triggers without replacing it.
+          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers
+          and NBA triggers without replacing it.
         </p>
       </div>
 
-      <div className="p-5 sm:p-7">
+      <div className="p-5 sm:p-6">
         {!staged && (
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={onDrop}
             className={cn(
               "rounded-xl border-2 border-dashed border-border p-10 flex flex-col items-center justify-center text-center",
-              "bg-[var(--surface-sunken)]/40 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              "bg-card transition-colors hover:border-primary/40 hover:bg-primary/5",
             )}
           >
             <div className="size-12 rounded-xl bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center text-primary-foreground shadow-[var(--shadow-glow)]">
-              {parsing ? (
-                <Loader2 className="size-6 animate-spin" />
-              ) : (
-                <UploadCloud className="size-6" />
-              )}
+              {parsing ? <Loader2 className="size-6 animate-spin" /> : <UploadCloud className="size-6" />}
             </div>
             <div className="mt-4 text-base font-semibold text-foreground">
               {parsing ? "Parsing file…" : "Drag a file here, or browse"}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              CSV · Parquet · max 50 MB
-            </div>
+            <div className="text-xs text-muted-foreground mt-1">CSV · Parquet · max 50 MB</div>
             <input
               ref={fileRef}
               type="file"
@@ -369,7 +878,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
 
         {staged && (
           <div className="space-y-5">
-            <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/50 p-4 flex items-start justify-between gap-3">
+            <div className="rounded-lg border border-border bg-card p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <FileSpreadsheet className="size-5" />
@@ -411,10 +920,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
             )}
 
             {staged.kind === "customer_info" && (
-              <PreviewMapped
-                rows={staged.rows}
-                mapping={mapping}
-              />
+              <PreviewMapped rows={staged.rows} mapping={mapping} />
             )}
 
             {(staged.kind === "calls" || staged.kind === "cease" || staged.kind === "usage") && (
@@ -531,7 +1037,7 @@ function EnrichmentPreview({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Enrichment status — shows which calls/cease/usage extracts are live
+// Behavioural enrichment status — calls / cease / usage tiles
 // ─────────────────────────────────────────────────────────────────────────────
 
 function EnrichmentStatusPanel() {
@@ -629,7 +1135,9 @@ function EnrichmentStatusPanel() {
         </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Calls · cease · usage signals</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Activate an extract from the library below — or drop a new one above — and it will be aggregated by customer ID and layered onto the SHAP waterfall and NBA trigger derivation.
+          These signals are layered on top of whichever source is active. Activate an extract from
+          the library below — or pull a fresh one from a live integration — and it will be aggregated
+          by customer ID and folded into the SHAP waterfall and NBA trigger derivation.
         </p>
       </div>
       <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -641,11 +1149,16 @@ function EnrichmentStatusPanel() {
               key={t.kind}
               className={cn(
                 "rounded-lg border p-4 flex flex-col gap-2",
-                active ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-[var(--surface-sunken)]/40"
+                active ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-[var(--surface-sunken)]/40",
               )}
             >
               <div className="flex items-center gap-2">
-                <div className={cn("size-9 rounded-md flex items-center justify-center", active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                <div
+                  className={cn(
+                    "size-9 rounded-md flex items-center justify-center",
+                    active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
                   <Icon className="size-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -671,7 +1184,8 @@ function EnrichmentStatusPanel() {
                     <span className="font-mono text-primary">{t.source!.filename}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t.source!.detail ?? (t.source!.origin === "live" ? "Live integration" : "Stored upload")} · {t.size.toLocaleString()} customers enriched · activated{" "}
+                    {t.source!.detail ?? (t.source!.origin === "live" ? "Live integration" : "Stored upload")} ·{" "}
+                    {t.size.toLocaleString()} customers enriched · activated{" "}
                     {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-1.5">
@@ -680,19 +1194,25 @@ function EnrichmentStatusPanel() {
                         <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
                           {m.label}
                         </div>
-                        <div className="text-xs font-semibold text-foreground tabular-nums truncate" title={m.value}>
+                        <div
+                          className="text-xs font-semibold text-foreground tabular-nums truncate"
+                          title={m.value}
+                        >
                           {m.value}
                         </div>
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => clear(t.kind)} className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start">
+                  <button
+                    onClick={() => clear(t.kind)}
+                    className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start"
+                  >
                     <Trash2 className="size-3" /> Clear enrichment
                   </button>
                 </>
               ) : (
                 <div className="text-[11px] text-muted-foreground italic">
-                  No {t.kind} extract loaded — upload one above or activate a stored {t.kind} file from the library.
+                  No {t.kind} extract loaded — upload one or activate a stored {t.kind} file from the library.
                 </div>
               )}
             </div>
@@ -719,7 +1239,11 @@ const MAPPING_FIELDS: Array<{ key: keyof FieldMapping; label: string; hint: stri
   { key: "lineSpeed", label: "Line speed (Mbps)", hint: "Realised throughput — drives speed deficit" },
   { key: "technology", label: "Technology", hint: "FTTC / FTTP / G.Fast / etc." },
   { key: "arpuOverride", label: "ARPU column (optional)", hint: "Override package-derived ARPU" },
-  { key: "riskScoreOverride", label: "Pre-computed risk score (optional)", hint: "0–1 probability if you've trained externally" },
+  {
+    key: "riskScoreOverride",
+    label: "Pre-computed risk score (optional)",
+    hint: "0–1 probability if you've trained externally",
+  },
 ];
 
 function MappingEditor({
@@ -756,9 +1280,7 @@ function MappingEditor({
               </div>
               <select
                 value={value}
-                onChange={(e) =>
-                  onChange({ ...mapping, [f.key]: e.target.value || undefined })
-                }
+                onChange={(e) => onChange({ ...mapping, [f.key]: e.target.value || undefined })}
                 className="w-full h-8 px-2 text-xs rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">— not mapped —</option>
@@ -813,8 +1335,7 @@ function PreviewMapped({
                   {(c.tenureDays / 365).toFixed(1)} yrs
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
-                  {(c.shap.find((s) => s.feature === "ooc_days")?.detail ?? "").match(/-?\d+/)?.[0] ??
-                    "—"}
+                  {(c.shap.find((s) => s.feature === "ooc_days")?.detail ?? "").match(/-?\d+/)?.[0] ?? "—"}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-semibold">
                   {(c.riskScore * 100).toFixed(0)}
@@ -900,11 +1421,19 @@ function DatasetTable({
       if (d.kind === "customer_info") {
         const mapped = mapCustomers(rows, DEFAULT_MAPPING);
         if (mapped.length === 0) {
-          alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
+          alert(
+            "Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.",
+          );
           return;
         }
         setActive(mapped, d.filename, "upload", `Stored upload · ${d.filename}`);
-        await persist({ kind: "customer_info", origin: "upload", label: d.filename, rows: mapped.length, datasetId: d.id });
+        await persist({
+          kind: "customer_info",
+          origin: "upload",
+          label: d.filename,
+          rows: mapped.length,
+          datasetId: d.id,
+        });
       } else {
         const src = {
           filename: d.filename,
@@ -946,12 +1475,11 @@ function DatasetTable({
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div className="px-5 sm:px-7 py-5 border-b border-border">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-          Library
-        </div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Library</div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Stored datasets</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Every upload is kept here. Activate any version to swap the live customer source or refresh the calls / cease / usage enrichment.
+          Every upload — or pull from a live integration — is kept here. Activate any version to
+          swap the live customer source or refresh the calls / cease / usage enrichment.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -977,7 +1505,8 @@ function DatasetTable({
             {!loading && datasets.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground text-sm">
-                  No datasets uploaded yet. Drop a file above to get started.
+                  No datasets uploaded yet. Drop a file in the Local upload tab or pull from a
+                  live integration to get started.
                 </td>
               </tr>
             )}
