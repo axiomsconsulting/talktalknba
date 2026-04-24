@@ -33,6 +33,7 @@ import stats from "@/data/modelStats.json";
 import { useLiveDataStore } from "@/data/liveDataStore";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
 import { ExternalTrainingKit } from "@/components/ExternalTrainingKit";
+import { ApiTesterCard } from "@/components/ApiTesterCard";
 
 export const Route = createFileRoute("/model")({
   component: ModelPage,
@@ -383,6 +384,8 @@ function ModelPage() {
         />
 
         <SegmentBreakdown />
+
+        <ApiTesterCard />
 
         <ExternalTrainingKit />
 
