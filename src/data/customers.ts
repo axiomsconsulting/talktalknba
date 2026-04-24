@@ -402,7 +402,7 @@ export const deriveNbaTrigger = (input: {
   contractStatus: Customer["contractStatus"];
   signals?: Partial<BehavioralSignals>;
   package: string;
-}): NbaTriggerKey {
+}): NbaTriggerKey => {
   const { riskTier, contractStatus, signals = {}, package: pkg } = input;
   const speedDeficit =
     signals.soldSpeedMbps && signals.lineSpeedMbps
@@ -421,7 +421,7 @@ export const deriveNbaTrigger = (input: {
   if (isHeavyUser) return "rightsize_email";
   if (riskTier === "High" && contractStatus === "Out of contract") return "loyalty_save_desk";
   return "nurture";
-}
+};
 
 export const NBA_TRIGGERS: Record<
   NbaTriggerKey,
