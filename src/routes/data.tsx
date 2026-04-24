@@ -868,22 +868,33 @@ function DatasetTable({
       const file = new File([data], d.filename, { type: data.type });
       const { rows } = await parseFile(file);
 
+      const persist = useCustomerStore.getState().persistActive;
       if (d.kind === "customer_info") {
         const mapped = mapCustomers(rows, DEFAULT_MAPPING);
         if (mapped.length === 0) {
           alert("Could not map any customers from this file with the default mapping. Re-upload with a custom mapping.");
           return;
         }
-        setActive(mapped, d.filename);
+        setActive(mapped, d.filename, "upload", `Stored upload · ${d.filename}`);
+        await persist({ kind: "customer_info", origin: "upload", label: d.filename, rows: mapped.length, datasetId: d.id });
       } else {
         const src = {
           filename: d.filename,
           rowsAggregated: rows.length,
           uploadedAt: new Date().toISOString(),
+          origin: "upload" as const,
+          detail: `Stored upload · ${d.filename}`,
         };
-        if (d.kind === "calls") applyCalls(aggregateCalls(rows), src);
-        else if (d.kind === "cease") applyCease(aggregateCease(rows), src);
-        else if (d.kind === "usage") applyUsage(aggregateUsage(rows), src);
+        if (d.kind === "calls") {
+          applyCalls(aggregateCalls(rows), src);
+          await persist({ kind: "calls", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        } else if (d.kind === "cease") {
+          applyCease(aggregateCease(rows), src);
+          await persist({ kind: "cease", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        } else if (d.kind === "usage") {
+          applyUsage(aggregateUsage(rows), src);
+          await persist({ kind: "usage", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+        }
       }
     } catch (err) {
       alert(`Activation failed: ${(err as Error).message}`);
