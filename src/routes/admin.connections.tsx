@@ -104,7 +104,7 @@ type ModelRun = {
 
 type PullJob = {
   id: string;
-  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error";
+  status: "queued" | "downloading" | "parsing" | "uploading" | "done" | "error" | "cancelled";
   files_total: number;
   files_done: number;
   current_kind: string | null;
