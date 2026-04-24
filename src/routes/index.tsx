@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
 import { RoiSimulator } from "@/components/RoiSimulator";
 import { SensitivityPanel } from "@/components/SensitivityPanel";
+import { PerTriggerSensitivityPanel } from "@/components/PerTriggerSensitivityPanel";
 import { ExportPdfButton } from "@/components/ExportPdfButton";
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
