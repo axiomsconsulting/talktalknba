@@ -1,6 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Brain, Search, Sparkles, ArrowRight, Zap, TrendingUp, TrendingDown, MessageCircleQuestion } from "lucide-react";
+import {
+  Brain,
+  Search,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  MessageCircleQuestion,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,7 +29,7 @@ import { personas, type Customer, type SHAPContribution, NBA_TRIGGERS } from "@/
 import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { customerLtv } from "@/data/financials";
-import { useEffect } from "react";
+import { hydrateLiveCustomers } from "@/data/liveCustomerHydrator";
 import { cn } from "@/lib/utils";
 import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
 
@@ -47,7 +58,12 @@ function ExplainabilityPage() {
   const source = useCustomerStore((s) => s.source);
   const { rules, loaded, load } = useNbaRulesStore();
   useEffect(() => { if (!loaded) load(); }, [loaded, load]);
+  // Pull active datasets from storage into the store on mount so the page
+  // shows real customers (not the bundled personas) after a hard refresh.
+  useEffect(() => { void hydrateLiveCustomers(); }, []);
+
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
 
   const importanceData = useMemo(
@@ -74,6 +90,28 @@ function ExplainabilityPage() {
         (c.persona ?? "").toLowerCase().includes(q)
     );
   }, [query, allCustomers]);
+
+  const PAGE_SIZE = 5;
+  const pageCount = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+  // Reset/clamp page whenever the filtered set changes size.
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(0);
+  }, [pageCount, page]);
+  // Reset page to 0 on a new search query.
+  useEffect(() => { setPage(0); }, [query]);
+
+  const visibleCustomers = useMemo(
+    () => filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredCustomers, page],
+  );
+
+  // Auto-select the first real customer once live data lands so the detail
+  // panel mirrors the active dataset rather than a stale persona.
+  useEffect(() => {
+    if (allCustomers.length > 0 && !allCustomers.some((c) => c.id === selectedId)) {
+      setSelectedId(allCustomers[0].id);
+    }
+  }, [allCustomers, selectedId]);
 
   const selected = allCustomers.find((c) => c.id === selectedId) ?? allCustomers[0] ?? personas[0];
 
