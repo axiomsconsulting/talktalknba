@@ -101,6 +101,156 @@ export type Database = {
         }
         Relationships: []
       }
+      data_connections: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          kind: Database["public"]["Enums"]["data_connection_kind"]
+          last_error: string | null
+          last_run_at: string | null
+          last_status: Database["public"]["Enums"]["data_run_status"] | null
+          name: string
+          schedule_cron: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          kind: Database["public"]["Enums"]["data_connection_kind"]
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?: Database["public"]["Enums"]["data_run_status"] | null
+          name: string
+          schedule_cron?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["data_connection_kind"]
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?: Database["public"]["Enums"]["data_run_status"] | null
+          name?: string
+          schedule_cron?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_source_files: {
+        Row: {
+          bytes: number | null
+          connection_id: string
+          created_at: string
+          dataset_id: string | null
+          id: string
+          kind: string
+          last_ingested_at: string | null
+          last_seen_at: string
+          remote_hash: string | null
+          remote_id: string
+          remote_modified_at: string | null
+          remote_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          bytes?: number | null
+          connection_id: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          kind: string
+          last_ingested_at?: string | null
+          last_seen_at?: string
+          remote_hash?: string | null
+          remote_id: string
+          remote_modified_at?: string | null
+          remote_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bytes?: number | null
+          connection_id?: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          kind?: string
+          last_ingested_at?: string | null
+          last_seen_at?: string
+          remote_hash?: string | null
+          remote_id?: string
+          remote_modified_at?: string | null
+          remote_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_source_files_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "data_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_source_files_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "customer_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_runs: {
+        Row: {
+          artefact_paths: Json | null
+          created_at: string
+          databricks_run_id: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          metrics: Json | null
+          started_at: string
+          status: Database["public"]["Enums"]["data_run_status"]
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          artefact_paths?: Json | null
+          created_at?: string
+          databricks_run_id?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          metrics?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["data_run_status"]
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          artefact_paths?: Json | null
+          created_at?: string
+          databricks_run_id?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          metrics?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["data_run_status"]
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nba_rules: {
         Row: {
           channel: string
@@ -244,6 +394,8 @@ export type Database = {
     Enums: {
       account_status: "pending" | "active" | "rejected"
       app_role: "admin" | "operator" | "analyst" | "approver"
+      data_connection_kind: "databricks" | "gdrive"
+      data_run_status: "pending" | "running" | "success" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -373,6 +525,8 @@ export const Constants = {
     Enums: {
       account_status: ["pending", "active", "rejected"],
       app_role: ["admin", "operator", "analyst", "approver"],
+      data_connection_kind: ["databricks", "gdrive"],
+      data_run_status: ["pending", "running", "success", "error"],
     },
   },
 } as const
