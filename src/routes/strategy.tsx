@@ -84,6 +84,48 @@ function StrategyPage() {
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
+        {/* Behavioural triggers */}
+        <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+          <div className="px-5 sm:px-7 py-5 border-b border-border">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              Behavioural triggers · NBA rules
+            </div>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">
+              Four signals that decide the next conversation
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Each rule below is fired by a specific behavioural pattern in the data — call-centre
+              friction, contract & speed friction, usage mismatch, and competitor cease intent.
+            </p>
+          </div>
+          <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TriggerCard
+              icon={Headphones}
+              source="calls.csv"
+              signal="Multiple recent Loyalty calls or extended hold time"
+              trigger={NBA_TRIGGERS.loyalty_save_desk}
+            />
+            <TriggerCard
+              icon={Wrench}
+              source="customer_info.parquet"
+              signal="Soon-to-be-OOC, high ooc_days, or line_speed << promised speed"
+              trigger={NBA_TRIGGERS.free_tech_upgrade}
+            />
+            <TriggerCard
+              icon={Mail}
+              source="usage.parquet"
+              signal="Heavy usage_download_mbs on a basic package (FTTC / ADSL)"
+              trigger={NBA_TRIGGERS.rightsize_email}
+            />
+            <TriggerCard
+              icon={PoundSterling}
+              source="cease.csv"
+              signal="reason_description_insight = Competitor Deals"
+              trigger={NBA_TRIGGERS.competitor_match}
+            />
+          </div>
+        </div>
+
         {/* Pipeline diagram */}
         <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
           <div className="px-5 sm:px-7 py-5 border-b border-border">
