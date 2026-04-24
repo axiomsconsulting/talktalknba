@@ -70,6 +70,9 @@
   --color-primary-deep: var(--primary-deep);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-sunken: var(--surface-sunken);
+  --color-talktalk-lime: var(--talktalk-lime);
+  --color-talktalk-lime-deep: var(--talktalk-lime-deep);
+  --color-talktalk-ink: var(--talktalk-ink);
 }
 
 :root {

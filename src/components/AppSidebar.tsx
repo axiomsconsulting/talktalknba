@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Brain, Workflow, Sparkles, Database } from "lucide-react";
+import { LayoutDashboard, Brain, Workflow, Database, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import talktalkLogo from "@/assets/talktalk-logo.svg";
 
 const NAV_ITEMS = [
   {
