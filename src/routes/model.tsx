@@ -1,5 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Activity, Target, Crosshair, GitBranch, BarChart3, Cpu } from "lucide-react";
+import {
+  Activity,
+  Target,
+  Crosshair,
+  GitBranch,
+  BarChart3,
+  Cpu,
+  Info,
+  BookOpen,
+  Layers,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+  ReferenceDot,
+  Tooltip as RTooltip,
+  BarChart,
+  Bar,
+  Legend,
+} from "recharts";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiCard } from "@/components/KpiCard";
