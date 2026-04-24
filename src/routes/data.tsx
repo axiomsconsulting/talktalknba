@@ -346,6 +346,16 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
                     {(staged.file.size / 1024).toFixed(1)} KB · detected as{" "}
                     <span className="font-mono text-foreground">{staged.kind}</span>
                   </div>
+                  {staged.kind === "customer_info" && autoMatchedFields > 0 && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success)]/10 text-[var(--success)] text-[10px] font-semibold uppercase tracking-wider border border-[var(--success)]/20">
+                      <Sparkles className="size-3" /> Smart-mapped {autoMatchedFields}/12 fields
+                    </div>
+                  )}
+                  {staged.kind !== "customer_info" && staged.kind !== "other" && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wider border border-primary/20">
+                      <Zap className="size-3" /> Will enrich active customer base
+                    </div>
+                  )}
                 </div>
               </div>
               <button
@@ -372,21 +382,24 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
               />
             )}
 
+            {(staged.kind === "calls" || staged.kind === "cease" || staged.kind === "usage") && (
+              <EnrichmentPreview kind={staged.kind} columns={staged.columns} rows={staged.rows} />
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-border">
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={activateAfterUpload}
-                  disabled={staged.kind !== "customer_info"}
+                  disabled={staged.kind === "other"}
                   onChange={(e) => setActivateAfterUpload(e.target.checked)}
                   className="size-4 accent-primary"
                 />
-                Activate as live customer source after upload
-                {staged.kind !== "customer_info" && (
-                  <span className="text-[11px] text-muted-foreground">
-                    (only customer_info files can be activated)
-                  </span>
-                )}
+                {staged.kind === "customer_info"
+                  ? "Activate as live customer source after upload"
+                  : staged.kind === "other"
+                    ? "Store as reference only"
+                    : `Apply ${staged.kind} enrichment to active customers`}
               </label>
               <button
                 onClick={commit}
