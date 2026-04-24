@@ -91,6 +91,14 @@ function UserMenu() {
             <div className="text-sm font-medium truncate">{profile.display_name ?? "User"}</div>
             <div className="text-[11px] text-muted-foreground truncate">{profile.email}</div>
           </div>
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-foreground/80 hover:bg-foreground/5"
+          >
+            <UserIcon className="size-4" />
+            Your profile
+          </Link>
           {isApproverOrAdmin && (
             <Link
               to="/admin/users"
