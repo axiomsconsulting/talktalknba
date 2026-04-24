@@ -144,7 +144,6 @@ function DataPage() {
           datasets={datasets}
           loading={loading}
           onChanged={refresh}
-          onActivate={setActive}
           activeFilename={source.kind === "uploaded" ? source.filename : null}
         />
       </div>
