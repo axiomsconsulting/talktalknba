@@ -241,14 +241,47 @@ function ConnectionsAdminPage() {
     }
   };
 
+  const [pullJob, setPullJob] = useState<PullJob | null>(null);
+
+  const refreshPullJob = async (jobId?: string) => {
+    try {
+      const res = (await callServer(`/api/admin/connections/pull-status`, jobId ? { jobId } : {})) as {
+        job: PullJob | null;
+      } | null;
+      setPullJob(res?.job ?? null);
+      return res?.job ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Poll while a job is active
+  useEffect(() => {
+    if (!pullJob) return;
+    const active = ["queued", "downloading", "parsing", "uploading"].includes(pullJob.status);
+    if (!active) return;
+    const t = setInterval(() => {
+      void refreshPullJob(pullJob.id);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [pullJob?.id, pullJob?.status]);
+
+  // On mount: hydrate latest job (so progress survives a refresh)
+  useEffect(() => {
+    if (isAdmin) void refreshPullJob();
+  }, [isAdmin]);
+
   const pullAzure = async () => {
     setBusy("azure_repo-pull");
     try {
       const res = (await callServer(`/api/admin/connections/pull-azure`, {})) as {
-        message?: string;
-        summary?: Record<string, { rows?: number; bytes: number; skipped?: string }>;
+        jobId?: string;
+        filesTotal?: number;
       } | null;
-      toast.success(res?.message ?? "Azure DevOps data pulled");
+      if (res?.jobId) {
+        toast.success(`Queued — ${res.filesTotal ?? 0} file(s) to pull`);
+        await refreshPullJob(res.jobId);
+      }
       await reload();
     } catch (e) {
       toast.error(`Pull failed: ${(e as Error).message}`);
