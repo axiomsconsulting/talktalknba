@@ -99,15 +99,15 @@ const DBX_GATEWAY = "https://connector-gateway.lovable.dev/databricks";
 
 export function gatewayHeaders(connectorEnv: "GOOGLE_DRIVE_API_KEY" | "DATABRICKS_API_KEY") {
   const lovableKey = process.env.LOVABLE_API_KEY;
-  // Connectors may be linked under suffixed env names (e.g. GOOGLE_DRIVE_API_KEY_1)
-  // when an older connection has been disconnected. Pick the first non-empty one.
-  let connKey = process.env[connectorEnv];
-  if (!connKey) {
-    for (let i = 1; i <= 5; i += 1) {
-      const v = process.env[`${connectorEnv}_${i}`];
-      if (v) { connKey = v; break; }
-    }
+  // Prefer suffixed env names (e.g. GOOGLE_DRIVE_API_KEY_1) over the bare name —
+  // a suffix means the platform has issued a fresh credential after a previous
+  // workspace connection was disconnected, and the bare env var may now be stale.
+  let connKey: string | undefined;
+  for (let i = 5; i >= 1; i -= 1) {
+    const v = process.env[`${connectorEnv}_${i}`];
+    if (v) { connKey = v; break; }
   }
+  if (!connKey) connKey = process.env[connectorEnv];
   if (!lovableKey) throw jsonError(412, "LOVABLE_API_KEY missing — connect a Lovable connector");
   if (!connKey)
     throw jsonError(
