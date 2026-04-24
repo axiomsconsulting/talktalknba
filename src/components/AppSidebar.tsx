@@ -7,6 +7,7 @@ import {
   Database,
   PackageOpen,
   Settings2,
+  Activity,
   Menu,
   X,
   LogOut,
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { to: "/strategy", short: "Strategy", label: "NBA Strategy", icon: Workflow },
   { to: "/nba-rules", short: "Rules", label: "NBA Rules", icon: Settings2 },
   { to: "/products", short: "Catalogue", label: "Product Catalogue", icon: PackageOpen },
+  { to: "/model", short: "Model", label: "Model Metrics", icon: Activity },
   { to: "/data", short: "Data", label: "Data Library", icon: Database },
 ] as const;
 
