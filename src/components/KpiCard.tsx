@@ -13,6 +13,7 @@ export function KpiCard({
   accent = "primary",
   className,
   prov,
+  compact = false,
 }: {
   label: string;
   value: string | null | undefined;
@@ -26,6 +27,8 @@ export function KpiCard({
    * pass null only to deliberately render the "no source" state.
    */
   prov: Provenance | null;
+  /** Smaller padding/type — useful when packing 4 tiles in a tight row. */
+  compact?: boolean;
 }) {
   const accentClasses: Record<string, string> = {
     primary: "from-primary/10 to-primary/0 text-primary",
@@ -43,37 +46,46 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]",
+        "relative overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]",
+        compact ? "p-3" : "p-5",
         className
       )}
     >
       <div
         className={cn(
-          "absolute inset-x-0 top-0 h-20 bg-gradient-to-b pointer-events-none opacity-80",
+          "absolute inset-x-0 top-0 bg-gradient-to-b pointer-events-none opacity-80",
+          compact ? "h-12" : "h-20",
           accentClasses[accent]
         )}
       />
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="relative flex items-start justify-between gap-2">
+        <div
+          className={cn(
+            "font-semibold uppercase tracking-wider text-muted-foreground leading-tight",
+            compact ? "text-[10px]" : "text-[11px]"
+          )}
+        >
           {label}
         </div>
         {Icon && (
           <div
             className={cn(
-              "size-8 rounded-lg flex items-center justify-center",
+              "rounded-lg flex items-center justify-center shrink-0",
+              compact ? "size-6" : "size-8",
               accent === "primary" && "bg-primary/10 text-primary",
               accent === "risk" && "bg-[var(--risk-high)]/10 text-[var(--risk-high)]",
               accent === "success" && "bg-[var(--success)]/10 text-[var(--success)]",
               accent === "neutral" && "bg-muted text-muted-foreground"
             )}
           >
-            <Icon className="size-4" />
+            <Icon className={compact ? "size-3" : "size-4"} />
           </div>
         )}
       </div>
       <div
         className={cn(
-          "relative mt-3 text-3xl font-semibold tracking-tight tabular-nums",
+          "relative font-semibold tracking-tight tabular-nums",
+          compact ? "mt-2 text-xl" : "mt-3 text-3xl",
           noSource ? "text-muted-foreground/60" : "text-foreground",
         )}
         title={
@@ -84,8 +96,13 @@ export function KpiCard({
       >
         {noSource ? "—" : value}
       </div>
-      <div className="relative mt-1.5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2 min-w-0">
+      <div
+        className={cn(
+          "relative flex items-center justify-between gap-2 text-muted-foreground",
+          compact ? "mt-1 text-[10.5px]" : "mt-1.5 text-xs"
+        )}
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
           {sub && !noSource && <span className="truncate">{sub}</span>}
           {noSource && (
             <span className="truncate italic">No source connected</span>
@@ -93,7 +110,7 @@ export function KpiCard({
           {trend && !noSource && (
             <span
               className={cn(
-                "inline-flex items-center gap-1 font-medium",
+                "inline-flex items-center gap-1 font-medium shrink-0",
                 trend.direction === "up" && "text-[var(--success)]",
                 trend.direction === "down" && "text-[var(--risk-high)]",
                 trend.direction === "neutral" && "text-muted-foreground"
