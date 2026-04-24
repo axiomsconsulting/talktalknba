@@ -20,6 +20,7 @@ import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminConnectionsRouteImport } from './routes/admin.connections'
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
 
 const StrategyRoute = StrategyRouteImport.update({
@@ -77,6 +78,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminConnectionsRoute = AdminConnectionsRouteImport.update({
+  id: '/admin/connections',
+  path: '/admin/connections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminBrandingRoute = AdminBrandingRouteImport.update({
   id: '/admin/branding',
   path: '/admin/branding',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
+  '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
+  '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/strategy': typeof StrategyRoute
   '/admin/branding': typeof AdminBrandingRoute
+  '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
+    | '/admin/connections'
     | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
+    | '/admin/connections'
     | '/admin/users'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/strategy'
     | '/admin/branding'
+    | '/admin/connections'
     | '/admin/users'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   StrategyRoute: typeof StrategyRoute
   AdminBrandingRoute: typeof AdminBrandingRoute
+  AdminConnectionsRoute: typeof AdminConnectionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
 
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/connections': {
+      id: '/admin/connections'
+      path: '/admin/connections'
+      fullPath: '/admin/connections'
+      preLoaderRoute: typeof AdminConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/branding': {
       id: '/admin/branding'
       path: '/admin/branding'
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   StrategyRoute: StrategyRoute,
   AdminBrandingRoute: AdminBrandingRoute,
+  AdminConnectionsRoute: AdminConnectionsRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport

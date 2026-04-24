@@ -180,7 +180,7 @@ function ConnectionsAdminPage() {
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? (kind === "databricks" ? "Databricks" : "Google Drive"),
-      config: patch.config ?? existing?.config ?? {},
+      config: (patch.config ?? existing?.config ?? {}) as never,
       schedule_cron: patch.schedule_cron ?? existing?.schedule_cron ?? null,
       enabled: patch.enabled ?? existing?.enabled ?? true,
     };
