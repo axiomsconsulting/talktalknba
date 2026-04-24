@@ -34,7 +34,7 @@ export const Route = createFileRoute("/explainability")({
       },
     ],
   }),
-  component: ExplainabilityPage;
+  component: ExplainabilityPage,
 });
 
 function ExplainabilityPage() {
