@@ -37,6 +37,8 @@ export function TopImpactedCustomers() {
   const [rows, setRows] = useState<TopCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastImport, setLastImport] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 5;
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +50,7 @@ export function TopImpactedCustomers() {
     const list = (data ?? []) as TopCustomer[];
     setRows(list);
     setLastImport(list[0]?.created_at ?? null);
+    setPage(0);
     setLoading(false);
   };
 
@@ -56,6 +59,11 @@ export function TopImpactedCustomers() {
   }, []);
 
   const empty = !loading && rows.length === 0;
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageRows = useMemo(
+    () => rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [rows, page],
+  );
 
   return (
     <section className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
