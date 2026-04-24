@@ -81,10 +81,15 @@ function enrichCustomers(
   if (callsMap.size === 0 && ceaseMap.size === 0 && usageMap.size === 0) return base;
 
   return base.map((c) => {
-    const idTail = c.id.replace(/^TT-/, "").toLowerCase();
+    const cid = c.id.toLowerCase();
+    const idTail = cid.replace(/^tt-/, "");
     const findKey = (m: Map<string, unknown>): unknown => {
+      // Direct hit (full unique_customer_identifier match) — fast path for uploaded data
+      const direct = m.get(c.id) ?? m.get(cid);
+      if (direct) return direct;
       for (const [k, v] of m) {
-        if (k.toLowerCase().startsWith(idTail) || idTail.startsWith(k.toLowerCase().slice(0, 6))) {
+        const lk = k.toLowerCase();
+        if (lk === cid || lk.startsWith(idTail) || idTail.startsWith(lk.slice(0, 6))) {
           return v;
         }
       }
