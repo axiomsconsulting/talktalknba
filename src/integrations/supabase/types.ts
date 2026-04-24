@@ -21,6 +21,7 @@ export type Database = {
           app_name: string
           email_reply_to: string | null
           email_sender_name: string | null
+          favicon_url: string | null
           gradient_css: string
           id: string
           is_singleton: boolean
@@ -36,6 +37,7 @@ export type Database = {
           app_name?: string
           email_reply_to?: string | null
           email_sender_name?: string | null
+          favicon_url?: string | null
           gradient_css?: string
           id?: string
           is_singleton?: boolean
@@ -51,6 +53,7 @@ export type Database = {
           app_name?: string
           email_reply_to?: string | null
           email_sender_name?: string | null
+          favicon_url?: string | null
           gradient_css?: string
           id?: string
           is_singleton?: boolean
