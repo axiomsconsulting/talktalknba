@@ -375,6 +375,14 @@ function CustomerDetail({ customer, rules }: { customer: Customer; rules: import
             />
           </div>
         )}
+
+        {/* Customer LTV + dilution economics for the matched rule */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <Pill label="Customer LTV" value={formatGbp(ltv)} />
+          <Pill label="Proposed discount" value={`${discountPct.toFixed(0)}% · ${horizonMonths}mo`} />
+          <Pill label="Revenue dilution" value={`−${formatGbp(dilutionGbp)}`} tone={dilutionGbp > 0 ? "warn" : undefined} />
+          <Pill label="Net retained value" value={formatGbp(netRetainedGbp)} />
+        </div>
       </div>
 
       {/* Why this customer — plain-English drill-down of top + and − drivers */}
