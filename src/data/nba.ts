@@ -160,35 +160,43 @@ export const treatmentMatrix: Array<{
   },
 ];
 
+// Compact formatter implemented manually so SSR (Node ICU) and the browser
+// always agree byte-for-byte. Intl.NumberFormat with notation:"compact" can
+// disagree between runtimes (e.g. "£71M" vs "£71.0M") because of CLDR
+// version drift, which causes React hydration mismatches.
+function compactGbp(value: number): string {
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${sign}£${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}£${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}£${Math.round(abs / 1_000)}K`;
+  return `${sign}£${Math.round(abs)}`;
+}
+
+function compactNumber(value: number): string {
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${sign}${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}${Math.round(abs / 1_000)}K`;
+  return `${sign}${Math.round(abs)}`;
+}
+
 export function formatGbp(value: number, opts?: { compact?: boolean }): string {
-  if (opts?.compact) {
-    // Round to integer millions/thousands first to avoid SSR/client hydration
-    // mismatches from locale-specific fractional rounding.
-    const abs = Math.abs(value);
-    let rounded = value;
-    if (abs >= 1_000_000) rounded = Math.round(value / 100_000) * 100_000;
-    else if (abs >= 1_000) rounded = Math.round(value / 100) * 100;
-    else rounded = Math.round(value);
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: "GBP",
-      notation: "compact",
-      maximumFractionDigits: 0,
-    }).format(rounded);
-  }
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(Math.round(value));
+  if (opts?.compact) return compactGbp(value);
+  // Manual thousands formatting for SSR/client parity.
+  const rounded = Math.round(value);
+  const sign = rounded < 0 ? "-" : "";
+  const parts = Math.abs(rounded).toString().split("");
+  for (let i = parts.length - 3; i > 0; i -= 3) parts.splice(i, 0, ",");
+  return `${sign}£${parts.join("")}`;
 }
 
 export function formatNumber(value: number, opts?: { compact?: boolean }): string {
-  if (opts?.compact) {
-    return new Intl.NumberFormat("en-GB", {
-      notation: "compact",
-      maximumFractionDigits: 0,
-    }).format(Math.round(value));
-  }
-  return new Intl.NumberFormat("en-GB").format(Math.round(value));
+  if (opts?.compact) return compactNumber(value);
+  const rounded = Math.round(value);
+  const sign = rounded < 0 ? "-" : "";
+  const parts = Math.abs(rounded).toString().split("");
+  for (let i = parts.length - 3; i > 0; i -= 3) parts.splice(i, 0, ",");
+  return `${sign}${parts.join("")}`;
 }
