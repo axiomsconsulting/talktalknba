@@ -53,6 +53,17 @@ export const Route = createFileRoute("/api/admin/connections/test")({
             return jsonOk({ ok: true, folder: data.name, mime: data.mimeType });
           }
 
+          if (kind === "motherduck") {
+            const cfg = (conn.config ?? {}) as Partial<MotherDuckConfig>;
+            if (!cfg.database) return jsonError(400, "database missing — save MotherDuck config first");
+            const out = await motherduckQuery(cfg as MotherDuckConfig, "SELECT 1 AS ok");
+            await supabaseAdmin
+              .from("data_connections")
+              .update({ last_status: "success", last_error: null, last_run_at: new Date().toISOString() })
+              .eq("id", conn.id);
+            return jsonOk({ ok: true, rows: out.rows.length });
+          }
+
           // Databricks
           const cfg = (conn.config ?? {}) as { warehouse_id?: string };
           if (!cfg.warehouse_id) return jsonError(400, "warehouse_id missing — save Databricks config first");
