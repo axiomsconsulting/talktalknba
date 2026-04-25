@@ -93,6 +93,8 @@ function ExplainabilityPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
+  const [filters, setFilters] = useState<CustomerFilters>(EMPTY_FILTERS);
+  const facets = useCustomerFacets({ customers: allCustomers, liveEnabled: mdLiveEnabled });
 
   // Live MotherDuck search state.
   const [liveRows, setLiveRows] = useState<Customer[]>([]);
