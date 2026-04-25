@@ -139,7 +139,7 @@ function DataPage() {
       <PageHeader
         eyebrow="Data · Control plane"
         title="Customer data sources"
-        description="Choose where the dashboard reads from — sample data, a local upload, MotherDuck (live), Google Drive or Databricks. Behavioural enrichment cards show which signals are live."
+        description="The single place to enable, disable and switch the live data source — sample, local upload, MotherDuck (live), Google Drive or Databricks. Behavioural enrichment cards show which signals are live. Deep connector credentials live under Admin · Connector setup."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
