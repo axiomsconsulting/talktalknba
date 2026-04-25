@@ -70,6 +70,13 @@ type CustomerStore = {
 
   /** Persists the active selection to DB (idempotent, admin-only). */
   persistActive: (args: PersistArgs) => Promise<void>;
+
+  /**
+   * Wipes every active "upload"-origin selection (customer_info + enrichments)
+   * from the in-memory store *and* the active_data_sources table, restoring
+   * the bundled sample dataset. Used when the dataset library is emptied.
+   */
+  clearAllUploads: () => Promise<void>;
 };
 
 function enrichCustomers(
@@ -345,5 +352,25 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
       .from("active_data_sources")
       .upsert(payload, { onConflict: "kind" });
     if (error) console.warn("[customerStore] persistActive failed", error);
+  },
+
+  clearAllUploads: async () => {
+    // Reset in-memory state back to the bundled sample dataset.
+    set({
+      customers: defaultCustomers,
+      source: { kind: "mock" },
+      callsMap: new Map(),
+      ceaseMap: new Map(),
+      usageMap: new Map(),
+      callsSource: null,
+      ceaseSource: null,
+      usageSource: null,
+    });
+    // Drop every upload-origin row from the persisted active sources.
+    const { error } = await supabase
+      .from("active_data_sources")
+      .delete()
+      .eq("origin", "upload");
+    if (error) console.warn("[customerStore] clearAllUploads failed", error);
   },
 }));

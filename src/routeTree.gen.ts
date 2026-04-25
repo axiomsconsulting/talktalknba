@@ -31,6 +31,7 @@ import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public
 import { Route as ApiAdminTrainingKitRouteImport } from './routes/api.admin.training.kit'
 import { Route as ApiAdminTrainingImportRouteImport } from './routes/api.admin.training.import'
 import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
+import { Route as ApiAdminConnectionsSearchMotherduckRouteImport } from './routes/api.admin.connections.search-motherduck'
 import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.admin.connections.retrain'
 import { Route as ApiAdminConnectionsQueryMotherduckRouteImport } from './routes/api.admin.connections.query-motherduck'
 import { Route as ApiAdminConnectionsPullStatusRouteImport } from './routes/api.admin.connections.pull-status'
@@ -155,6 +156,12 @@ const ApiAdminConnectionsTestRoute = ApiAdminConnectionsTestRouteImport.update({
   path: '/api/admin/connections/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminConnectionsSearchMotherduckRoute =
+  ApiAdminConnectionsSearchMotherduckRouteImport.update({
+    id: '/api/admin/connections/search-motherduck',
+    path: '/api/admin/connections/search-motherduck',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminConnectionsRetrainRoute =
   ApiAdminConnectionsRetrainRouteImport.update({
     id: '/api/admin/connections/retrain',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -301,6 +310,7 @@ export interface FileRoutesById {
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
+  '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
+    | '/api/admin/connections/search-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
+    | '/api/admin/connections/search-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -402,6 +414,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
+    | '/api/admin/connections/search-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -436,6 +449,7 @@ export interface RootRouteChildren {
   ApiAdminConnectionsPullStatusRoute: typeof ApiAdminConnectionsPullStatusRoute
   ApiAdminConnectionsQueryMotherduckRoute: typeof ApiAdminConnectionsQueryMotherduckRoute
   ApiAdminConnectionsRetrainRoute: typeof ApiAdminConnectionsRetrainRoute
+  ApiAdminConnectionsSearchMotherduckRoute: typeof ApiAdminConnectionsSearchMotherduckRoute
   ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
   ApiAdminTrainingImportRoute: typeof ApiAdminTrainingImportRoute
   ApiAdminTrainingKitRoute: typeof ApiAdminTrainingKitRoute
@@ -602,6 +616,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/search-motherduck': {
+      id: '/api/admin/connections/search-motherduck'
+      path: '/api/admin/connections/search-motherduck'
+      fullPath: '/api/admin/connections/search-motherduck'
+      preLoaderRoute: typeof ApiAdminConnectionsSearchMotherduckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/connections/retrain': {
       id: '/api/admin/connections/retrain'
       path: '/api/admin/connections/retrain'
@@ -694,6 +715,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsQueryMotherduckRoute:
     ApiAdminConnectionsQueryMotherduckRoute,
   ApiAdminConnectionsRetrainRoute: ApiAdminConnectionsRetrainRoute,
+  ApiAdminConnectionsSearchMotherduckRoute:
+    ApiAdminConnectionsSearchMotherduckRoute,
   ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
   ApiAdminTrainingImportRoute: ApiAdminTrainingImportRoute,
   ApiAdminTrainingKitRoute: ApiAdminTrainingKitRoute,

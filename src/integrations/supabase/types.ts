@@ -537,6 +537,7 @@ export type Database = {
         | "gdrive"
         | "azure_repo"
         | "motherduck"
+        | "local_upload"
       data_run_status: "pending" | "running" | "success" | "error"
     }
     CompositeTypes: {
@@ -672,6 +673,7 @@ export const Constants = {
         "gdrive",
         "azure_repo",
         "motherduck",
+        "local_upload",
       ],
       data_run_status: ["pending", "running", "success", "error"],
     },

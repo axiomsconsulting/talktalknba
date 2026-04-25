@@ -30,6 +30,8 @@ import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { customerLtv } from "@/data/financials";
 import { hydrateLiveCustomers } from "@/data/liveCustomerHydrator";
+import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_MAPPING, mapCustomers, type RawCustomerRow } from "@/data/customerMapping";
 import { cn } from "@/lib/utils";
 import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
 
@@ -62,9 +64,33 @@ function ExplainabilityPage() {
   // shows real customers (not the bundled personas) after a hard refresh.
   useEffect(() => { void hydrateLiveCustomers(); }, []);
 
+  // Detect whether MotherDuck is the active live source — if so, the
+  // customer search runs against the online DuckDB instead of the in-memory
+  // store, so we can browse / search the full customer base.
+  const [mdLiveEnabled, setMdLiveEnabled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const { data } = await supabase
+        .from("data_connections")
+        .select("enabled")
+        .eq("kind", "motherduck")
+        .maybeSingle();
+      if (alive) setMdLiveEnabled(!!data?.enabled);
+    })();
+    return () => { alive = false; };
+  }, []);
+
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
+
+  // Live MotherDuck search state.
+  const [liveRows, setLiveRows] = useState<Customer[]>([]);
+  const [liveTotal, setLiveTotal] = useState(0);
+  const [liveTotalAll, setLiveTotalAll] = useState(0);
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   const importanceData = useMemo(
     () =>
@@ -78,7 +104,53 @@ function ExplainabilityPage() {
     []
   );
 
+  // (filteredCustomers is declared below — handles both live MotherDuck and
+  // in-memory mode.)
+
+  const PAGE_SIZE = 5;
+
+  // When MotherDuck live mode is on, we run a server-paged search against the
+  // online DuckDB. Otherwise we filter the in-memory store as before.
+  useEffect(() => {
+    if (!mdLiveEnabled) return;
+    let cancelled = false;
+    setLiveBusy(true);
+    setLiveError(null);
+    const handle = setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch("/api/admin/connections/search-motherduck", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ q: query, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+        });
+        const json = (await res.json()) as {
+          headers?: string[]; rows?: unknown[][]; total?: number; totalAll?: number; error?: string;
+        };
+        if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+        if (cancelled) return;
+        const objects = (json.rows ?? []).map((r) => {
+          const o: RawCustomerRow = {};
+          (json.headers ?? []).forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
+          return o;
+        });
+        setLiveRows(mapCustomers(objects, DEFAULT_MAPPING));
+        setLiveTotal(json.total ?? 0);
+        setLiveTotalAll(json.totalAll ?? 0);
+      } catch (e) {
+        if (!cancelled) setLiveError((e as Error).message);
+      } finally {
+        if (!cancelled) setLiveBusy(false);
+      }
+    }, 250); // debounce
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [mdLiveEnabled, query, page]);
+
   const filteredCustomers = useMemo(() => {
+    if (mdLiveEnabled) return liveRows;
     const q = query.trim().toLowerCase();
     if (!q) return allCustomers;
     return allCustomers.filter(
@@ -89,10 +161,13 @@ function ExplainabilityPage() {
         c.region.toLowerCase().includes(q) ||
         (c.persona ?? "").toLowerCase().includes(q)
     );
-  }, [query, allCustomers]);
+  }, [query, allCustomers, mdLiveEnabled, liveRows]);
 
-  const PAGE_SIZE = 5;
-  const pageCount = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+  const totalCustomersForCount = mdLiveEnabled ? liveTotalAll : allCustomers.length;
+  const matchesCount = mdLiveEnabled ? liveTotal : filteredCustomers.length;
+  const pageCount = mdLiveEnabled
+    ? Math.max(1, Math.ceil(liveTotal / PAGE_SIZE))
+    : Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
   // Reset/clamp page whenever the filtered set changes size.
   useEffect(() => {
     if (page > pageCount - 1) setPage(0);
@@ -101,19 +176,25 @@ function ExplainabilityPage() {
   useEffect(() => { setPage(0); }, [query]);
 
   const visibleCustomers = useMemo(
-    () => filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
-    [filteredCustomers, page],
+    () => mdLiveEnabled
+      ? liveRows
+      : filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredCustomers, page, mdLiveEnabled, liveRows],
   );
 
+  // Pool of customers we can pick "selected" from — live rows in MotherDuck
+  // mode, otherwise the in-memory store.
+  const pool = mdLiveEnabled ? liveRows : allCustomers;
   // Auto-select the first real customer once live data lands so the detail
   // panel mirrors the active dataset rather than a stale persona.
   useEffect(() => {
-    if (allCustomers.length > 0 && !allCustomers.some((c) => c.id === selectedId)) {
-      setSelectedId(allCustomers[0].id);
+    if (pool.length > 0 && !pool.some((c) => c.id === selectedId)) {
+      setSelectedId(pool[0].id);
     }
-  }, [allCustomers, selectedId]);
+  }, [pool, selectedId]);
 
-  const selected = allCustomers.find((c) => c.id === selectedId) ?? allCustomers[0] ?? personas[0];
+  const selected = pool.find((c) => c.id === selectedId) ?? pool[0] ?? personas[0];
+
 
   return (
     <AppShell>
@@ -212,8 +293,17 @@ function ExplainabilityPage() {
                 />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
-                {filteredCustomers.length} of {allCustomers.length} customers ·{" "}
-                {source.kind === "uploaded" ? (
+                {matchesCount.toLocaleString()} of {totalCustomersForCount.toLocaleString()} customers ·{" "}
+                {mdLiveEnabled ? (
+                  <>
+                    live source{" "}
+                    <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]">
+                      MotherDuck (live)
+                    </code>
+                    {liveBusy && <span className="ml-1 italic">searching…</span>}
+                    {liveError && <span className="ml-1 text-[var(--risk-high)]">{liveError}</span>}
+                  </>
+                ) : source.kind === "uploaded" ? (
                   <>
                     live source{" "}
                     <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]">
@@ -226,7 +316,7 @@ function ExplainabilityPage() {
                     <code className="px-1 py-0.5 rounded bg-muted text-foreground/80 font-mono text-[10px]">
                       customer_info.parquet
                     </code>{" "}
-                    on the Data Library to swap in a real extract
+                    on the Data Library, or enable MotherDuck for live search
                   </>
                 )}
               </div>

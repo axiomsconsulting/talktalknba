@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck";
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
@@ -118,6 +118,7 @@ function DataPage() {
   const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
+  const localConn = connections.find((c) => c.kind === "local_upload");
 
   // Derive which source is currently powering the customer base
   const activeSourceKey: SourceKey = useMemo(() => {
@@ -150,6 +151,7 @@ function DataPage() {
           gdriveConn={gdriveConn}
           dbxConn={dbxConn}
           mdConn={mdConn}
+          localConn={localConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
@@ -221,8 +223,9 @@ function DataPage() {
               />
             </TabsContent>
 
-            <TabsContent value="upload" className="mt-5">
-              <UploadCard onUploaded={refresh} />
+            <TabsContent value="upload" className="mt-5 space-y-4">
+              <LocalUploadToggle conn={localConn} onChanged={refresh} />
+              {localConn?.enabled !== false && <UploadCard onUploaded={refresh} />}
             </TabsContent>
 
             <TabsContent value="motherduck" className="mt-5">
@@ -279,6 +282,7 @@ function ActiveSourcesOverview({
   gdriveConn,
   dbxConn,
   mdConn,
+  localConn,
   onReset,
   onJump,
 }: {
@@ -288,6 +292,7 @@ function ActiveSourcesOverview({
   gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
+  localConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
@@ -312,8 +317,15 @@ function ActiveSourcesOverview({
       subtitle:
         activeSourceKey === "upload" && source.kind === "uploaded"
           ? source.filename
-          : "CSV / Parquet, drop & map",
-      status: activeSourceKey === "upload" ? "active" : "available",
+          : localConn?.enabled === false
+            ? "Disabled — toggle in Connections"
+            : "CSV / Parquet, drop & map",
+      status:
+        activeSourceKey === "upload"
+          ? "active"
+          : localConn?.enabled
+            ? "configured"
+            : "not_configured",
     },
     {
       key: "motherduck",
@@ -572,6 +584,86 @@ function SamplePanel({
           {isActive ? "Sample data is active" : "Activate sample data"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Local upload connection toggle — makes the dataset library behave like the
+// other live integrations (enable/disable persists in data_connections).
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LocalUploadToggle({
+  conn,
+  onChanged,
+}: {
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+
+  async function toggle(value: boolean) {
+    if (!conn) {
+      toast.error("Local upload connection row missing — please refresh");
+      return;
+    }
+    setBusy(true);
+    setEnabled(value);
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", conn.id);
+    setBusy(false);
+    if (error) {
+      setEnabled(!value);
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      return;
+    }
+    if (!value) {
+      // Disabling local upload also wipes any active upload-origin selection
+      // so the dashboards stop reporting it as live.
+      await useCustomerStore.getState().clearAllUploads();
+    }
+    toast.success(`Local upload ${value ? "enabled" : "disabled"}`);
+    onChanged();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-4 sm:p-5 flex items-start gap-3">
+      <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <UploadCloud className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-semibold text-foreground">Local upload</div>
+          <span
+            className={cn(
+              "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+              enabled
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            )}
+          >
+            {enabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">
+          Drag-and-drop CSV / Parquet files into the dataset library. Disable to hide the
+          upload surface and clear any active upload-origin selection.
+        </div>
+      </div>
+      <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+        <span>{enabled ? "On" : "Off"}</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy}
+          onChange={(e) => toggle(e.target.checked)}
+          className="size-4 accent-primary"
+        />
+      </label>
     </div>
   );
 }
@@ -1789,6 +1881,36 @@ function DatasetTable({
     try {
       await supabase.storage.from("datasets").remove([d.storage_path]);
       await supabase.from("customer_datasets").delete().eq("id", d.id);
+
+      // If the file we just removed was powering an active enrichment or the
+      // live customer base, drop it from the persisted active sources too so
+      // the dashboards stop pretending it's still loaded.
+      const wasActive = isActiveFor(d);
+      if (wasActive) {
+        await supabase.from("active_data_sources").delete().eq("kind", d.kind);
+      }
+
+      // After delete, check whether the dataset library is now empty. If so,
+      // wipe every upload-origin selection and auto-disable the "Local upload"
+      // connection so the UI stops advertising it as a live source.
+      const { data: remaining } = await supabase
+        .from("customer_datasets")
+        .select("id")
+        .limit(1);
+      if (!remaining || remaining.length === 0) {
+        await useCustomerStore.getState().clearAllUploads();
+        await supabase
+          .from("data_connections")
+          .update({ enabled: false })
+          .eq("kind", "local_upload");
+        toast.success("Library cleared — local upload deactivated, sample data restored");
+      } else if (wasActive) {
+        // Library still has files but we just removed the active one — fall
+        // back to sample until the user activates another.
+        useCustomerStore.getState().reset();
+        toast.success("Active dataset removed — restored sample data");
+      }
+
       onChanged();
     } finally {
       setBusyId(null);
