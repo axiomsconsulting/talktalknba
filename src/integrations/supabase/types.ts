@@ -538,6 +538,7 @@ export type Database = {
         | "azure_repo"
         | "motherduck"
         | "local_upload"
+        | "sample"
       data_run_status: "pending" | "running" | "success" | "error"
     }
     CompositeTypes: {
@@ -674,6 +675,7 @@ export const Constants = {
         "azure_repo",
         "motherduck",
         "local_upload",
+        "sample",
       ],
       data_run_status: ["pending", "running", "success", "error"],
     },
