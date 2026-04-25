@@ -1421,7 +1421,7 @@ function MotherDuckPanel({
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
   onTest: () => void;
-  onPull: () => void;
+  onPull: (customerLimit?: number) => void;
   onCancel: () => void;
   pullJob: PullJob | null;
 }) {
