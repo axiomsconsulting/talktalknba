@@ -93,6 +93,7 @@ function DataPage() {
   const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const { customers, source, reset } = useCustomerStore();
+  const clearAll = useCustomerStore((s) => s.clearAll);
   const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
 
   async function refresh() {
@@ -119,9 +120,49 @@ function DataPage() {
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
   const localConn = connections.find((c) => c.kind === "local_upload");
+  const sampleConn = connections.find((c) => c.kind === "sample");
+
+  // If every connector (incl. sample) is disabled — wipe all data and show empty state.
+  // If sample is the only enabled source and the store is currently empty — restore sample.
+  const allDisabled =
+    connections.length > 0 &&
+    !sampleConn?.enabled &&
+    !mdConn?.enabled &&
+    !gdriveConn?.enabled &&
+    !dbxConn?.enabled &&
+    !localConn?.enabled;
+
+  useEffect(() => {
+    if (!connections.length) return;
+    if (allDisabled && source.kind !== "empty") {
+      void clearAll();
+    } else if (
+      sampleConn?.enabled &&
+      !mdConn?.enabled &&
+      !gdriveConn?.enabled &&
+      !dbxConn?.enabled &&
+      !localConn?.enabled &&
+      source.kind === "empty"
+    ) {
+      // Sample re-enabled while everything else is off → restore sample.
+      reset();
+    }
+  }, [
+    allDisabled,
+    sampleConn?.enabled,
+    mdConn?.enabled,
+    gdriveConn?.enabled,
+    dbxConn?.enabled,
+    localConn?.enabled,
+    source.kind,
+    connections.length,
+    reset,
+    clearAll,
+  ]);
 
   // Derive which source is currently powering the customer base
-  const activeSourceKey: SourceKey = useMemo(() => {
+  const activeSourceKey: SourceKey | "none" = useMemo(() => {
+    if (source.kind === "empty") return "none";
     if (source.kind === "mock") return "sample";
     const detail = (source as { detail?: string }).detail ?? "";
     if (detail.toLowerCase().includes("motherduck")) return "motherduck";
