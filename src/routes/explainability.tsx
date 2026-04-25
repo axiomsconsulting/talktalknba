@@ -122,6 +122,7 @@ function ExplainabilityPage() {
 
   // When MotherDuck live mode is on, we run a server-paged search against the
   // online DuckDB. Otherwise we filter the in-memory store as before.
+  const filtersBody = useMemo(() => filtersToQueryBody(filters), [filters]);
   useEffect(() => {
     if (!mdLiveEnabled) return;
     let cancelled = false;
@@ -136,7 +137,12 @@ function ExplainabilityPage() {
             "Content-Type": "application/json",
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({ q: query, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+          body: JSON.stringify({
+            q: query,
+            limit: PAGE_SIZE,
+            offset: page * PAGE_SIZE,
+            filters: filtersBody,
+          }),
         });
         const json = (await res.json()) as {
           headers?: string[]; rows?: unknown[][]; total?: number; totalAll?: number; error?: string;
@@ -158,13 +164,14 @@ function ExplainabilityPage() {
       }
     }, 250); // debounce
     return () => { cancelled = true; clearTimeout(handle); };
-  }, [mdLiveEnabled, query, page]);
+  }, [mdLiveEnabled, query, page, filtersBody]);
 
   const filteredCustomers = useMemo(() => {
     if (mdLiveEnabled) return liveRows;
+    const filtered = applyCustomerFilters(allCustomers, filters);
     const q = query.trim().toLowerCase();
-    if (!q) return allCustomers;
-    return allCustomers.filter(
+    if (!q) return filtered;
+    return filtered.filter(
       (c) =>
         c.id.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
@@ -172,7 +179,9 @@ function ExplainabilityPage() {
         c.region.toLowerCase().includes(q) ||
         (c.persona ?? "").toLowerCase().includes(q)
     );
-  }, [query, allCustomers, mdLiveEnabled, liveRows]);
+  }, [query, allCustomers, mdLiveEnabled, liveRows, filters]);
+  // Reset page to 0 when filters change.
+  useEffect(() => { setPage(0); }, [filters]);
 
   const totalCustomersForCount = mdLiveEnabled ? liveTotalAll : allCustomers.length;
   const matchesCount = mdLiveEnabled ? liveTotal : filteredCustomers.length;
