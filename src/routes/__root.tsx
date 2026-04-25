@@ -126,6 +126,9 @@ function LiveDataHydrator() {
   useEffect(() => {
     void load(!!userId);
     void hydrateCustomers();
+    // Once a user is signed in, also try to materialise live data from the
+    // currently-active source (e.g. MotherDuck → in-memory customer store).
+    if (userId) void hydrateLiveCustomers();
   }, [load, hydrateCustomers, userId]);
   return null;
 }
