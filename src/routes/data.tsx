@@ -278,6 +278,7 @@ function ActiveSourcesOverview({
   source,
   gdriveConn,
   dbxConn,
+  mdConn,
   onReset,
   onJump,
 }: {
@@ -286,6 +287,7 @@ function ActiveSourcesOverview({
   source: ReturnType<typeof useCustomerStore.getState>["source"];
   gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
+  mdConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
@@ -312,6 +314,22 @@ function ActiveSourcesOverview({
           ? source.filename
           : "CSV / Parquet, drop & map",
       status: activeSourceKey === "upload" ? "active" : "available",
+    },
+    {
+      key: "motherduck",
+      icon: Cloud,
+      title: "MotherDuck (live)",
+      subtitle: mdConn?.enabled
+        ? `Live · ${mdConn.name}`
+        : mdConn
+          ? "Configured · disabled"
+          : "Not configured",
+      status:
+        activeSourceKey === "motherduck"
+          ? "active"
+          : mdConn?.enabled
+            ? "configured"
+            : "not_configured",
     },
     {
       key: "gdrive",
@@ -348,9 +366,11 @@ function ActiveSourcesOverview({
       ? "Sample data"
       : activeSourceKey === "upload"
         ? "Local upload"
-        : activeSourceKey === "gdrive"
-          ? "Google Drive"
-          : "Databricks";
+        : activeSourceKey === "motherduck"
+          ? "MotherDuck (live)"
+          : activeSourceKey === "gdrive"
+            ? "Google Drive"
+            : "Databricks";
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
