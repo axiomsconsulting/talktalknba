@@ -171,7 +171,6 @@ function RoiPage() {
                 : null
             }
           />
-          />
 
           {/* Financial KPIs · driven by the editable NBA rules */}
           <KpiCard
