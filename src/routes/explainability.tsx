@@ -106,6 +106,25 @@ function ExplainabilityPage() {
   const facets = useCustomerFacets({ customers: allCustomers, liveEnabled: mdLiveEnabled });
   const [drawerOpenId, setDrawerOpenId] = useState<string | null>(null);
 
+  // The query/filters the user has typed/picked vs what we've actually
+  // submitted. Search runs only when the user clicks "Search" (or hits Enter)
+  // — this keeps MotherDuck quiet while the analyst dials in a complex
+  // multi-filter scenario, instead of hammering it on every keystroke /
+  // slider tick.
+  const [appliedQuery, setAppliedQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<CustomerFilters>(EMPTY_FILTERS);
+  const hasPendingChanges = useMemo(
+    () =>
+      query !== appliedQuery ||
+      JSON.stringify(filters) !== JSON.stringify(appliedFilters),
+    [query, appliedQuery, filters, appliedFilters],
+  );
+  const runSearch = () => {
+    setAppliedQuery(query);
+    setAppliedFilters(filters);
+    setPage(0);
+  };
+
   // Live MotherDuck search state.
   const [liveRows, setLiveRows] = useState<Customer[]>([]);
   const [liveTotal, setLiveTotal] = useState(0);
@@ -128,17 +147,21 @@ function ExplainabilityPage() {
   // (filteredCustomers is declared below — handles both live MotherDuck and
   // in-memory mode.)
 
-  const PAGE_SIZE = 5;
+  // Pre-populate the customer list with at least 50 customers from MotherDuck
+  // so the analyst lands on a useful sample, not 5 rows. Server caps at 200.
+  const PAGE_SIZE = 50;
 
   // When MotherDuck live mode is on, we run a server-paged search against the
   // online DuckDB. Otherwise we filter the in-memory store as before.
-  const filtersBody = useMemo(() => filtersToQueryBody(filters), [filters]);
+  // The query depends on `appliedQuery`/`appliedFilters` (not raw inputs) so
+  // the user controls when it fires via the Search button.
+  const filtersBody = useMemo(() => filtersToQueryBody(appliedFilters), [appliedFilters]);
   useEffect(() => {
     if (!mdLiveEnabled) return;
     let cancelled = false;
     setLiveBusy(true);
     setLiveError(null);
-    const handle = setTimeout(async () => {
+    (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch("/api/admin/connections/search-motherduck", {
@@ -148,7 +171,7 @@ function ExplainabilityPage() {
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
           body: JSON.stringify({
-            q: query,
+            q: appliedQuery,
             limit: PAGE_SIZE,
             offset: page * PAGE_SIZE,
             filters: filtersBody,
@@ -172,14 +195,14 @@ function ExplainabilityPage() {
       } finally {
         if (!cancelled) setLiveBusy(false);
       }
-    }, 250); // debounce
-    return () => { cancelled = true; clearTimeout(handle); };
-  }, [mdLiveEnabled, query, page, filtersBody]);
+    })();
+    return () => { cancelled = true; };
+  }, [mdLiveEnabled, appliedQuery, page, filtersBody]);
 
   const filteredCustomers = useMemo(() => {
     if (mdLiveEnabled) return liveRows;
-    const filtered = applyCustomerFilters(allCustomers, filters);
-    const q = query.trim().toLowerCase();
+    const filtered = applyCustomerFilters(allCustomers, appliedFilters);
+    const q = appliedQuery.trim().toLowerCase();
     if (!q) return filtered;
     return filtered.filter(
       (c) =>
@@ -189,9 +212,7 @@ function ExplainabilityPage() {
         c.region.toLowerCase().includes(q) ||
         (c.persona ?? "").toLowerCase().includes(q)
     );
-  }, [query, allCustomers, mdLiveEnabled, liveRows, filters]);
-  // Reset page to 0 when filters change.
-  useEffect(() => { setPage(0); }, [filters]);
+  }, [appliedQuery, allCustomers, mdLiveEnabled, liveRows, appliedFilters]);
 
   const totalCustomersForCount = mdLiveEnabled ? liveTotalAll : allCustomers.length;
   const matchesCount = mdLiveEnabled ? liveTotal : filteredCustomers.length;
@@ -202,8 +223,6 @@ function ExplainabilityPage() {
   useEffect(() => {
     if (page > pageCount - 1) setPage(0);
   }, [pageCount, page]);
-  // Reset page to 0 on a new search query.
-  useEffect(() => { setPage(0); }, [query]);
 
   const visibleCustomers = useMemo(
     () => mdLiveEnabled
