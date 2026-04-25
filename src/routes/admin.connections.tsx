@@ -436,6 +436,7 @@ function ConnectionsAdminPage() {
             conn={azr}
             busy={busy}
             onSave={(patch) => upsert("azure_repo", patch)}
+            onToggleEnabled={(v) => toggleEnabled("azure_repo", v)}
             onIngest={() => ingest("azure_repo")}
             onPull={pullAzure}
             onCancel={cancelPull}
@@ -448,6 +449,7 @@ function ConnectionsAdminPage() {
             conn={mdr}
             busy={busy}
             onSave={(patch) => upsert("motherduck", patch)}
+            onToggleEnabled={(v) => toggleEnabled("motherduck", v)}
             onTest={() => test("motherduck")}
             onPull={pullMotherduck}
             onCancel={cancelPull}
@@ -460,6 +462,7 @@ function ConnectionsAdminPage() {
             conn={dbx}
             busy={busy}
             onSave={(patch) => upsert("databricks", patch)}
+            onToggleEnabled={(v) => toggleEnabled("databricks", v)}
             onTest={() => test("databricks")}
             onIngest={() => ingest("databricks")}
             onRetrain={trigger}
@@ -471,6 +474,7 @@ function ConnectionsAdminPage() {
             conn={gdr}
             busy={busy}
             onSave={(patch) => upsert("gdrive", patch)}
+            onToggleEnabled={(v) => toggleEnabled("gdrive", v)}
             onTest={() => test("gdrive")}
             onIngest={() => ingest("gdrive")}
           />
