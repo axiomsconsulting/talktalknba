@@ -1076,7 +1076,7 @@ function AzurePanel({
               project secrets to read private repos.
             </p>
           </div>
-          <Switch id="az-enabled" checked={enabled} onCheckedChange={setEnabled} />
+          <Switch id="az-enabled" checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           <Label htmlFor="az-enabled">Enabled</Label>
         </div>
 
