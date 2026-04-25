@@ -372,6 +372,10 @@ function ExplainabilityPage() {
                   customer={c}
                   selected={selectedId === c.id}
                   onSelect={() => setSelectedId(c.id)}
+                  onExpand={() => {
+                    setSelectedId(c.id);
+                    setDrawerOpenId(c.id);
+                  }}
                 />
               ))}
             </div>
