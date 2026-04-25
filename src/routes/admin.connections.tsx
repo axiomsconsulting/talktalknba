@@ -321,7 +321,7 @@ function ConnectionsAdminPage() {
 
   const cancelPull = async () => {
     if (!pullJob) return;
-    setBusy("azure_repo-cancel");
+    setBusy("pull-cancel");
     try {
       await callServer(`/api/admin/connections/cancel-pull`, { jobId: pullJob.id });
       toast.success("Pull cancelled");
@@ -1003,7 +1003,7 @@ function MotherDuckPanel({
             {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
           </Button>
           {isPullActive(pullJob) ? (
-            <Button variant="destructive" onClick={onCancel} disabled={busy === "azure_repo-cancel"}>
+            <Button variant="destructive" onClick={onCancel} disabled={busy === "pull-cancel"}>
               <StopCircle className="size-4" /> Stop pull
             </Button>
           ) : null}
