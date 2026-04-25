@@ -332,14 +332,42 @@ function ExplainabilityPage() {
                 Customer Search
               </div>
               <h3 className="mt-1 text-base font-semibold text-foreground">Local explanations</h3>
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search ID, name, package, region…"
-                  className="pl-9"
-                />
+              <div className="mt-3 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        runSearch();
+                      }
+                    }}
+                    placeholder="Search ID (unique_customer_identifier), name, package, region…"
+                    className="pl-9"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={runSearch}
+                  disabled={liveBusy}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors shrink-0",
+                    hasPendingChanges
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    liveBusy && "opacity-60 cursor-not-allowed",
+                  )}
+                  title={
+                    hasPendingChanges
+                      ? "Apply filters and search"
+                      : "Re-run the current search"
+                  }
+                >
+                  <Search className="size-3.5" />
+                  {liveBusy ? "Searching…" : "Search"}
+                </button>
               </div>
               <div className="mt-3 space-y-2">
                 <CustomerFilterPresetsBar filters={filters} onLoad={setFilters} />
@@ -349,6 +377,11 @@ function ExplainabilityPage() {
                   facets={facets}
                   liveEnabled={mdLiveEnabled}
                 />
+                {hasPendingChanges && (
+                  <div className="text-[10px] text-primary/80 italic">
+                    Pending changes — click Search to apply.
+                  </div>
+                )}
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
                 {matchesCount.toLocaleString()} of {totalCustomersForCount.toLocaleString()} customers ·{" "}
