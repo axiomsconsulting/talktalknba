@@ -293,8 +293,17 @@ function ExplainabilityPage() {
                 />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
-                {filteredCustomers.length} of {allCustomers.length} customers ·{" "}
-                {source.kind === "uploaded" ? (
+                {matchesCount.toLocaleString()} of {totalCustomersForCount.toLocaleString()} customers ·{" "}
+                {mdLiveEnabled ? (
+                  <>
+                    live source{" "}
+                    <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]">
+                      MotherDuck (live)
+                    </code>
+                    {liveBusy && <span className="ml-1 italic">searching…</span>}
+                    {liveError && <span className="ml-1 text-[var(--risk-high)]">{liveError}</span>}
+                  </>
+                ) : source.kind === "uploaded" ? (
                   <>
                     live source{" "}
                     <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]">
@@ -307,7 +316,7 @@ function ExplainabilityPage() {
                     <code className="px-1 py-0.5 rounded bg-muted text-foreground/80 font-mono text-[10px]">
                       customer_info.parquet
                     </code>{" "}
-                    on the Data Library to swap in a real extract
+                    on the Data Library, or enable MotherDuck for live search
                   </>
                 )}
               </div>
