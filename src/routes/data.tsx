@@ -138,7 +138,7 @@ function DataPage() {
       <PageHeader
         eyebrow="Data · Control plane"
         title="Customer data sources"
-        description="Choose where the dashboard reads from — sample data, a local upload, Google Drive or Databricks. Behavioural enrichment cards show which signals are live."
+        description="Choose where the dashboard reads from — sample data, a local upload, MotherDuck (live), Google Drive or Databricks. Behavioural enrichment cards show which signals are live."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
@@ -149,6 +149,7 @@ function DataPage() {
           source={source}
           gdriveConn={gdriveConn}
           dbxConn={dbxConn}
+          mdConn={mdConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
@@ -277,6 +278,7 @@ function ActiveSourcesOverview({
   source,
   gdriveConn,
   dbxConn,
+  mdConn,
   onReset,
   onJump,
 }: {
@@ -285,6 +287,7 @@ function ActiveSourcesOverview({
   source: ReturnType<typeof useCustomerStore.getState>["source"];
   gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
+  mdConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
@@ -311,6 +314,22 @@ function ActiveSourcesOverview({
           ? source.filename
           : "CSV / Parquet, drop & map",
       status: activeSourceKey === "upload" ? "active" : "available",
+    },
+    {
+      key: "motherduck",
+      icon: Cloud,
+      title: "MotherDuck (live)",
+      subtitle: mdConn?.enabled
+        ? `Live · ${mdConn.name}`
+        : mdConn
+          ? "Configured · disabled"
+          : "Not configured",
+      status:
+        activeSourceKey === "motherduck"
+          ? "active"
+          : mdConn?.enabled
+            ? "configured"
+            : "not_configured",
     },
     {
       key: "gdrive",
@@ -347,9 +366,11 @@ function ActiveSourcesOverview({
       ? "Sample data"
       : activeSourceKey === "upload"
         ? "Local upload"
-        : activeSourceKey === "gdrive"
-          ? "Google Drive"
-          : "Databricks";
+        : activeSourceKey === "motherduck"
+          ? "MotherDuck (live)"
+          : activeSourceKey === "gdrive"
+            ? "Google Drive"
+            : "Databricks";
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
@@ -387,7 +408,7 @@ function ActiveSourcesOverview({
         )}
       </div>
 
-      <div className="p-5 sm:p-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="p-5 sm:p-7 grid grid-cols-2 lg:grid-cols-5 gap-3">
         {cards.map((c) => {
           const Icon = c.icon;
           const isActive = c.status === "active";
