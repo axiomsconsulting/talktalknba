@@ -38,7 +38,7 @@ export const Route = createFileRoute("/admin/connections")({
   component: ConnectionsAdminPage,
 });
 
-type ConnectionKind = "databricks" | "gdrive" | "azure_repo";
+type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck";
 type RunStatus = "pending" | "running" | "success" | "error";
 
 type DatabricksQuery = { kind: string; sql: string };
@@ -68,12 +68,24 @@ type AzureRepoConfig = {
   anonymous?: boolean;
   files?: Record<string, string>;
 };
+type MotherDuckConfig = {
+  database?: string;
+  schema?: string;
+  host?: string;
+  port?: number;
+  tables?: Partial<Record<"customer_info" | "calls" | "cease" | "usage", string>>;
+};
 
 type Connection = {
   id: string;
   kind: ConnectionKind;
   name: string;
-  config: DatabricksConfig | GDriveConfig | AzureRepoConfig | Record<string, unknown>;
+  config:
+    | DatabricksConfig
+    | GDriveConfig
+    | AzureRepoConfig
+    | MotherDuckConfig
+    | Record<string, unknown>;
   schedule_cron: string | null;
   enabled: boolean;
   last_run_at: string | null;
