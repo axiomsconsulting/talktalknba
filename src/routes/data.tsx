@@ -204,6 +204,7 @@ function DataPage() {
           dbxConn={dbxConn}
           mdConn={mdConn}
           localConn={localConn}
+          sampleConn={sampleConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
