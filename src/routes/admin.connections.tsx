@@ -376,6 +376,7 @@ function ConnectionsAdminPage() {
   const dbx = (conns ?? []).find((c) => c.kind === "databricks");
   const gdr = (conns ?? []).find((c) => c.kind === "gdrive");
   const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
+  const mdr = (conns ?? []).find((c) => c.kind === "motherduck");
 
   return (
     <AppShell>
