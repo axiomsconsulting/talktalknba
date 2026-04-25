@@ -223,8 +223,9 @@ function DataPage() {
               />
             </TabsContent>
 
-            <TabsContent value="upload" className="mt-5">
-              <UploadCard onUploaded={refresh} />
+            <TabsContent value="upload" className="mt-5 space-y-4">
+              <LocalUploadToggle conn={localConn} onChanged={refresh} />
+              {localConn?.enabled !== false && <UploadCard onUploaded={refresh} />}
             </TabsContent>
 
             <TabsContent value="motherduck" className="mt-5">
