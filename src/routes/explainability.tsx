@@ -242,7 +242,7 @@ function ExplainabilityPage() {
     }
   }, [pool, selectedId]);
 
-  const selected = pool.find((c) => c.id === selectedId) ?? pool[0] ?? personas[0];
+  
 
 
   return (
