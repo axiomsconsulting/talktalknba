@@ -226,7 +226,9 @@ function ConnectionsAdminPage() {
           ? "Google Drive"
           : kind === "motherduck"
             ? "MotherDuck"
-            : "Azure DevOps";
+            : kind === "local_upload"
+              ? "Local upload"
+              : "Azure DevOps";
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? defaultName,
