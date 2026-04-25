@@ -323,10 +323,12 @@ function ConnectionsAdminPage() {
     }
   };
 
-  const pullMotherduck = async () => {
+  const pullMotherduck = async (customerLimit?: number) => {
     setBusy("motherduck-pull");
     try {
-      const res = (await callServer(`/api/admin/connections/pull-motherduck`, {})) as {
+      const res = (await callServer(`/api/admin/connections/pull-motherduck`, {
+        customerLimit: customerLimit ?? null,
+      })) as {
         jobId?: string;
         filesTotal?: number;
       } | null;
