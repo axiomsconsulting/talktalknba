@@ -21,11 +21,21 @@ export const Route = createFileRoute("/api/public/hooks/pull-azure-worker")({
   server: {
     handlers: {
       POST: async () => {
-        // Find the oldest job that still has work to do
+        // Find the oldest active job whose connection is an Azure one.
+        // (pull_jobs has no FK to data_connections, so use a two-step lookup
+        // — and scope by kind so this worker never picks up a MotherDuck job.)
+        const { data: azConns } = await supabaseAdmin
+          .from("data_connections")
+          .select("id")
+          .eq("kind", "azure_repo");
+        const azIds = (azConns ?? []).map((c) => c.id);
+        if (azIds.length === 0) return json(200, { idle: true });
+
         const { data: job, error: jobErr } = await supabaseAdmin
           .from("pull_jobs")
           .select("*")
           .in("status", ["queued", "downloading", "parsing", "uploading"])
+          .in("connection_id", azIds)
           .order("started_at", { ascending: true })
           .limit(1)
           .maybeSingle();

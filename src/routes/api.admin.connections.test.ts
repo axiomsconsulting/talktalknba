@@ -6,6 +6,8 @@ import {
   gatewayHeaders,
   GATEWAY_URLS,
   databricksRunSql,
+  motherduckQuery,
+  type MotherDuckConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -21,8 +23,8 @@ export const Route = createFileRoute("/api/admin/connections/test")({
 
         const body = (await request.json().catch(() => null)) as { kind?: string } | null;
         const kind = body?.kind;
-        if (kind !== "databricks" && kind !== "gdrive") {
-          return jsonError(400, "kind must be 'databricks' or 'gdrive'");
+        if (kind !== "databricks" && kind !== "gdrive" && kind !== "motherduck") {
+          return jsonError(400, "kind must be 'databricks', 'gdrive', or 'motherduck'");
         }
 
         const { data: conn, error } = await supabaseAdmin
@@ -49,6 +51,17 @@ export const Route = createFileRoute("/api/admin/connections/test")({
               .update({ last_status: "success", last_error: null, last_run_at: new Date().toISOString() })
               .eq("id", conn.id);
             return jsonOk({ ok: true, folder: data.name, mime: data.mimeType });
+          }
+
+          if (kind === "motherduck") {
+            const cfg = (conn.config ?? {}) as Partial<MotherDuckConfig>;
+            if (!cfg.database) return jsonError(400, "database missing — save MotherDuck config first");
+            const out = await motherduckQuery(cfg as MotherDuckConfig, "SELECT 1 AS ok");
+            await supabaseAdmin
+              .from("data_connections")
+              .update({ last_status: "success", last_error: null, last_run_at: new Date().toISOString() })
+              .eq("id", conn.id);
+            return jsonOk({ ok: true, rows: out.rows.length });
           }
 
           // Databricks
