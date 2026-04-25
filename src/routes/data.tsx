@@ -281,6 +281,7 @@ function ActiveSourcesOverview({
   gdriveConn,
   dbxConn,
   mdConn,
+  localConn,
   onReset,
   onJump,
 }: {
@@ -290,6 +291,7 @@ function ActiveSourcesOverview({
   gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
+  localConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
@@ -314,8 +316,15 @@ function ActiveSourcesOverview({
       subtitle:
         activeSourceKey === "upload" && source.kind === "uploaded"
           ? source.filename
-          : "CSV / Parquet, drop & map",
-      status: activeSourceKey === "upload" ? "active" : "available",
+          : localConn?.enabled === false
+            ? "Disabled — toggle in Connections"
+            : "CSV / Parquet, drop & map",
+      status:
+        activeSourceKey === "upload"
+          ? "active"
+          : localConn?.enabled
+            ? "configured"
+            : "not_configured",
     },
     {
       key: "motherduck",
