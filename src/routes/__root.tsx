@@ -8,6 +8,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { useBrandingStore, applyBrandingToDocument } from "@/data/brandingStore";
 import { useLiveDataStore } from "@/data/liveDataStore";
 import { useCustomerStore } from "@/data/customerStore";
+import { hydrateLiveCustomers } from "@/data/liveCustomerHydrator";
 import { useAuth } from "@/data/auth";
 
 function NotFoundComponent() {
