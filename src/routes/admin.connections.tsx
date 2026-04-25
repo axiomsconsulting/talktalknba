@@ -391,6 +391,9 @@ function ConnectionsAdminPage() {
           <TabsTrigger value="azure_repo" className="gap-2">
             <GitBranch className="size-4" /> Azure DevOps
           </TabsTrigger>
+          <TabsTrigger value="motherduck" className="gap-2">
+            <Cloud className="size-4" /> MotherDuck
+          </TabsTrigger>
           <TabsTrigger value="databricks" className="gap-2">
             <Database className="size-4" /> Databricks
           </TabsTrigger>
