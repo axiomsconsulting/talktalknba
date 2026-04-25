@@ -223,7 +223,9 @@ function ConnectionsAdminPage() {
         ? "Databricks"
         : kind === "gdrive"
           ? "Google Drive"
-          : "Azure DevOps";
+          : kind === "motherduck"
+            ? "MotherDuck"
+            : "Azure DevOps";
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? defaultName,
