@@ -312,6 +312,14 @@ function ExplainabilityPage() {
                   className="pl-9"
                 />
               </div>
+              <div className="mt-3">
+                <CustomerFiltersBar
+                  filters={filters}
+                  onChange={setFilters}
+                  facets={facets}
+                  liveEnabled={mdLiveEnabled}
+                />
+              </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
                 {matchesCount.toLocaleString()} of {totalCustomersForCount.toLocaleString()} customers ·{" "}
                 {mdLiveEnabled ? (
