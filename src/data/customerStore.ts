@@ -29,6 +29,7 @@ export type EnrichmentSource = {
 
 export type CustomerSource =
   | { kind: "mock" }
+  | { kind: "empty" }
   | {
       kind: "uploaded";
       filename: string;
