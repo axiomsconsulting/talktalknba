@@ -191,15 +191,11 @@ function ConnectionsAdminPage() {
     const defaultName =
       kind === "databricks"
         ? "Databricks"
-        : kind === "gdrive"
-          ? "Google Drive"
-          : kind === "motherduck"
-            ? "MotherDuck"
-            : kind === "local_upload"
-              ? "Local upload"
-              : kind === "sample"
-                ? "Sample data"
-                : "Azure DevOps";
+        : kind === "motherduck"
+          ? "MotherDuck"
+          : kind === "local_upload"
+            ? "Local upload"
+            : "Sample data";
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? defaultName,
