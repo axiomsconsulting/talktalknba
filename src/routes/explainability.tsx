@@ -11,7 +11,16 @@ import {
   MessageCircleQuestion,
   ChevronLeft,
   ChevronRight,
+  Maximize2,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { CustomerFilterPresetsBar } from "@/components/CustomerFilterPresetsBar";
 import {
   ResponsiveContainer,
   BarChart,
