@@ -229,7 +229,9 @@ function ConnectionsAdminPage() {
             ? "MotherDuck"
             : kind === "local_upload"
               ? "Local upload"
-              : "Azure DevOps";
+              : kind === "sample"
+                ? "Sample data"
+                : "Azure DevOps";
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? defaultName,
