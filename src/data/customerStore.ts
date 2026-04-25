@@ -381,4 +381,23 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
       .eq("origin", "upload");
     if (error) console.warn("[customerStore] clearAllUploads failed", error);
   },
+
+  clearAll: async () => {
+    set({
+      customers: [],
+      source: { kind: "empty" },
+      callsMap: new Map(),
+      ceaseMap: new Map(),
+      usageMap: new Map(),
+      callsSource: null,
+      ceaseSource: null,
+      usageSource: null,
+    });
+    // Drop every active source row regardless of origin so nothing rehydrates.
+    const { error } = await supabase
+      .from("active_data_sources")
+      .delete()
+      .not("kind", "is", null);
+    if (error) console.warn("[customerStore] clearAll failed", error);
+  },
 }));
