@@ -575,10 +575,12 @@ function SamplePanel({
   isActive,
   onActivate,
   customerCount,
+  disabled = false,
 }: {
   isActive: boolean;
   onActivate: () => void;
   customerCount: number;
+  disabled?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
@@ -615,18 +617,106 @@ function SamplePanel({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onActivate}
-          disabled={isActive}
+          disabled={isActive || disabled}
           className={cn(
             "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold",
-            isActive
+            isActive || disabled
               ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-gradient-to-r from-primary to-primary-deep text-primary-foreground shadow-[var(--shadow-glow)]",
           )}
         >
           <CheckCircle2 className="size-4" />
-          {isActive ? "Sample data is active" : "Activate sample data"}
+          {disabled
+            ? "Sample data disabled"
+            : isActive
+              ? "Sample data is active"
+              : "Activate sample data"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sample data connection toggle — mirrors the local-upload / live integration
+// switches so admins can disable the bundled dataset entirely.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SampleToggle({
+  conn,
+  onChanged,
+}: {
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [busy, setBusy] = useState(false);
+  const reset = useCustomerStore((s) => s.reset);
+  const clearAll = useCustomerStore((s) => s.clearAll);
+  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+
+  async function toggle(value: boolean) {
+    if (!conn) {
+      toast.error("Sample connection row missing — please refresh");
+      return;
+    }
+    setBusy(true);
+    setEnabled(value);
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", conn.id);
+    setBusy(false);
+    if (error) {
+      setEnabled(!value);
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      return;
+    }
+    if (value) {
+      // Re-enabling sample restores the bundled personas immediately.
+      reset();
+    } else if (useCustomerStore.getState().source.kind === "mock") {
+      // Disabling while sample was active → wipe so dashboards reflect reality.
+      await clearAll();
+    }
+    toast.success(`Sample data ${value ? "enabled" : "disabled"}`);
+    onChanged();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-4 sm:p-5 flex items-start gap-3">
+      <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <Sparkles className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-semibold text-foreground">Sample data</div>
+          <span
+            className={cn(
+              "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+              enabled
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            )}
+          >
+            {enabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">
+          The bundled 6 personas + 50 generated customers used as a safe playground when no
+          live source is wired. Disable to force the dashboards to reflect only real data.
+        </div>
+      </div>
+      <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+        <span>{enabled ? "On" : "Off"}</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy}
+          onChange={(e) => toggle(e.target.checked)}
+          className="size-4 accent-primary"
+        />
+      </label>
     </div>
   );
 }
