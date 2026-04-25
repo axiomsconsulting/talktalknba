@@ -127,7 +127,7 @@ function UserMenu() {
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-foreground/80 hover:bg-foreground/5"
             >
               <Plug className="size-4" />
-              Live data connections
+              Connector setup
             </Link>
           )}
           <button
