@@ -11,7 +11,16 @@ import {
   MessageCircleQuestion,
   ChevronLeft,
   ChevronRight,
+  Maximize2,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { CustomerFilterPresetsBar } from "@/components/CustomerFilterPresetsBar";
 import {
   ResponsiveContainer,
   BarChart,
@@ -95,6 +104,7 @@ function ExplainabilityPage() {
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
   const [filters, setFilters] = useState<CustomerFilters>(EMPTY_FILTERS);
   const facets = useCustomerFacets({ customers: allCustomers, liveEnabled: mdLiveEnabled });
+  const [drawerOpenId, setDrawerOpenId] = useState<string | null>(null);
 
   // Live MotherDuck search state.
   const [liveRows, setLiveRows] = useState<Customer[]>([]);
@@ -312,7 +322,8 @@ function ExplainabilityPage() {
                   className="pl-9"
                 />
               </div>
-              <div className="mt-3">
+              <div className="mt-3 space-y-2">
+                <CustomerFilterPresetsBar filters={filters} onLoad={setFilters} />
                 <CustomerFiltersBar
                   filters={filters}
                   onChange={setFilters}
@@ -361,6 +372,10 @@ function ExplainabilityPage() {
                   customer={c}
                   selected={selectedId === c.id}
                   onSelect={() => setSelectedId(c.id)}
+                  onExpand={() => {
+                    setSelectedId(c.id);
+                    setDrawerOpenId(c.id);
+                  }}
                 />
               ))}
             </div>
@@ -397,6 +412,44 @@ function ExplainabilityPage() {
           <CustomerDetail customer={selected} rules={rules} />
         </div>
       </div>
+
+      {/* Right-side drawer with the same full profile, surfaced from the
+          search row's "Profile" button. Useful when running a wide table
+          search and not wanting to lose the inline panel context. */}
+      <Sheet
+        open={drawerOpenId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDrawerOpenId(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-[640px] p-0 overflow-y-auto"
+        >
+          {(() => {
+            const drawerCustomer = drawerOpenId
+              ? pool.find((c) => c.id === drawerOpenId) ?? null
+              : null;
+            if (!drawerCustomer) return null;
+            return (
+              <>
+                <SheetHeader className="px-5 sm:px-7 pt-6 pb-2 text-left">
+                  <SheetTitle className="text-base font-semibold">
+                    Customer profile
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground">
+                    Full attributes, behavioural signals, SHAP drivers and the
+                    computed Next Best Action.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="p-3 sm:p-5">
+                  <CustomerDetail customer={drawerCustomer} rules={rules} />
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </AppShell>
   );
 }
@@ -405,10 +458,12 @@ function CustomerRow({
   customer,
   selected,
   onSelect,
+  onExpand,
 }: {
   customer: Customer;
   selected: boolean;
   onSelect: () => void;
+  onExpand?: () => void;
 }) {
   const tierColor =
     customer.riskTier === "High"
@@ -418,10 +473,18 @@ function CustomerRow({
         : "var(--risk-low)";
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "w-full text-left px-5 py-3 border-b border-border/60 transition-colors",
+        "group relative w-full text-left px-5 py-3 border-b border-border/60 transition-colors cursor-pointer",
         selected ? "bg-primary/5" : "hover:bg-muted/40"
       )}
     >
@@ -455,9 +518,24 @@ function CustomerRow({
           <div className="text-sm font-semibold tabular-nums text-foreground">
             {(customer.riskScore * 100).toFixed(0)}
           </div>
+          {onExpand && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand();
+              }}
+              className="mt-1 inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              aria-label={`Open full profile for ${customer.name}`}
+              title="Open full profile"
+            >
+              <Maximize2 className="size-3" />
+              Profile
+            </button>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
