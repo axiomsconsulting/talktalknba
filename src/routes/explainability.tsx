@@ -104,18 +104,8 @@ function ExplainabilityPage() {
     []
   );
 
-  const filteredCustomers = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allCustomers;
-    return allCustomers.filter(
-      (c) =>
-        c.id.toLowerCase().includes(q) ||
-        c.name.toLowerCase().includes(q) ||
-        c.package.toLowerCase().includes(q) ||
-        c.region.toLowerCase().includes(q) ||
-        (c.persona ?? "").toLowerCase().includes(q)
-    );
-  }, [query, allCustomers]);
+  // (filteredCustomers is declared below — handles both live MotherDuck and
+  // in-memory mode.)
 
   const PAGE_SIZE = 5;
 
