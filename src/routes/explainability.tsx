@@ -34,6 +34,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_MAPPING, mapCustomers, type RawCustomerRow } from "@/data/customerMapping";
 import { cn } from "@/lib/utils";
 import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
+import {
+  CustomerFiltersBar,
+  EMPTY_FILTERS,
+  applyCustomerFilters,
+  countActiveFilters,
+  filtersToQueryBody,
+  useCustomerFacets,
+  type CustomerFilters,
+} from "@/components/CustomerFiltersBar";
 
 export const Route = createFileRoute("/explainability")({
   head: () => ({
