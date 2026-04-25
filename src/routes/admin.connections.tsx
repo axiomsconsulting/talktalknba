@@ -596,6 +596,7 @@ function DatabricksPanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onIngest,
   onRetrain,
@@ -603,6 +604,7 @@ function DatabricksPanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onIngest: () => void;
   onRetrain: () => void;
