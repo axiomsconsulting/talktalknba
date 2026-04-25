@@ -299,7 +299,6 @@ function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState
   if (source.kind === "mock") return "sample";
   const detail = (source as { detail?: string }).detail ?? "";
   if (detail.toLowerCase().includes("motherduck")) return "motherduck";
-  if (detail.toLowerCase().includes("google drive")) return "gdrive";
   if (detail.toLowerCase().includes("databricks")) return "databricks";
   return "upload";
 }
@@ -312,7 +311,6 @@ function ActiveSourcesOverview({
   activeSourceKey,
   customerCount,
   source,
-  gdriveConn,
   dbxConn,
   mdConn,
   localConn,
@@ -323,7 +321,6 @@ function ActiveSourcesOverview({
   activeSourceKey: SourceKey | "none";
   customerCount: number;
   source: ReturnType<typeof useCustomerStore.getState>["source"];
-  gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
   localConn: ConnectionRow | undefined;
@@ -351,20 +348,6 @@ function ActiveSourcesOverview({
         activeSourceKey === "motherduck"
           ? "active"
           : mdConn?.enabled
-            ? "configured"
-            : "not_configured",
-    },
-    {
-      key: "gdrive",
-      icon: HardDrive,
-      title: "Google Drive",
-      subtitle: gdriveConn?.enabled
-        ? `Connected · ${gdriveConn.name}`
-        : "Not configured",
-      status:
-        activeSourceKey === "gdrive"
-          ? "active"
-          : gdriveConn?.enabled
             ? "configured"
             : "not_configured",
     },
@@ -422,9 +405,7 @@ function ActiveSourcesOverview({
           ? "Local upload"
           : activeSourceKey === "motherduck"
             ? "MotherDuck (live)"
-            : activeSourceKey === "gdrive"
-              ? "Google Drive"
-              : "Databricks";
+            : "Databricks";
 
   const isEmpty = activeSourceKey === "none";
 
