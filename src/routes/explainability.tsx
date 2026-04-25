@@ -182,15 +182,19 @@ function ExplainabilityPage() {
     [filteredCustomers, page, mdLiveEnabled, liveRows],
   );
 
+  // Pool of customers we can pick "selected" from — live rows in MotherDuck
+  // mode, otherwise the in-memory store.
+  const pool = mdLiveEnabled ? liveRows : allCustomers;
   // Auto-select the first real customer once live data lands so the detail
   // panel mirrors the active dataset rather than a stale persona.
   useEffect(() => {
-    if (allCustomers.length > 0 && !allCustomers.some((c) => c.id === selectedId)) {
-      setSelectedId(allCustomers[0].id);
+    if (pool.length > 0 && !pool.some((c) => c.id === selectedId)) {
+      setSelectedId(pool[0].id);
     }
-  }, [allCustomers, selectedId]);
+  }, [pool, selectedId]);
 
-  const selected = allCustomers.find((c) => c.id === selectedId) ?? allCustomers[0] ?? personas[0];
+  const selected = pool.find((c) => c.id === selectedId) ?? pool[0] ?? personas[0];
+
 
   return (
     <AppShell>
