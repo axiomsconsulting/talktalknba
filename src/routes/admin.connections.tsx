@@ -1676,3 +1676,52 @@ function LocalUploadAdminPanel({
     </Card>
   );
 }
+
+function SampleAdminPanel({
+  conn,
+  busy,
+  onToggleEnabled,
+}: {
+  conn?: Connection;
+  busy: string | null;
+  onToggleEnabled: (value: boolean) => void;
+}) {
+  const enabled = conn?.enabled ?? true;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="size-4" /> Sample data
+            </CardTitle>
+            <CardDescription>
+              The bundled 6 personas + 50 generated customers used as a safe playground when no
+              live source is wired. Disable to force the dashboards to reflect only real data —
+              when every connector is off, the customer base is wiped.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={enabled ? "border-success/30 text-success bg-success/10" : "border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10"}>
+              {enabled ? "Enabled" : "Disabled"}
+            </Badge>
+            <Switch
+              checked={enabled}
+              onCheckedChange={(v: boolean) => onToggleEnabled(v)}
+              disabled={busy === "sample"}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+          Toggle this from either the{" "}
+          <Link to="/data" className="text-primary underline-offset-2 hover:underline">
+            Data control plane
+          </Link>{" "}
+          or here. The state is persisted in <span className="font-mono">data_connections</span>.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
