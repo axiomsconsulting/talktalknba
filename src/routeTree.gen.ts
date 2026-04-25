@@ -25,9 +25,6 @@ import { Route as AdminConnectionsRouteImport } from './routes/admin.connections
 import { Route as AdminBrandingRouteImport } from './routes/admin.branding'
 import { Route as ApiPublicIngestArtefactsRouteImport } from './routes/api.public.ingest.artefacts'
 import { Route as ApiPublicHooksPullMotherduckWorkerRouteImport } from './routes/api.public.hooks.pull-motherduck-worker'
-import { Route as ApiPublicHooksPullDriveWorkerRouteImport } from './routes/api.public.hooks.pull-drive-worker'
-import { Route as ApiPublicHooksPullAzureWorkerRouteImport } from './routes/api.public.hooks.pull-azure-worker'
-import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public.hooks.poll-drive'
 import { Route as ApiAdminTrainingKitRouteImport } from './routes/api.admin.training.kit'
 import { Route as ApiAdminTrainingImportRouteImport } from './routes/api.admin.training.import'
 import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
@@ -37,9 +34,6 @@ import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.adm
 import { Route as ApiAdminConnectionsQueryMotherduckRouteImport } from './routes/api.admin.connections.query-motherduck'
 import { Route as ApiAdminConnectionsPullStatusRouteImport } from './routes/api.admin.connections.pull-status'
 import { Route as ApiAdminConnectionsPullMotherduckRouteImport } from './routes/api.admin.connections.pull-motherduck'
-import { Route as ApiAdminConnectionsPullDriveRouteImport } from './routes/api.admin.connections.pull-drive'
-import { Route as ApiAdminConnectionsPullAzureRouteImport } from './routes/api.admin.connections.pull-azure'
-import { Route as ApiAdminConnectionsPreviewAzureRouteImport } from './routes/api.admin.connections.preview-azure'
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
 import { Route as ApiAdminConnectionsFacetsMotherduckRouteImport } from './routes/api.admin.connections.facets-motherduck'
 import { Route as ApiAdminConnectionsCancelPullRouteImport } from './routes/api.admin.connections.cancel-pull'
@@ -126,23 +120,6 @@ const ApiPublicHooksPullMotherduckWorkerRoute =
     path: '/api/public/hooks/pull-motherduck-worker',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksPullDriveWorkerRoute =
-  ApiPublicHooksPullDriveWorkerRouteImport.update({
-    id: '/api/public/hooks/pull-drive-worker',
-    path: '/api/public/hooks/pull-drive-worker',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPullAzureWorkerRoute =
-  ApiPublicHooksPullAzureWorkerRouteImport.update({
-    id: '/api/public/hooks/pull-azure-worker',
-    path: '/api/public/hooks/pull-azure-worker',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPollDriveRoute = ApiPublicHooksPollDriveRouteImport.update({
-  id: '/api/public/hooks/poll-drive',
-  path: '/api/public/hooks/poll-drive',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAdminTrainingKitRoute = ApiAdminTrainingKitRouteImport.update({
   id: '/api/admin/training/kit',
   path: '/api/admin/training/kit',
@@ -194,24 +171,6 @@ const ApiAdminConnectionsPullMotherduckRoute =
     path: '/api/admin/connections/pull-motherduck',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminConnectionsPullDriveRoute =
-  ApiAdminConnectionsPullDriveRouteImport.update({
-    id: '/api/admin/connections/pull-drive',
-    path: '/api/admin/connections/pull-drive',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminConnectionsPullAzureRoute =
-  ApiAdminConnectionsPullAzureRouteImport.update({
-    id: '/api/admin/connections/pull-azure',
-    path: '/api/admin/connections/pull-azure',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminConnectionsPreviewAzureRoute =
-  ApiAdminConnectionsPreviewAzureRouteImport.update({
-    id: '/api/admin/connections/preview-azure',
-    path: '/api/admin/connections/preview-azure',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminConnectionsIngestRoute =
   ApiAdminConnectionsIngestRouteImport.update({
     id: '/api/admin/connections/ingest',
@@ -249,9 +208,6 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
-  '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
-  '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
-  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-motherduck': typeof ApiAdminConnectionsPullMotherduckRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
@@ -261,9 +217,6 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
-  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
-  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
-  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/hooks/pull-motherduck-worker': typeof ApiPublicHooksPullMotherduckWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
@@ -285,9 +238,6 @@ export interface FileRoutesByTo {
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
-  '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
-  '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
-  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-motherduck': typeof ApiAdminConnectionsPullMotherduckRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
@@ -297,9 +247,6 @@ export interface FileRoutesByTo {
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
-  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
-  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
-  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/hooks/pull-motherduck-worker': typeof ApiPublicHooksPullMotherduckWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
@@ -322,9 +269,6 @@ export interface FileRoutesById {
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
-  '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
-  '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
-  '/api/admin/connections/pull-drive': typeof ApiAdminConnectionsPullDriveRoute
   '/api/admin/connections/pull-motherduck': typeof ApiAdminConnectionsPullMotherduckRoute
   '/api/admin/connections/pull-status': typeof ApiAdminConnectionsPullStatusRoute
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
@@ -334,9 +278,6 @@ export interface FileRoutesById {
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
-  '/api/public/hooks/poll-drive': typeof ApiPublicHooksPollDriveRoute
-  '/api/public/hooks/pull-azure-worker': typeof ApiPublicHooksPullAzureWorkerRoute
-  '/api/public/hooks/pull-drive-worker': typeof ApiPublicHooksPullDriveWorkerRoute
   '/api/public/hooks/pull-motherduck-worker': typeof ApiPublicHooksPullMotherduckWorkerRoute
   '/api/public/ingest/artefacts': typeof ApiPublicIngestArtefactsRoute
 }
@@ -360,9 +301,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
-    | '/api/admin/connections/preview-azure'
-    | '/api/admin/connections/pull-azure'
-    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-motherduck'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
@@ -372,9 +310,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
-    | '/api/public/hooks/poll-drive'
-    | '/api/public/hooks/pull-azure-worker'
-    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/hooks/pull-motherduck-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesByTo: FileRoutesByTo
@@ -396,9 +331,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
-    | '/api/admin/connections/preview-azure'
-    | '/api/admin/connections/pull-azure'
-    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-motherduck'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
@@ -408,9 +340,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
-    | '/api/public/hooks/poll-drive'
-    | '/api/public/hooks/pull-azure-worker'
-    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/hooks/pull-motherduck-worker'
     | '/api/public/ingest/artefacts'
   id:
@@ -432,9 +361,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
-    | '/api/admin/connections/preview-azure'
-    | '/api/admin/connections/pull-azure'
-    | '/api/admin/connections/pull-drive'
     | '/api/admin/connections/pull-motherduck'
     | '/api/admin/connections/pull-status'
     | '/api/admin/connections/query-motherduck'
@@ -444,9 +370,6 @@ export interface FileRouteTypes {
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
-    | '/api/public/hooks/poll-drive'
-    | '/api/public/hooks/pull-azure-worker'
-    | '/api/public/hooks/pull-drive-worker'
     | '/api/public/hooks/pull-motherduck-worker'
     | '/api/public/ingest/artefacts'
   fileRoutesById: FileRoutesById
@@ -469,9 +392,6 @@ export interface RootRouteChildren {
   ApiAdminConnectionsCancelPullRoute: typeof ApiAdminConnectionsCancelPullRoute
   ApiAdminConnectionsFacetsMotherduckRoute: typeof ApiAdminConnectionsFacetsMotherduckRoute
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
-  ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
-  ApiAdminConnectionsPullAzureRoute: typeof ApiAdminConnectionsPullAzureRoute
-  ApiAdminConnectionsPullDriveRoute: typeof ApiAdminConnectionsPullDriveRoute
   ApiAdminConnectionsPullMotherduckRoute: typeof ApiAdminConnectionsPullMotherduckRoute
   ApiAdminConnectionsPullStatusRoute: typeof ApiAdminConnectionsPullStatusRoute
   ApiAdminConnectionsQueryMotherduckRoute: typeof ApiAdminConnectionsQueryMotherduckRoute
@@ -481,9 +401,6 @@ export interface RootRouteChildren {
   ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
   ApiAdminTrainingImportRoute: typeof ApiAdminTrainingImportRoute
   ApiAdminTrainingKitRoute: typeof ApiAdminTrainingKitRoute
-  ApiPublicHooksPollDriveRoute: typeof ApiPublicHooksPollDriveRoute
-  ApiPublicHooksPullAzureWorkerRoute: typeof ApiPublicHooksPullAzureWorkerRoute
-  ApiPublicHooksPullDriveWorkerRoute: typeof ApiPublicHooksPullDriveWorkerRoute
   ApiPublicHooksPullMotherduckWorkerRoute: typeof ApiPublicHooksPullMotherduckWorkerRoute
   ApiPublicIngestArtefactsRoute: typeof ApiPublicIngestArtefactsRoute
 }
@@ -602,27 +519,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPullMotherduckWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/pull-drive-worker': {
-      id: '/api/public/hooks/pull-drive-worker'
-      path: '/api/public/hooks/pull-drive-worker'
-      fullPath: '/api/public/hooks/pull-drive-worker'
-      preLoaderRoute: typeof ApiPublicHooksPullDriveWorkerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/pull-azure-worker': {
-      id: '/api/public/hooks/pull-azure-worker'
-      path: '/api/public/hooks/pull-azure-worker'
-      fullPath: '/api/public/hooks/pull-azure-worker'
-      preLoaderRoute: typeof ApiPublicHooksPullAzureWorkerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/poll-drive': {
-      id: '/api/public/hooks/poll-drive'
-      path: '/api/public/hooks/poll-drive'
-      fullPath: '/api/public/hooks/poll-drive'
-      preLoaderRoute: typeof ApiPublicHooksPollDriveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/training/kit': {
       id: '/api/admin/training/kit'
       path: '/api/admin/training/kit'
@@ -686,27 +582,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsPullMotherduckRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/connections/pull-drive': {
-      id: '/api/admin/connections/pull-drive'
-      path: '/api/admin/connections/pull-drive'
-      fullPath: '/api/admin/connections/pull-drive'
-      preLoaderRoute: typeof ApiAdminConnectionsPullDriveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/connections/pull-azure': {
-      id: '/api/admin/connections/pull-azure'
-      path: '/api/admin/connections/pull-azure'
-      fullPath: '/api/admin/connections/pull-azure'
-      preLoaderRoute: typeof ApiAdminConnectionsPullAzureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/connections/preview-azure': {
-      id: '/api/admin/connections/preview-azure'
-      path: '/api/admin/connections/preview-azure'
-      fullPath: '/api/admin/connections/preview-azure'
-      preLoaderRoute: typeof ApiAdminConnectionsPreviewAzureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/connections/ingest': {
       id: '/api/admin/connections/ingest'
       path: '/api/admin/connections/ingest'
@@ -750,9 +625,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsFacetsMotherduckRoute:
     ApiAdminConnectionsFacetsMotherduckRoute,
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
-  ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
-  ApiAdminConnectionsPullAzureRoute: ApiAdminConnectionsPullAzureRoute,
-  ApiAdminConnectionsPullDriveRoute: ApiAdminConnectionsPullDriveRoute,
   ApiAdminConnectionsPullMotherduckRoute:
     ApiAdminConnectionsPullMotherduckRoute,
   ApiAdminConnectionsPullStatusRoute: ApiAdminConnectionsPullStatusRoute,
@@ -766,9 +638,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
   ApiAdminTrainingImportRoute: ApiAdminTrainingImportRoute,
   ApiAdminTrainingKitRoute: ApiAdminTrainingKitRoute,
-  ApiPublicHooksPollDriveRoute: ApiPublicHooksPollDriveRoute,
-  ApiPublicHooksPullAzureWorkerRoute: ApiPublicHooksPullAzureWorkerRoute,
-  ApiPublicHooksPullDriveWorkerRoute: ApiPublicHooksPullDriveWorkerRoute,
   ApiPublicHooksPullMotherduckWorkerRoute:
     ApiPublicHooksPullMotherduckWorkerRoute,
   ApiPublicIngestArtefactsRoute: ApiPublicIngestArtefactsRoute,

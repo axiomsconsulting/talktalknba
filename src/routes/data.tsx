@@ -16,7 +16,7 @@ import {
   Phone,
   XOctagon,
   Activity,
-  HardDrive,
+  
   Cloud,
   ExternalLink,
   PlayCircle,
@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload" | "sample";
+  kind: "databricks" | "motherduck" | "local_upload" | "sample";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
@@ -73,20 +73,20 @@ export const Route = createFileRoute("/data")({
       {
         name: "description",
         content:
-          "Pick a customer data source — Sample, Local upload, MotherDuck (live), Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
+          "Pick a customer data source — Sample, Local upload, MotherDuck (live) or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
       },
       { property: "og:title", content: "Data Library — TalkTalk NBA" },
       {
         property: "og:description",
         content:
-          "Centralised data control plane: choose between sample, uploaded, MotherDuck-live, Google Drive or Databricks sources and see which signals are live.",
+          "Centralised data control plane: choose between sample, uploaded, MotherDuck-live or Databricks sources and see which signals are live.",
       },
     ],
   }),
   component: DataPage,
 });
 
-type SourceKey = "sample" | "upload" | "motherduck" | "gdrive" | "databricks";
+type SourceKey = "sample" | "upload" | "motherduck" | "databricks";
 
 function DataPage() {
   const [datasets, setDatasets] = useState<DatasetRow[]>([]);
@@ -116,7 +116,6 @@ function DataPage() {
     setSelectedSource(deriveInitialSource(source));
   }, [source.kind, (source as { detail?: string }).detail]);
 
-  const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
   const localConn = connections.find((c) => c.kind === "local_upload");
@@ -128,7 +127,6 @@ function DataPage() {
     connections.length > 0 &&
     !sampleConn?.enabled &&
     !mdConn?.enabled &&
-    !gdriveConn?.enabled &&
     !dbxConn?.enabled &&
     !localConn?.enabled;
 
@@ -139,7 +137,6 @@ function DataPage() {
     } else if (
       sampleConn?.enabled &&
       !mdConn?.enabled &&
-      !gdriveConn?.enabled &&
       !dbxConn?.enabled &&
       !localConn?.enabled &&
       source.kind === "empty"
@@ -151,7 +148,6 @@ function DataPage() {
     allDisabled,
     sampleConn?.enabled,
     mdConn?.enabled,
-    gdriveConn?.enabled,
     dbxConn?.enabled,
     localConn?.enabled,
     source.kind,
@@ -161,13 +157,12 @@ function DataPage() {
   ]);
 
   // Derive which source is currently powering the customer base.
-  // Priority (highest → lowest): MotherDuck → Google Drive → Databricks → Local upload → Sample.
+  // Priority (highest → lowest): MotherDuck → Databricks → Local upload → Sample.
   // The first *enabled* source in this list wins, regardless of which detail
   // string the in-memory store currently carries — so toggling MotherDuck on
   // immediately re-labels every dashboard as "MotherDuck (live)".
   const activeSourceKey: SourceKey | "none" = useMemo(() => {
     if (mdConn?.enabled) return "motherduck";
-    if (gdriveConn?.enabled) return "gdrive";
     if (dbxConn?.enabled) return "databricks";
     if (localConn?.enabled && source.kind === "uploaded" && (source as { origin?: string }).origin !== "live") {
       return "upload";
@@ -180,7 +175,6 @@ function DataPage() {
   }, [
     source,
     mdConn?.enabled,
-    gdriveConn?.enabled,
     dbxConn?.enabled,
     localConn?.enabled,
     sampleConn?.enabled,
@@ -191,7 +185,7 @@ function DataPage() {
       <PageHeader
         eyebrow="Data · Control plane"
         title="Customer data sources"
-        description="The single place to enable, disable and switch the live data source — sample, local upload, MotherDuck (live), Google Drive or Databricks. Behavioural enrichment cards show which signals are live. Deep connector credentials live under Admin · Connector setup."
+        description="The single place to enable, disable and switch the live data source — sample, local upload, MotherDuck (live) or Databricks. Behavioural enrichment cards show which signals are live. Deep connector credentials live under Admin · Connector setup."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
@@ -200,7 +194,6 @@ function DataPage() {
           activeSourceKey={activeSourceKey}
           customerCount={customers.length}
           source={source}
-          gdriveConn={gdriveConn}
           dbxConn={dbxConn}
           mdConn={mdConn}
           localConn={localConn}
@@ -232,7 +225,7 @@ function DataPage() {
             onValueChange={(v) => setSelectedSource(v as SourceKey)}
             className="px-5 sm:px-7 py-5"
           >
-            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full gap-2 h-auto bg-muted/40 p-1">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full gap-2 h-auto bg-muted/40 p-1">
               <SourceTab
                 value="sample"
                 icon={Sparkles}
@@ -251,13 +244,6 @@ function DataPage() {
                 label="MotherDuck (live)"
                 active={activeSourceKey === "motherduck"}
                 statusOk={!!mdConn?.enabled}
-              />
-              <SourceTab
-                value="gdrive"
-                icon={HardDrive}
-                label="Google Drive"
-                active={activeSourceKey === "gdrive"}
-                statusOk={!!gdriveConn?.enabled}
               />
               <SourceTab
                 value="databricks"
@@ -287,14 +273,6 @@ function DataPage() {
               <MotherDuckLivePanel conn={mdConn} onChanged={refresh} />
             </TabsContent>
 
-            <TabsContent value="gdrive" className="mt-5">
-              <LiveConnectionPanel
-                kind="gdrive"
-                conn={gdriveConn}
-                onChanged={refresh}
-              />
-            </TabsContent>
-
             <TabsContent value="databricks" className="mt-5">
               <LiveConnectionPanel
                 kind="databricks"
@@ -321,7 +299,6 @@ function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState
   if (source.kind === "mock") return "sample";
   const detail = (source as { detail?: string }).detail ?? "";
   if (detail.toLowerCase().includes("motherduck")) return "motherduck";
-  if (detail.toLowerCase().includes("google drive")) return "gdrive";
   if (detail.toLowerCase().includes("databricks")) return "databricks";
   return "upload";
 }
@@ -334,7 +311,6 @@ function ActiveSourcesOverview({
   activeSourceKey,
   customerCount,
   source,
-  gdriveConn,
   dbxConn,
   mdConn,
   localConn,
@@ -345,7 +321,6 @@ function ActiveSourcesOverview({
   activeSourceKey: SourceKey | "none";
   customerCount: number;
   source: ReturnType<typeof useCustomerStore.getState>["source"];
-  gdriveConn: ConnectionRow | undefined;
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
   localConn: ConnectionRow | undefined;
@@ -373,20 +348,6 @@ function ActiveSourcesOverview({
         activeSourceKey === "motherduck"
           ? "active"
           : mdConn?.enabled
-            ? "configured"
-            : "not_configured",
-    },
-    {
-      key: "gdrive",
-      icon: HardDrive,
-      title: "Google Drive",
-      subtitle: gdriveConn?.enabled
-        ? `Connected · ${gdriveConn.name}`
-        : "Not configured",
-      status:
-        activeSourceKey === "gdrive"
-          ? "active"
-          : gdriveConn?.enabled
             ? "configured"
             : "not_configured",
     },
@@ -444,9 +405,7 @@ function ActiveSourcesOverview({
           ? "Local upload"
           : activeSourceKey === "motherduck"
             ? "MotherDuck (live)"
-            : activeSourceKey === "gdrive"
-              ? "Google Drive"
-              : "Databricks";
+            : "Databricks";
 
   const isEmpty = activeSourceKey === "none";
 
@@ -475,7 +434,7 @@ function ActiveSourcesOverview({
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                Every connector — sample, local upload, MotherDuck, Google Drive and Databricks
+                Every connector — sample, local upload, MotherDuck and Databricks
                 — is disabled. Enable at least one below to populate the dashboards.
               </div>
             ) : source.kind === "uploaded" ? (
@@ -839,7 +798,7 @@ function LocalUploadToggle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Live connection panel — shared between Google Drive & Databricks
+// Live connection panel — Databricks
 // ─────────────────────────────────────────────────────────────────────────────
 
 function LiveConnectionPanel({
@@ -847,13 +806,13 @@ function LiveConnectionPanel({
   conn,
   onChanged,
 }: {
-  kind: "gdrive" | "databricks";
+  kind: "databricks";
   conn: ConnectionRow | undefined;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<"test" | "ingest" | null>(null);
-  const Icon = kind === "gdrive" ? HardDrive : Cloud;
-  const label = kind === "gdrive" ? "Google Drive" : "Databricks";
+  const Icon = Cloud;
+  const label = "Databricks";
 
   async function run(action: "test" | "ingest") {
     setBusy(action);
@@ -889,9 +848,7 @@ function LiveConnectionPanel({
           <div>
             <div className="text-base font-semibold text-foreground">{label} not configured</div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {kind === "gdrive"
-                ? "Connect a shared Google Drive folder containing your customer_info, calls, cease, usage and model artefact files."
-                : "Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables."}
+              Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables.
             </p>
           </div>
         </div>
@@ -907,14 +864,9 @@ function LiveConnectionPanel({
   }
 
   const lastRun = conn.last_run_at ? new Date(conn.last_run_at).toLocaleString("en-GB") : "Never";
-  const cfgSummary =
-    kind === "gdrive"
-      ? `Root folder: ${(conn.config as { root_folder_url?: string; root_folder_id?: string }).root_folder_url ??
-          (conn.config as { root_folder_id?: string }).root_folder_id ??
-          "—"}`
-      : `Workspace: ${(conn.config as { host?: string }).host ?? "—"} · warehouse ${
-          (conn.config as { warehouse_id?: string }).warehouse_id ?? "—"
-        }`;
+  const cfgSummary = `Workspace: ${(conn.config as { host?: string }).host ?? "—"} · warehouse ${
+    (conn.config as { warehouse_id?: string }).warehouse_id ?? "—"
+  }`;
 
   return (
     <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
