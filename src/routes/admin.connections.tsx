@@ -110,13 +110,6 @@ type PullJob = {
   error: string | null;
 };
 
-const FIXED_SUBFOLDERS: Array<{ key: keyof GDriveSubfolders; label: string }> = [
-  { key: "customer_info", label: "customer_info/" },
-  { key: "calls", label: "calls/" },
-  { key: "cease", label: "cease/" },
-  { key: "usage", label: "usage/" },
-  { key: "model_artefacts", label: "model_artefacts/" },
-];
 
 function StatusBadge({ status }: { status: RunStatus | null }) {
   if (!status) {
