@@ -341,6 +341,8 @@ function ConnectionsAdminPage() {
       setBusy(null);
     }
   };
+
+  const cancelPull = async () => {
     if (!pullJob) return;
     setBusy("azure_repo-cancel");
     try {
