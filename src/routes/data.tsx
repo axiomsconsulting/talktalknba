@@ -118,6 +118,7 @@ function DataPage() {
   const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
+  const localConn = connections.find((c) => c.kind === "local_upload");
 
   // Derive which source is currently powering the customer base
   const activeSourceKey: SourceKey = useMemo(() => {
@@ -150,6 +151,7 @@ function DataPage() {
           gdriveConn={gdriveConn}
           dbxConn={dbxConn}
           mdConn={mdConn}
+          localConn={localConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
