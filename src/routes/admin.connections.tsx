@@ -298,25 +298,6 @@ function ConnectionsAdminPage() {
     if (isAdmin) void refreshPullJob();
   }, [isAdmin]);
 
-  const pullAzure = async () => {
-    setBusy("azure_repo-pull");
-    try {
-      const res = (await callServer(`/api/admin/connections/pull-azure`, {})) as {
-        jobId?: string;
-        filesTotal?: number;
-      } | null;
-      if (res?.jobId) {
-        toast.success(`Queued — ${res.filesTotal ?? 0} file(s) to pull`);
-        await refreshPullJob(res.jobId);
-      }
-      await reload();
-    } catch (e) {
-      toast.error(`Pull failed: ${(e as Error).message}`);
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const pullMotherduck = async (customerLimit?: number) => {
     setBusy("motherduck-pull");
     try {
