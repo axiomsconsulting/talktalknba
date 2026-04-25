@@ -662,7 +662,7 @@ function DatabricksPanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>
@@ -821,7 +821,7 @@ function GDrivePanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>
@@ -1503,7 +1503,7 @@ function MotherDuckPanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>
