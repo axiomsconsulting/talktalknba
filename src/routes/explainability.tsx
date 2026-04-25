@@ -324,7 +324,7 @@ function ExplainabilityPage() {
         </div>
 
         {/* Local explainability */}
-        <div className="grid lg:grid-cols-[420px_1fr] gap-5">
+        <div className="grid grid-cols-1 gap-5">
           {/* Customer search */}
           <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden flex flex-col max-h-[820px]">
             <div className="px-5 py-4 border-b border-border">
@@ -460,8 +460,6 @@ function ExplainabilityPage() {
             )}
           </div>
 
-          {/* Detail panel */}
-          <CustomerDetail customer={selected} rules={rules} />
         </div>
       </div>
 
