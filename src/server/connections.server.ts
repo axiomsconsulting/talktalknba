@@ -463,3 +463,82 @@ export async function parseParquet(
   return { headers: cols, rows, totalRows };
 }
 
+
+/* ------------------------------------------------------------------ */
+/*  MotherDuck — Postgres wire-protocol endpoint                       */
+/*  pg.<region>.motherduck.com:5432, password = MotherDuck token.      */
+/*  Cloudflare Workers run `pg` via the nodejs_compat shim.            */
+/* ------------------------------------------------------------------ */
+
+export type MotherDuckConfig = {
+  /** Database name on MotherDuck (e.g. "file"). */
+  database: string;
+  /** Schema name. Defaults to "main". */
+  schema?: string;
+  /** Region host, e.g. "pg.us-east-1-aws.motherduck.com". */
+  host?: string;
+  /** Port, defaults to 5432. */
+  port?: number;
+  /** Map of dataset kind → fully-qualified table name (defaults are derived). */
+  tables?: Partial<Record<"customer_info" | "calls" | "cease" | "usage", string>>;
+};
+
+const DEFAULT_MD_HOST = "pg.us-east-1-aws.motherduck.com";
+
+function motherduckToken(): string {
+  // Match Lovable's "_N suffix preferred" convention used elsewhere.
+  for (let i = 5; i >= 1; i -= 1) {
+    const v = process.env[`MOTHERDUCK_TOKEN_${i}`];
+    if (v) return v;
+  }
+  const v = process.env.MOTHERDUCK_TOKEN;
+  if (!v) throw jsonError(412, "MOTHERDUCK_TOKEN missing — add it under Settings → Secrets");
+  return v;
+}
+
+/** Build a fresh, single-use pg client. Caller MUST call `await client.end()`. */
+export async function motherduckClient(cfg: MotherDuckConfig) {
+  const { Client } = await import("pg");
+  const token = motherduckToken();
+  const client = new Client({
+    host: cfg.host || DEFAULT_MD_HOST,
+    port: cfg.port ?? 5432,
+    user: "postgres",
+    password: token,
+    database: cfg.database,
+    ssl: { rejectUnauthorized: false },
+    // Workers have no DNS retry — fail fast and let the caller surface the error.
+    connectionTimeoutMillis: 15_000,
+    statement_timeout: 60_000,
+  });
+  await client.connect();
+  return client;
+}
+
+/** Resolve the table name for a kind. Honours overrides in cfg.tables. */
+export function motherduckTableFor(
+  cfg: MotherDuckConfig,
+  kind: "customer_info" | "calls" | "cease" | "usage",
+): string {
+  const override = cfg.tables?.[kind];
+  if (override && override.trim()) return override.trim();
+  const schema = (cfg.schema || "main").trim();
+  return `"${schema}"."${kind}"`;
+}
+
+/** Run a SQL query and return rows + headers (column names from the result). */
+export async function motherduckQuery(
+  cfg: MotherDuckConfig,
+  sql: string,
+  values?: unknown[],
+): Promise<{ headers: string[]; rows: unknown[][]; totalRows: number }> {
+  const client = await motherduckClient(cfg);
+  try {
+    const res = await client.query({ text: sql, values, rowMode: "array" });
+    const headers = res.fields.map((f) => f.name);
+    const rows = (res.rows as unknown[][]) ?? [];
+    return { headers, rows, totalRows: rows.length };
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
