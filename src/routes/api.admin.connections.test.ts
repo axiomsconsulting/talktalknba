@@ -23,8 +23,8 @@ export const Route = createFileRoute("/api/admin/connections/test")({
 
         const body = (await request.json().catch(() => null)) as { kind?: string } | null;
         const kind = body?.kind;
-        if (kind !== "databricks" && kind !== "gdrive") {
-          return jsonError(400, "kind must be 'databricks' or 'gdrive'");
+        if (kind !== "databricks" && kind !== "gdrive" && kind !== "motherduck") {
+          return jsonError(400, "kind must be 'databricks', 'gdrive', or 'motherduck'");
         }
 
         const { data: conn, error } = await supabaseAdmin
