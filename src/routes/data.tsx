@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload";
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload" | "sample";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
@@ -93,6 +93,7 @@ function DataPage() {
   const [connections, setConnections] = useState<ConnectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const { customers, source, reset } = useCustomerStore();
+  const clearAll = useCustomerStore((s) => s.clearAll);
   const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
 
   async function refresh() {
@@ -119,9 +120,49 @@ function DataPage() {
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
   const localConn = connections.find((c) => c.kind === "local_upload");
+  const sampleConn = connections.find((c) => c.kind === "sample");
+
+  // If every connector (incl. sample) is disabled — wipe all data and show empty state.
+  // If sample is the only enabled source and the store is currently empty — restore sample.
+  const allDisabled =
+    connections.length > 0 &&
+    !sampleConn?.enabled &&
+    !mdConn?.enabled &&
+    !gdriveConn?.enabled &&
+    !dbxConn?.enabled &&
+    !localConn?.enabled;
+
+  useEffect(() => {
+    if (!connections.length) return;
+    if (allDisabled && source.kind !== "empty") {
+      void clearAll();
+    } else if (
+      sampleConn?.enabled &&
+      !mdConn?.enabled &&
+      !gdriveConn?.enabled &&
+      !dbxConn?.enabled &&
+      !localConn?.enabled &&
+      source.kind === "empty"
+    ) {
+      // Sample re-enabled while everything else is off → restore sample.
+      reset();
+    }
+  }, [
+    allDisabled,
+    sampleConn?.enabled,
+    mdConn?.enabled,
+    gdriveConn?.enabled,
+    dbxConn?.enabled,
+    localConn?.enabled,
+    source.kind,
+    connections.length,
+    reset,
+    clearAll,
+  ]);
 
   // Derive which source is currently powering the customer base
-  const activeSourceKey: SourceKey = useMemo(() => {
+  const activeSourceKey: SourceKey | "none" = useMemo(() => {
+    if (source.kind === "empty") return "none";
     if (source.kind === "mock") return "sample";
     const detail = (source as { detail?: string }).detail ?? "";
     if (detail.toLowerCase().includes("motherduck")) return "motherduck";
@@ -215,11 +256,13 @@ function DataPage() {
               />
             </TabsList>
 
-            <TabsContent value="sample" className="mt-5">
+            <TabsContent value="sample" className="mt-5 space-y-4">
+              <SampleToggle conn={sampleConn} onChanged={refresh} />
               <SamplePanel
                 isActive={activeSourceKey === "sample"}
                 onActivate={reset}
                 customerCount={customers.length}
+                disabled={sampleConn?.enabled === false}
               />
             </TabsContent>
 
@@ -286,7 +329,7 @@ function ActiveSourcesOverview({
   onReset,
   onJump,
 }: {
-  activeSourceKey: SourceKey;
+  activeSourceKey: SourceKey | "none";
   customerCount: number;
   source: ReturnType<typeof useCustomerStore.getState>["source"];
   gdriveConn: ConnectionRow | undefined;
@@ -374,31 +417,49 @@ function ActiveSourcesOverview({
   ];
 
   const activeLabel =
-    activeSourceKey === "sample"
-      ? "Sample data"
-      : activeSourceKey === "upload"
-        ? "Local upload"
-        : activeSourceKey === "motherduck"
-          ? "MotherDuck (live)"
-          : activeSourceKey === "gdrive"
-            ? "Google Drive"
-            : "Databricks";
+    activeSourceKey === "none"
+      ? "No source enabled"
+      : activeSourceKey === "sample"
+        ? "Sample data"
+        : activeSourceKey === "upload"
+          ? "Local upload"
+          : activeSourceKey === "motherduck"
+            ? "MotherDuck (live)"
+            : activeSourceKey === "gdrive"
+              ? "Google Drive"
+              : "Databricks";
+
+  const isEmpty = activeSourceKey === "none";
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div className="px-5 sm:px-7 py-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Database className="size-5" />
+          <div
+            className={cn(
+              "size-10 rounded-lg flex items-center justify-center shrink-0",
+              isEmpty
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "bg-primary/10 text-primary",
+            )}
+          >
+            {isEmpty ? <AlertTriangle className="size-5" /> : <Database className="size-5" />}
           </div>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
               Active customer source
             </div>
             <div className="text-base font-semibold text-foreground mt-0.5">
-              {activeLabel} · {customerCount.toLocaleString()} customers loaded
+              {isEmpty
+                ? `${activeLabel} · 0 customers loaded`
+                : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
             </div>
-            {source.kind === "uploaded" ? (
+            {isEmpty ? (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Every connector — sample, local upload, MotherDuck, Google Drive and Databricks
+                — is disabled. Enable at least one below to populate the dashboards.
+              </div>
+            ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
                 {(source as { detail?: string }).detail ?? source.filename} · activated{" "}
                 {new Date(source.uploadedAt).toLocaleString("en-GB")}
@@ -410,7 +471,7 @@ function ActiveSourcesOverview({
             )}
           </div>
         </div>
-        {activeSourceKey !== "sample" && (
+        {activeSourceKey !== "sample" && activeSourceKey !== "none" && (
           <button
             onClick={onReset}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60"
@@ -532,10 +593,12 @@ function SamplePanel({
   isActive,
   onActivate,
   customerCount,
+  disabled = false,
 }: {
   isActive: boolean;
   onActivate: () => void;
   customerCount: number;
+  disabled?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
@@ -572,18 +635,106 @@ function SamplePanel({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onActivate}
-          disabled={isActive}
+          disabled={isActive || disabled}
           className={cn(
             "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold",
-            isActive
+            isActive || disabled
               ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-gradient-to-r from-primary to-primary-deep text-primary-foreground shadow-[var(--shadow-glow)]",
           )}
         >
           <CheckCircle2 className="size-4" />
-          {isActive ? "Sample data is active" : "Activate sample data"}
+          {disabled
+            ? "Sample data disabled"
+            : isActive
+              ? "Sample data is active"
+              : "Activate sample data"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sample data connection toggle — mirrors the local-upload / live integration
+// switches so admins can disable the bundled dataset entirely.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SampleToggle({
+  conn,
+  onChanged,
+}: {
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [busy, setBusy] = useState(false);
+  const reset = useCustomerStore((s) => s.reset);
+  const clearAll = useCustomerStore((s) => s.clearAll);
+  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+
+  async function toggle(value: boolean) {
+    if (!conn) {
+      toast.error("Sample connection row missing — please refresh");
+      return;
+    }
+    setBusy(true);
+    setEnabled(value);
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", conn.id);
+    setBusy(false);
+    if (error) {
+      setEnabled(!value);
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      return;
+    }
+    if (value) {
+      // Re-enabling sample restores the bundled personas immediately.
+      reset();
+    } else if (useCustomerStore.getState().source.kind === "mock") {
+      // Disabling while sample was active → wipe so dashboards reflect reality.
+      await clearAll();
+    }
+    toast.success(`Sample data ${value ? "enabled" : "disabled"}`);
+    onChanged();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-4 sm:p-5 flex items-start gap-3">
+      <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <Sparkles className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-semibold text-foreground">Sample data</div>
+          <span
+            className={cn(
+              "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+              enabled
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            )}
+          >
+            {enabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">
+          The bundled 6 personas + 50 generated customers used as a safe playground when no
+          live source is wired. Disable to force the dashboards to reflect only real data.
+        </div>
+      </div>
+      <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+        <span>{enabled ? "On" : "Off"}</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy}
+          onChange={(e) => toggle(e.target.checked)}
+          className="size-4 accent-primary"
+        />
+      </label>
     </div>
   );
 }

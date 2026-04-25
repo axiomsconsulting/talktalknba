@@ -29,6 +29,7 @@ export type EnrichmentSource = {
 
 export type CustomerSource =
   | { kind: "mock" }
+  | { kind: "empty" }
   | {
       kind: "uploaded";
       filename: string;
@@ -77,6 +78,13 @@ type CustomerStore = {
    * the bundled sample dataset. Used when the dataset library is emptied.
    */
   clearAllUploads: () => Promise<void>;
+
+  /**
+   * Wipes the customer base AND every enrichment, leaving an empty store
+   * (source.kind = "empty"). Used when every connector — including sample —
+   * is disabled, so the dashboards correctly show "no data".
+   */
+  clearAll: () => Promise<void>;
 };
 
 function enrichCustomers(
@@ -372,5 +380,24 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
       .delete()
       .eq("origin", "upload");
     if (error) console.warn("[customerStore] clearAllUploads failed", error);
+  },
+
+  clearAll: async () => {
+    set({
+      customers: [],
+      source: { kind: "empty" },
+      callsMap: new Map(),
+      ceaseMap: new Map(),
+      usageMap: new Map(),
+      callsSource: null,
+      ceaseSource: null,
+      usageSource: null,
+    });
+    // Drop every active source row regardless of origin so nothing rehydrates.
+    const { error } = await supabase
+      .from("active_data_sources")
+      .delete()
+      .not("kind", "is", null);
+    if (error) console.warn("[customerStore] clearAll failed", error);
   },
 }));
