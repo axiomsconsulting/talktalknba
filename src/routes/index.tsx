@@ -242,6 +242,9 @@ function RoiPage() {
         {/* Per-NBA-trigger sensitivity */}
         <PerTriggerSensitivityPanel />
 
+        {/* Net ROI segment drill-down */}
+        <NetRoiSegmentDrilldown />
+
         {/* Risk distribution */}
         <div className="grid lg:grid-cols-3 gap-5">
           <div className="lg:col-span-1 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-sm)]">
