@@ -420,10 +420,12 @@ function CustomerRow({
   customer,
   selected,
   onSelect,
+  onExpand,
 }: {
   customer: Customer;
   selected: boolean;
   onSelect: () => void;
+  onExpand?: () => void;
 }) {
   const tierColor =
     customer.riskTier === "High"
@@ -433,10 +435,18 @@ function CustomerRow({
         : "var(--risk-low)";
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "w-full text-left px-5 py-3 border-b border-border/60 transition-colors",
+        "group relative w-full text-left px-5 py-3 border-b border-border/60 transition-colors cursor-pointer",
         selected ? "bg-primary/5" : "hover:bg-muted/40"
       )}
     >
@@ -470,9 +480,24 @@ function CustomerRow({
           <div className="text-sm font-semibold tabular-nums text-foreground">
             {(customer.riskScore * 100).toFixed(0)}
           </div>
+          {onExpand && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand();
+              }}
+              className="mt-1 inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              aria-label={`Open full profile for ${customer.name}`}
+              title="Open full profile"
+            >
+              <Maximize2 className="size-3" />
+              Profile
+            </button>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
