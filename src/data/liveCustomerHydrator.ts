@@ -111,10 +111,24 @@ async function loadRowsForActive(row: ActiveRow): Promise<RawCustomerRow[] | nul
   }
 
   // origin === "live" — read the JSON snapshot the worker writes.
+  // Snapshots live under one of: azure/{conn_id}/{kind}.json, gdrive/{conn_id}/{kind}.json,
+  // motherduck/{conn_id}/{kind}.json — try each in turn so the same hydrator
+  // covers every connector we ship.
   if (!row.connection_id) return null;
-  const path = `azure/${row.connection_id}/${row.kind}.json`;
-  const { data: blob, error } = await supabase.storage.from("datasets").download(path);
-  if (error || !blob) return null;
+  const candidates = [
+    `azure/${row.connection_id}/${row.kind}.json`,
+    `motherduck/${row.connection_id}/${row.kind}.json`,
+    `gdrive/${row.connection_id}/${row.kind}.json`,
+  ];
+  let blob: Blob | null = null;
+  for (const path of candidates) {
+    const { data } = await supabase.storage.from("datasets").download(path);
+    if (data) {
+      blob = data;
+      break;
+    }
+  }
+  if (!blob) return null;
   const text = await blob.text();
   const snap = JSON.parse(text) as {
     headers?: string[];
