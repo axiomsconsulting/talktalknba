@@ -100,8 +100,8 @@ function RoiPage() {
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">
-        {/* KPI row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        {/* KPI grid · 4 across × 2 rows */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           <KpiCard
             compact
             label="Total Customer Base"
@@ -171,10 +171,8 @@ function RoiPage() {
                 : null
             }
           />
-        </div>
 
-        {/* Financial KPIs · driven by the editable NBA rules */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Financial KPIs · driven by the editable NBA rules */}
           <KpiCard
             compact
             label="Gross Retained Revenue"
