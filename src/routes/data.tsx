@@ -149,6 +149,7 @@ function DataPage() {
           source={source}
           gdriveConn={gdriveConn}
           dbxConn={dbxConn}
+          mdConn={mdConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
