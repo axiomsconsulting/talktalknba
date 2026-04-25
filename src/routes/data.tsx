@@ -434,7 +434,7 @@ function ActiveSourcesOverview({
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                Every connector — sample, local upload, MotherDuck, Google Drive and Databricks
+                Every connector — sample, local upload, MotherDuck and Databricks
                 — is disabled. Enable at least one below to populate the dashboards.
               </div>
             ) : source.kind === "uploaded" ? (
