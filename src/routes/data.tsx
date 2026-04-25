@@ -408,7 +408,7 @@ function ActiveSourcesOverview({
         )}
       </div>
 
-      <div className="p-5 sm:p-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="p-5 sm:p-7 grid grid-cols-2 lg:grid-cols-5 gap-3">
         {cards.map((c) => {
           const Icon = c.icon;
           const isActive = c.status === "active";
