@@ -1,85 +1,92 @@
-## Deliverables
+## Goal
 
-Three artifacts written to `/mnt/documents/`:
+Add a new Jupyter notebook `code/app_replica.ipynb` that reproduces, in pure Python, every visual, statistic, and customer-level output the TalkTalk NBA app shows — including a customer-lookup cell that takes a `unique_customer_identifier` and prints the same profile / SHAP / NBA / financial breakdown that the in-app drawer displays.
 
-1. **`TalkTalk_Retention_NBA.pptx`** — 18-slide deck, Midnight Executive palette (`#1E2761`, `#CADCFC`, `#FFFFFF`, `#F96167`).
-2. **`TalkTalk_Retention_NBA.pdf`** — same deck rendered to PDF via LibreOffice.
-3. **`TalkTalk_Retention_QA.docx`** + **`TalkTalk_Retention_QA.pdf`** — standalone Q&A study doc.
+It sits alongside `train.ipynb`, `score_top50.ipynb`, `score_offline_offers.ipynb` and reads the same local artefacts (`model_metrics.json`, `feature_importance.csv`, `nba_roi_params.json`, `top_50_customers.json`, `model_artefact.pkl`, `lovable_sample_*.csv`, `segment_risk_summary.csv`).
 
-All content derived from the actual model artefacts (`model_metrics.json`, `segment_risk_summary.csv`, `feature_importance.csv`, `nba_roi_params.json`, `top_50_customers.json`) and the in-app modules (Explainability, Net ROI, NBA rules, MotherDuck live data).
+## Notebook structure
 
----
+The notebook is organised page-by-page so a reader can map a section back to the corresponding screen in the app.
 
-## Slide flow (10 minutes ≈ 30s/slide)
+```text
+0. Setup & data loading
+1. ROI & Exec Summary    (mirrors / )
+2. Strategy & Pipeline   (mirrors /strategy)
+3. Model Evaluation      (mirrors /model)
+4. Explainability        (mirrors /explainability)
+5. NBA Rules             (mirrors /nba-rules)
+6. Customer Lookup       (drawer-equivalent for any customer_id)
+7. Top-50 most impacted  (mirrors the live table)
+```
 
-| # | Slide | Talk track focus |
-|---|---|---|
-| 1 | **Title** — "Prioritising Retention with a Churn-Risk + NBA engine" | Audience, presenter, date |
-| 2 | **The business ask** | UK Telecoms wants to focus retention spend on customers most likely to cease |
-| 3 | **TL;DR** (3 big stat cards) | 1.04M high-risk customers · £438M revenue at risk · ROC-AUC 0.868 |
-| 4 | **Approach overview** (4-step diagram) | Data → Model → Risk tiers → Next Best Action |
-| 5 | **The data** | 3.55M customers, 4 sources (customer_info / calls / cease / usage), DuckDB/MotherDuck pipeline |
-| 6 | **Feature engineering** | Tenure, OOC days, DD cancels, speed deficit, loyalty calls, hold time, usage vs package |
-| 7 | **Model choice & training** | XGBoost (binary:logistic), 600 trees, depth 6, LR 0.05, 2.66M train / 0.89M test, threshold 0.41 |
-| 8 | **Performance** (metrics table) | Accuracy 0.78 · Precision 0.73 · Recall 0.85 · F1 0.79 · **ROC-AUC 0.868** |
-| 9 | **ROC curve & confusion matrix** | Visual chart from `roc_curve` data; TP 357k, FP 130k, FN 64k, TN 335k |
-| 10 | **Top drivers** (horizontal bar) | tenure_days 0.31, contract_dd_cancels 0.19, dd_cancel_60_day 0.14, ooc_days 0.09, talk/hold time |
-| 11 | **Risk segmentation** | High 1.04M (score 0.82) · Medium 1.24M (0.51) · Low 1.26M (0.16) — dominant package Fibre 65 |
-| 12 | **From risk → action: the NBA matrix** | 6 treatments (Save desk, Free tech upgrade, Right-size, Competitor match, Nurture, Suppress) mapped to risk × context |
-| 13 | **Worked example: one customer** | Score 0.84 → High → OOC 142d + 2 loyalty calls → Loyalty Save Desk, 20% / 24-mo |
-| 14 | **ROI model** | Gross retained − discount dilution − cost-to-serve = Net retained; tier-based LTV horizon |
-| 15 | **Projected outcome** | Contact only the high-risk 1.04M (vs 3.55M base) → est. saves & net £ from current rule mix |
-| 16 | **The product: live decisioning app** | Dashboard, Explainability, NBA Rules, ROI sim, MotherDuck live source, filter presets |
-| 17 | **Roadmap & risks** | Drift monitoring, A/B holdout, fairness checks, channel capacity, retraining cadence |
-| 18 | **Thank you / Q&A** | Contact + repo links |
+### 0. Setup
+- Import `pandas`, `numpy`, `matplotlib`, `seaborn`, `json`, `pickle`, `pathlib`.
+- Load all artefacts from `./` (same folder as the other notebooks).
+- Helper `fmt_gbp`, `fmt_pct`, `fmt_int` matching the app's formatting.
+- Re-implement the scoring functions from `src/data/scoring.ts` in Python (`score_customer`, `tier_from_score`, `derive_nba_trigger`, `normalise_contract`) so customer lookup produces byte-identical SHAP contributions, risk tier and NBA trigger.
 
-Each slide uses the Midnight Executive palette: navy backgrounds for title/closing, light cards on white for content, coral (`#F96167`) reserved for the headline number or active risk tier.
+### 1. ROI & Exec Summary
+- KPI table: total customer base, high-risk volume, baseline conversion, average ARPU, revenue-at-risk, projected saved revenue at default 18% success rate (formulas from `src/routes/index.tsx` and `nba_roi_params.json`).
+- Pie chart: risk-tier mix (High / Medium / Low) from `segment_risk_summary.csv`.
+- Bar chart: net ROI per NBA trigger using rule contact-cost × saves × LTV (mirrors `RoiSimulator` + `PerTriggerSensitivityPanel`).
+- Line chart: net ROI sensitivity to success-rate sweep (10% → 35%).
+- Stacked bar: Net ROI segment drilldown by contract status, tenure bucket, and risk tier (mirrors `NetRoiSegmentDrilldown`).
 
-Visual elements: bar/donut/ROC charts rendered with chart libraries, icon callouts, pull-quote stat blocks (no plain bullet decks).
+### 2. Strategy & Pipeline
+- Markdown rendering of the 5 pipeline stages and an ASCII pipeline diagram.
+- Treatment matrix table: Risk × Contract status → NBA trigger, channel, offer (from `treatmentMatrix` in `src/data/nba.ts`).
 
----
+### 3. Model Evaluation
+- Hyperparameter table + dataset split.
+- Performance metrics bar chart (Accuracy / Precision / Recall / F1 / ROC-AUC) with the 0.41 threshold annotation.
+- Confusion matrix heatmap (TP/FP/FN/TN) with row %.
+- ROC curve from `model_metrics.json["roc_curve"]` with operating-point dot at threshold 0.41.
+- Per-segment precision/recall bars from `segment_metrics`.
 
-## Q&A Document (separate DOCX + PDF)
+### 4. Explainability
+- Global feature importance bar chart from `feature_importance.csv`.
+- Distribution plots: tenure_days, ooc_days, contract_dd_cancels coloured by risk tier (sample data).
+- "Local explanation" cell: pick the first customer from `top_50_customers.json`, render a horizontal bar chart of their top SHAP contributions and the narrative (`why_this_customer`, `why_this_nba`).
 
-Two sections, ~4-6 pages total.
+### 5. NBA Rules
+- Rendered table of NBA triggers from `src/data/customers.ts` (label, channel, offer, contact cost, success rate, expected save).
+- Bar chart: expected save GBP per trigger.
 
-**A. Technical Q&A (data science manager / DS team)**
-- Why XGBoost over Random Forest / Logistic Regression? (reference earlier RF benchmark in `model_training_stats.json`)
-- How was the decision threshold (0.41) chosen?
-- How do you handle class imbalance? (subsample 0.8, scale_pos_weight implicit via threshold tuning)
-- Feature leakage checks (cease label vs cease-derived features)
-- Why tree_method=hist with 600 estimators / depth 6
-- Calibration & probability interpretation (Platt / isotonic future work)
-- SHAP-style local explanations vs gain-based feature importance
-- Segment-level performance: 0-12m precision 0.84/recall 0.99 vs 48m+ precision 0.66/recall 0.65 — implications
-- Drift monitoring & retraining cadence
-- Edge-runtime constraint that pushed training to local Python + JSON ingest
-- Live data path: MotherDuck → introspected schema → `search-motherduck` / `facets-motherduck` endpoints
-- ROI math: `gross − dilution − cost`, tier LTV via `12 / annual_churn`
+### 6. Customer Lookup (the drawer in Python)
+A single parameterised cell:
 
-**B. General / business Q&A (CDO, Head of Data & AI, Data Manager)**
-- "Why these features and not others (e.g. NPS, complaints)?"
-- "How do we know the model isn't biased against long-tenure customers?"
-- "What's the contact capacity and how does that constrain the daily list?"
-- "Cost of false positives vs false negatives in £"
-- "How quickly can we re-train if a campaign changes behaviour?"
-- "What governance is in place for the offer rules?" (NBA rules store, audit trail)
-- "Privacy / PII handling, RLS on the app"
-- "What would it take to extend this to acquisition or cross-sell?"
-- "How does this compare to a propensity-only baseline?"
-- "Roadmap: holdout A/B, uplift modelling, fairness audit"
+```python
+CUSTOMER_ID = "abc-123"   # ← edit and re-run
+profile = lookup_customer(CUSTOMER_ID)
+render_customer_profile(profile)
+```
 
-Each Q has a concise 3-6 sentence answer with concrete numbers from the artefacts.
+`lookup_customer` searches `lovable_sample_customer_info.csv` (and joins `calls`, `usage`, `cease`) for the id, builds the `ScoringInput`, runs the Python `score_customer`, and returns the same shape the in-app drawer renders.
 
----
+`render_customer_profile` prints/plots:
+- Header: ID, package, tenure, contract status, region.
+- KPI strip: risk score, risk tier, expected save (GBP), recommended NBA, channel, offer.
+- SHAP horizontal bar chart of top 6 contributions with sign-coloured bars and the `detail` text alongside.
+- Behavioural signals table (loyalty calls 90d, hold seconds, talk seconds, monthly download/upload, sold vs line speed, OOC days).
+- "Why this customer" + "Why this NBA" narrative blocks.
+- Recent calls and usage timeline plots if data exists for that id.
 
-## Implementation
+If the id is not in the local sample, the cell falls back to `top_50_customers.json` so the cell still demonstrates the format end-to-end.
 
-1. Build the deck with `pptxgenjs` (Node) — embed all images as base64, use the Midnight Executive palette, vary layouts (title / 2-column / stat row / chart-left + text-right / matrix grid).
-2. Convert PPTX → PDF with LibreOffice (`run_libreoffice.py --headless --convert-to pdf`).
-3. Build DOCX with `docx` (Node) — Arial body, navy headings, two H1 sections, Q in bold + A as paragraph.
-4. Convert DOCX → PDF the same way.
-5. **Mandatory QA:** render every slide and every PDF page to JPG (`pdftoppm -jpeg -r 150`), inspect each, fix any overflow / overlap / contrast issues, re-render. Report findings.
-6. Emit `<lov-artifact>` tags for all four files.
+### 7. Top-50 most impacted
+- Table view of `top_50_customers.json` (rank, id, churn_prob, recommended_nba, expected_save_gbp).
+- Bar chart of expected save by trigger, summed across the 50.
+- Histogram of churn probabilities.
 
-Total expected runtime: ~3-5 minutes including QA cycles.
+## Technical details
+
+- Pure Python, no app or Lovable Cloud calls — runs offline like the existing notebooks.
+- Charts use matplotlib only (no extra installs) so the kernel works with the existing `pip install pandas pyarrow scikit-learn xgboost numpy [shap]` from `code/README tt.md`.
+- The Python re-implementation of `scoreCustomer` lives in a single notebook cell (clearly commented as the mirror of `src/data/scoring.ts`); risk-tier thresholds, base score 0.5, all impact weights and the NBA trigger rules are copied 1:1.
+- `lovable_sample_customer_info.csv` may not contain enrichments (loyalty calls, usage, cease insight) — the lookup uses `0` defaults exactly like `scoreCustomer` does so output stays consistent with the app.
+- Dataset volumes for the ROI charts come from `nba_roi_params.json` so the Python figures match the dashboard at the same scenario inputs.
+- README block at the top of the notebook lists every artefact it reads and which app screen each section reproduces.
+
+## Files
+
+- create `code/app_replica.ipynb`
