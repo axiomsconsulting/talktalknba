@@ -1534,7 +1534,7 @@ function MotherDuckPanel({
           <Button variant="outline" onClick={onTest} disabled={!conn || !!busy}>
             <PlayCircle className="size-4" /> Test connection
           </Button>
-          <Button onClick={onPull} disabled={!conn || !!busy || isPullActive(pullJob)}>
+          <Button onClick={() => onPull(customerLimit)} disabled={!conn || !!busy || isPullActive(pullJob)}>
             {busy === "motherduck-pull" || isPullActive(pullJob) ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
