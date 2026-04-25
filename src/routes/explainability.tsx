@@ -415,7 +415,7 @@ function ExplainabilityPage() {
             <div className="flex-1 overflow-y-auto">
               {filteredCustomers.length === 0 && (
                 <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-                  No customers match "{query}".
+                  No customers match {appliedQuery ? `"${appliedQuery}"` : "the current filters"}.
                 </div>
               )}
               {visibleCustomers.map((c) => (
