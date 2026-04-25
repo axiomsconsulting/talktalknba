@@ -496,6 +496,14 @@ function ConnectionsAdminPage() {
           />
         </TabsContent>
 
+        <TabsContent value="local_upload" className="mt-4">
+          <LocalUploadAdminPanel
+            conn={lup}
+            busy={busy}
+            onToggleEnabled={(v) => toggleEnabled("local_upload", v)}
+          />
+        </TabsContent>
+
         <TabsContent value="status" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
