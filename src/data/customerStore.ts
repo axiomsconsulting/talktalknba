@@ -353,4 +353,24 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
       .upsert(payload, { onConflict: "kind" });
     if (error) console.warn("[customerStore] persistActive failed", error);
   },
+
+  clearAllUploads: async () => {
+    // Reset in-memory state back to the bundled sample dataset.
+    set({
+      customers: defaultCustomers,
+      source: { kind: "mock" },
+      callsMap: new Map(),
+      ceaseMap: new Map(),
+      usageMap: new Map(),
+      callsSource: null,
+      ceaseSource: null,
+      usageSource: null,
+    });
+    // Drop every upload-origin row from the persisted active sources.
+    const { error } = await supabase
+      .from("active_data_sources")
+      .delete()
+      .eq("origin", "upload");
+    if (error) console.warn("[customerStore] clearAllUploads failed", error);
+  },
 }));
