@@ -3,8 +3,6 @@ import {
   jsonError,
   jsonOk,
   requireAdmin,
-  gatewayHeaders,
-  GATEWAY_URLS,
   databricksRunSql,
   motherduckQuery,
   type MotherDuckConfig,
