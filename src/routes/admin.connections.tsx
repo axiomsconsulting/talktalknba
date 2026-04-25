@@ -417,6 +417,18 @@ function ConnectionsAdminPage() {
           />
         </TabsContent>
 
+        <TabsContent value="motherduck" className="mt-4">
+          <MotherDuckPanel
+            conn={mdr}
+            busy={busy}
+            onSave={(patch) => upsert("motherduck", patch)}
+            onTest={() => test("motherduck")}
+            onPull={pullMotherduck}
+            onCancel={cancelPull}
+            pullJob={pullJob}
+          />
+        </TabsContent>
+
         <TabsContent value="databricks" className="mt-4">
           <DatabricksPanel
             conn={dbx}
