@@ -1789,6 +1789,36 @@ function DatasetTable({
     try {
       await supabase.storage.from("datasets").remove([d.storage_path]);
       await supabase.from("customer_datasets").delete().eq("id", d.id);
+
+      // If the file we just removed was powering an active enrichment or the
+      // live customer base, drop it from the persisted active sources too so
+      // the dashboards stop pretending it's still loaded.
+      const wasActive = isActiveFor(d);
+      if (wasActive) {
+        await supabase.from("active_data_sources").delete().eq("kind", d.kind);
+      }
+
+      // After delete, check whether the dataset library is now empty. If so,
+      // wipe every upload-origin selection and auto-disable the "Local upload"
+      // connection so the UI stops advertising it as a live source.
+      const { data: remaining } = await supabase
+        .from("customer_datasets")
+        .select("id")
+        .limit(1);
+      if (!remaining || remaining.length === 0) {
+        await useCustomerStore.getState().clearAllUploads();
+        await supabase
+          .from("data_connections")
+          .update({ enabled: false })
+          .eq("kind", "local_upload");
+        toast.success("Library cleared — local upload deactivated, sample data restored");
+      } else if (wasActive) {
+        // Library still has files but we just removed the active one — fall
+        // back to sample until the user activates another.
+        useCustomerStore.getState().reset();
+        toast.success("Active dataset removed — restored sample data");
+      }
+
       onChanged();
     } finally {
       setBusyId(null);
