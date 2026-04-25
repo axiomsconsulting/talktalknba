@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload";
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload" | "sample";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
