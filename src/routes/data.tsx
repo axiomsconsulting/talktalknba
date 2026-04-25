@@ -225,7 +225,7 @@ function DataPage() {
             onValueChange={(v) => setSelectedSource(v as SourceKey)}
             className="px-5 sm:px-7 py-5"
           >
-            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full gap-2 h-auto bg-muted/40 p-1">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full gap-2 h-auto bg-muted/40 p-1">
               <SourceTab
                 value="sample"
                 icon={Sparkles}
@@ -244,13 +244,6 @@ function DataPage() {
                 label="MotherDuck (live)"
                 active={activeSourceKey === "motherduck"}
                 statusOk={!!mdConn?.enabled}
-              />
-              <SourceTab
-                value="gdrive"
-                icon={HardDrive}
-                label="Google Drive"
-                active={activeSourceKey === "gdrive"}
-                statusOk={!!gdriveConn?.enabled}
               />
               <SourceTab
                 value="databricks"
@@ -278,14 +271,6 @@ function DataPage() {
 
             <TabsContent value="motherduck" className="mt-5">
               <MotherDuckLivePanel conn={mdConn} onChanged={refresh} />
-            </TabsContent>
-
-            <TabsContent value="gdrive" className="mt-5">
-              <LiveConnectionPanel
-                kind="gdrive"
-                conn={gdriveConn}
-                onChanged={refresh}
-              />
             </TabsContent>
 
             <TabsContent value="databricks" className="mt-5">
