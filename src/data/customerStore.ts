@@ -78,6 +78,13 @@ type CustomerStore = {
    * the bundled sample dataset. Used when the dataset library is emptied.
    */
   clearAllUploads: () => Promise<void>;
+
+  /**
+   * Wipes the customer base AND every enrichment, leaving an empty store
+   * (source.kind = "empty"). Used when every connector — including sample —
+   * is disabled, so the dashboards correctly show "no data".
+   */
+  clearAll: () => Promise<void>;
 };
 
 function enrichCustomers(
