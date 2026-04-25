@@ -410,6 +410,7 @@ function ConnectionsAdminPage() {
   const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
   const mdr = (conns ?? []).find((c) => c.kind === "motherduck");
   const lup = (conns ?? []).find((c) => c.kind === "local_upload");
+  const smp = (conns ?? []).find((c) => c.kind === "sample");
 
   return (
     <AppShell>
