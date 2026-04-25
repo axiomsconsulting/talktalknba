@@ -16,7 +16,7 @@ import {
   Phone,
   XOctagon,
   Activity,
-  HardDrive,
+  
   Cloud,
   ExternalLink,
   PlayCircle,
