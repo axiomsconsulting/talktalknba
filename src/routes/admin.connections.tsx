@@ -351,8 +351,6 @@ function ConnectionsAdminPage() {
   };
 
   const dbx = (conns ?? []).find((c) => c.kind === "databricks");
-  const gdr = (conns ?? []).find((c) => c.kind === "gdrive");
-  const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
   const mdr = (conns ?? []).find((c) => c.kind === "motherduck");
   const lup = (conns ?? []).find((c) => c.kind === "local_upload");
   const smp = (conns ?? []).find((c) => c.kind === "sample");
@@ -374,19 +372,13 @@ function ConnectionsAdminPage() {
         }
       />
 
-      <Tabs defaultValue="azure_repo" className="mt-6">
+      <Tabs defaultValue="motherduck" className="mt-6">
         <TabsList>
-          <TabsTrigger value="azure_repo" className="gap-2">
-            <GitBranch className="size-4" /> Azure DevOps
-          </TabsTrigger>
           <TabsTrigger value="motherduck" className="gap-2">
             <Cloud className="size-4" /> MotherDuck
           </TabsTrigger>
           <TabsTrigger value="databricks" className="gap-2">
             <Database className="size-4" /> Databricks
-          </TabsTrigger>
-          <TabsTrigger value="gdrive" className="gap-2">
-            <HardDrive className="size-4" /> Google Drive
           </TabsTrigger>
           <TabsTrigger value="local_upload" className="gap-2">
             <UploadCloud className="size-4" /> Local upload
@@ -398,19 +390,6 @@ function ConnectionsAdminPage() {
             <Cpu className="size-4" /> Status & runs
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="azure_repo" className="mt-4">
-          <AzurePanel
-            conn={azr}
-            busy={busy}
-            onSave={(patch) => upsert("azure_repo", patch)}
-            onToggleEnabled={(v) => toggleEnabled("azure_repo", v)}
-            onIngest={() => ingest("azure_repo")}
-            onPull={pullAzure}
-            onCancel={cancelPull}
-            pullJob={pullJob}
-          />
-        </TabsContent>
 
         <TabsContent value="motherduck" className="mt-4">
           <MotherDuckPanel
@@ -434,17 +413,6 @@ function ConnectionsAdminPage() {
             onTest={() => test("databricks")}
             onIngest={() => ingest("databricks")}
             onRetrain={trigger}
-          />
-        </TabsContent>
-
-        <TabsContent value="gdrive" className="mt-4">
-          <GDrivePanel
-            conn={gdr}
-            busy={busy}
-            onSave={(patch) => upsert("gdrive", patch)}
-            onToggleEnabled={(v) => toggleEnabled("gdrive", v)}
-            onTest={() => test("gdrive")}
-            onIngest={() => ingest("gdrive")}
           />
         </TabsContent>
 
