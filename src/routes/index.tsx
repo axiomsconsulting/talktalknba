@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { RoiSimulator } from "@/components/RoiSimulator";
 import { SensitivityPanel } from "@/components/SensitivityPanel";
 import { PerTriggerSensitivityPanel } from "@/components/PerTriggerSensitivityPanel";
+import { NetRoiSegmentDrilldown } from "@/components/NetRoiSegmentDrilldown";
 
 import { roiParams, segmentSummary, formatGbp, formatNumber } from "@/data/nba";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
