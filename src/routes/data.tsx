@@ -358,35 +358,11 @@ function ActiveSourcesOverview({
     status: "active" | "configured" | "available" | "not_configured";
   }> = [
     {
-      key: "sample",
-      icon: Sparkles,
-      title: "Sample data",
-      subtitle: "6 personas + 50 generated customers",
-      status: activeSourceKey === "sample" ? "active" : "available",
-    },
-    {
-      key: "upload",
-      icon: UploadCloud,
-      title: "Local upload",
-      subtitle:
-        activeSourceKey === "upload" && source.kind === "uploaded"
-          ? source.filename
-          : localConn?.enabled === false
-            ? "Disabled — toggle in Connections"
-            : "CSV / Parquet, drop & map",
-      status:
-        activeSourceKey === "upload"
-          ? "active"
-          : localConn?.enabled
-            ? "configured"
-            : "not_configured",
-    },
-    {
       key: "motherduck",
       icon: Cloud,
       title: "MotherDuck (live)",
       subtitle: mdConn?.enabled
-        ? `Live · ${mdConn.name}`
+        ? `Primary live source · ${mdConn.name}`
         : mdConn
           ? "Configured · disabled"
           : "Not configured",
@@ -422,6 +398,35 @@ function ActiveSourcesOverview({
         activeSourceKey === "databricks"
           ? "active"
           : dbxConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+    {
+      key: "upload",
+      icon: UploadCloud,
+      title: "Local upload",
+      subtitle:
+        activeSourceKey === "upload" && source.kind === "uploaded"
+          ? source.filename
+          : localConn?.enabled === false
+            ? "Disabled — toggle in Connections"
+            : "CSV / Parquet, drop & map",
+      status:
+        activeSourceKey === "upload"
+          ? "active"
+          : localConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+    {
+      key: "sample",
+      icon: Sparkles,
+      title: "Sample data",
+      subtitle: "6 personas + 50 generated customers (fallback)",
+      status:
+        activeSourceKey === "sample"
+          ? "active"
+          : sampleConn?.enabled
             ? "configured"
             : "not_configured",
     },
