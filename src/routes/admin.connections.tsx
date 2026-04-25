@@ -446,6 +446,9 @@ function ConnectionsAdminPage() {
           <TabsTrigger value="local_upload" className="gap-2">
             <UploadCloud className="size-4" /> Local upload
           </TabsTrigger>
+          <TabsTrigger value="sample" className="gap-2">
+            <Sparkles className="size-4" /> Sample data
+          </TabsTrigger>
           <TabsTrigger value="status" className="gap-2">
             <Cpu className="size-4" /> Status & runs
           </TabsTrigger>
