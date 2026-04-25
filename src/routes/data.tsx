@@ -160,20 +160,31 @@ function DataPage() {
     clearAll,
   ]);
 
-  // Derive which source is currently powering the customer base
+  // Derive which source is currently powering the customer base.
+  // Priority (highest → lowest): MotherDuck → Google Drive → Databricks → Local upload → Sample.
+  // The first *enabled* source in this list wins, regardless of which detail
+  // string the in-memory store currently carries — so toggling MotherDuck on
+  // immediately re-labels every dashboard as "MotherDuck (live)".
   const activeSourceKey: SourceKey | "none" = useMemo(() => {
-    if (source.kind === "empty") return "none";
-    if (source.kind === "mock") return "sample";
-    const detail = (source as { detail?: string }).detail ?? "";
-    if (detail.toLowerCase().includes("motherduck")) return "motherduck";
-    if (detail.toLowerCase().includes("google drive")) return "gdrive";
-    if (detail.toLowerCase().includes("databricks")) return "databricks";
-    if ((source as { origin?: string }).origin === "live") {
-      if (mdConn?.enabled) return "motherduck";
-      return gdriveConn?.enabled ? "gdrive" : "databricks";
+    if (mdConn?.enabled) return "motherduck";
+    if (gdriveConn?.enabled) return "gdrive";
+    if (dbxConn?.enabled) return "databricks";
+    if (localConn?.enabled && source.kind === "uploaded" && (source as { origin?: string }).origin !== "live") {
+      return "upload";
     }
-    return "upload";
-  }, [source, gdriveConn?.enabled, mdConn?.enabled]);
+    if (sampleConn?.enabled) return "sample";
+    if (source.kind === "empty") return "none";
+    // Fallback: nothing enabled but store still carries something.
+    if (source.kind === "uploaded") return "upload";
+    return "sample";
+  }, [
+    source,
+    mdConn?.enabled,
+    gdriveConn?.enabled,
+    dbxConn?.enabled,
+    localConn?.enabled,
+    sampleConn?.enabled,
+  ]);
 
   return (
     <AppShell>
