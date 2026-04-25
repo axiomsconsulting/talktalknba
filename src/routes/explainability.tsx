@@ -30,6 +30,8 @@ import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { customerLtv } from "@/data/financials";
 import { hydrateLiveCustomers } from "@/data/liveCustomerHydrator";
+import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_MAPPING, mapCustomers, type RawCustomerRow } from "@/data/customerMapping";
 import { cn } from "@/lib/utils";
 import { TopImpactedCustomers } from "@/components/TopImpactedCustomers";
 
