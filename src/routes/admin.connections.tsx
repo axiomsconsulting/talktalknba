@@ -18,6 +18,7 @@ import {
   Download,
   StopCircle,
   Cloud,
+  UploadCloud,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
