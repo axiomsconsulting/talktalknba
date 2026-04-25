@@ -17,6 +17,7 @@ import {
   GitBranch,
   Download,
   StopCircle,
+  Cloud,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
