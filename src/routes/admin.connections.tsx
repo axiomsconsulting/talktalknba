@@ -245,6 +245,30 @@ function ConnectionsAdminPage() {
     await reload();
   };
 
+  /** Persist just the enabled flag immediately when the toggle changes. */
+  const toggleEnabled = async (kind: ConnectionKind, value: boolean) => {
+    const existing = conns?.find((c) => c.kind === kind);
+    if (!existing) {
+      // No row yet — fall back to a full upsert so the toggle still persists.
+      await upsert(kind, { enabled: value });
+      return;
+    }
+    // Optimistic local update
+    setConns((prev) =>
+      (prev ?? []).map((c) => (c.id === existing.id ? { ...c, enabled: value } : c)),
+    );
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", existing.id);
+    if (error) {
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      await reload();
+      return;
+    }
+    toast.success(`${existing.name} ${value ? "enabled" : "disabled"}`);
+  };
+
   const test = async (kind: ConnectionKind) => {
     setBusy(`${kind}-test`);
     try {
@@ -412,6 +436,7 @@ function ConnectionsAdminPage() {
             conn={azr}
             busy={busy}
             onSave={(patch) => upsert("azure_repo", patch)}
+            onToggleEnabled={(v) => toggleEnabled("azure_repo", v)}
             onIngest={() => ingest("azure_repo")}
             onPull={pullAzure}
             onCancel={cancelPull}
@@ -424,6 +449,7 @@ function ConnectionsAdminPage() {
             conn={mdr}
             busy={busy}
             onSave={(patch) => upsert("motherduck", patch)}
+            onToggleEnabled={(v) => toggleEnabled("motherduck", v)}
             onTest={() => test("motherduck")}
             onPull={pullMotherduck}
             onCancel={cancelPull}
@@ -436,6 +462,7 @@ function ConnectionsAdminPage() {
             conn={dbx}
             busy={busy}
             onSave={(patch) => upsert("databricks", patch)}
+            onToggleEnabled={(v) => toggleEnabled("databricks", v)}
             onTest={() => test("databricks")}
             onIngest={() => ingest("databricks")}
             onRetrain={trigger}
@@ -447,6 +474,7 @@ function ConnectionsAdminPage() {
             conn={gdr}
             busy={busy}
             onSave={(patch) => upsert("gdrive", patch)}
+            onToggleEnabled={(v) => toggleEnabled("gdrive", v)}
             onTest={() => test("gdrive")}
             onIngest={() => ingest("gdrive")}
           />
@@ -568,6 +596,7 @@ function DatabricksPanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onIngest,
   onRetrain,
@@ -575,6 +604,7 @@ function DatabricksPanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onIngest: () => void;
   onRetrain: () => void;
@@ -632,7 +662,7 @@ function DatabricksPanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>
@@ -735,12 +765,14 @@ function GDrivePanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onIngest,
 }: {
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onIngest: () => void;
 }) {
@@ -789,7 +821,7 @@ function GDrivePanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>
@@ -878,6 +910,7 @@ function AzurePanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onIngest,
   onPull,
   onCancel,
@@ -886,6 +919,7 @@ function AzurePanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onIngest: () => void;
   onPull: () => void;
   onCancel: () => void;
@@ -1042,7 +1076,7 @@ function AzurePanel({
               project secrets to read private repos.
             </p>
           </div>
-          <Switch id="az-enabled" checked={enabled} onCheckedChange={setEnabled} />
+          <Switch id="az-enabled" checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           <Label htmlFor="az-enabled">Enabled</Label>
         </div>
 
@@ -1412,6 +1446,7 @@ function MotherDuckPanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onPull,
   onCancel,
@@ -1420,6 +1455,7 @@ function MotherDuckPanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onPull: (customerLimit?: number) => void;
   onCancel: () => void;
@@ -1467,7 +1503,7 @@ function MotherDuckPanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={conn?.last_status ?? null} />
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={(v) => { setEnabled(v); onToggleEnabled(v); }} />
           </div>
         </div>
       </CardHeader>

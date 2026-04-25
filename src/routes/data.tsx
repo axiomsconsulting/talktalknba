@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo";
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
@@ -73,20 +73,20 @@ export const Route = createFileRoute("/data")({
       {
         name: "description",
         content:
-          "Pick a customer data source — Sample, Local upload, Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
+          "Pick a customer data source — Sample, Local upload, MotherDuck (live), Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
       },
       { property: "og:title", content: "Data Library — TalkTalk NBA" },
       {
         property: "og:description",
         content:
-          "Centralised data control plane: choose between sample, uploaded, Google Drive or Databricks sources and see which signals are live.",
+          "Centralised data control plane: choose between sample, uploaded, MotherDuck-live, Google Drive or Databricks sources and see which signals are live.",
       },
     ],
   }),
   component: DataPage,
 });
 
-type SourceKey = "sample" | "upload" | "gdrive" | "databricks";
+type SourceKey = "sample" | "upload" | "motherduck" | "gdrive" | "databricks";
 
 function DataPage() {
   const [datasets, setDatasets] = useState<DatasetRow[]>([]);
@@ -117,19 +117,21 @@ function DataPage() {
 
   const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
+  const mdConn = connections.find((c) => c.kind === "motherduck");
 
   // Derive which source is currently powering the customer base
   const activeSourceKey: SourceKey = useMemo(() => {
     if (source.kind === "mock") return "sample";
     const detail = (source as { detail?: string }).detail ?? "";
+    if (detail.toLowerCase().includes("motherduck")) return "motherduck";
     if (detail.toLowerCase().includes("google drive")) return "gdrive";
     if (detail.toLowerCase().includes("databricks")) return "databricks";
     if ((source as { origin?: string }).origin === "live") {
-      // Best-effort: live but unknown provenance — show as gdrive if connected
+      if (mdConn?.enabled) return "motherduck";
       return gdriveConn?.enabled ? "gdrive" : "databricks";
     }
     return "upload";
-  }, [source, gdriveConn?.enabled]);
+  }, [source, gdriveConn?.enabled, mdConn?.enabled]);
 
   return (
     <AppShell>
@@ -174,7 +176,7 @@ function DataPage() {
             onValueChange={(v) => setSelectedSource(v as SourceKey)}
             className="px-5 sm:px-7 py-5"
           >
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full gap-2 h-auto bg-muted/40 p-1">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full gap-2 h-auto bg-muted/40 p-1">
               <SourceTab
                 value="sample"
                 icon={Sparkles}
@@ -186,6 +188,13 @@ function DataPage() {
                 icon={UploadCloud}
                 label="Local upload"
                 active={activeSourceKey === "upload"}
+              />
+              <SourceTab
+                value="motherduck"
+                icon={Cloud}
+                label="MotherDuck (live)"
+                active={activeSourceKey === "motherduck"}
+                statusOk={!!mdConn?.enabled}
               />
               <SourceTab
                 value="gdrive"
@@ -213,6 +222,10 @@ function DataPage() {
 
             <TabsContent value="upload" className="mt-5">
               <UploadCard onUploaded={refresh} />
+            </TabsContent>
+
+            <TabsContent value="motherduck" className="mt-5">
+              <MotherDuckLivePanel conn={mdConn} onChanged={refresh} />
             </TabsContent>
 
             <TabsContent value="gdrive" className="mt-5">
@@ -248,6 +261,7 @@ function DataPage() {
 function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState>["source"]): SourceKey {
   if (source.kind === "mock") return "sample";
   const detail = (source as { detail?: string }).detail ?? "";
+  if (detail.toLowerCase().includes("motherduck")) return "motherduck";
   if (detail.toLowerCase().includes("google drive")) return "gdrive";
   if (detail.toLowerCase().includes("databricks")) return "databricks";
   return "upload";
@@ -693,8 +707,296 @@ function LiveConnectionPanel({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Upload card with drag-and-drop, parsing, mapping UI
+// MotherDuck live panel — query the online DB directly without pulling
 // ─────────────────────────────────────────────────────────────────────────────
+
+type LiveQueryResult = {
+  results: Record<string, { headers: string[]; rows: unknown[][]; count: number }>;
+  customerLimit: number;
+};
+
+function MotherDuckLivePanel({
+  conn,
+  onChanged,
+}: {
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState<"test" | "query" | "toggle" | null>(null);
+  const [limit, setLimit] = useState(50);
+  const [enabled, setEnabled] = useState(conn?.enabled ?? false);
+  const [lastResult, setLastResult] = useState<LiveQueryResult | null>(null);
+  const setActive = useCustomerStore((s) => s.setActive);
+  const applyCalls = useCustomerStore((s) => s.applyCalls);
+  const applyCease = useCustomerStore((s) => s.applyCease);
+  const applyUsage = useCustomerStore((s) => s.applyUsage);
+
+  useEffect(() => {
+    setEnabled(conn?.enabled ?? false);
+  }, [conn?.id, conn?.enabled]);
+
+  async function toggle(value: boolean) {
+    if (!conn) {
+      toast.error("Configure MotherDuck in Admin → Connections first");
+      return;
+    }
+    setBusy("toggle");
+    setEnabled(value); // optimistic
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", conn.id);
+    setBusy(null);
+    if (error) {
+      setEnabled(!value);
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      return;
+    }
+    toast.success(`MotherDuck ${value ? "enabled" : "disabled"}`);
+    onChanged();
+  }
+
+  async function callJson(path: string, body: unknown) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+    const text = await res.text();
+    let json: unknown = null;
+    try { json = text ? JSON.parse(text) : null; } catch { /* keep text */ }
+    if (!res.ok) {
+      const msg = (json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string")
+        ? (json as { error: string }).error
+        : text || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    return json;
+  }
+
+  async function testConnection() {
+    setBusy("test");
+    try {
+      await callJson("/api/admin/connections/test", { kind: "motherduck" });
+      toast.success("MotherDuck connection ok");
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runLiveQuery() {
+    setBusy("query");
+    try {
+      const res = (await callJson("/api/admin/connections/query-motherduck", {
+        customerLimit: limit,
+      })) as LiveQueryResult;
+      setLastResult(res);
+
+      // Hydrate the in-memory store directly — no Storage round-trip.
+      const detail = `MotherDuck (live) · ${conn?.name ?? "MotherDuck"}`;
+      const stamp = new Date().toISOString();
+
+      const ci = res.results.customer_info;
+      if (ci && ci.rows.length > 0) {
+        const objects = ci.rows.map((r) => {
+          const o: RawCustomerRow = {};
+          ci.headers.forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
+          return o;
+        });
+        const mapped = mapCustomers(objects, DEFAULT_MAPPING);
+        if (mapped.length > 0) {
+          setActive(mapped, "MotherDuck (live)", "live", detail);
+        }
+      }
+
+      const enrichFor = (kind: "calls" | "cease" | "usage") => {
+        const r = res.results[kind];
+        if (!r || r.rows.length === 0) return;
+        const objects = r.rows.map((row) => {
+          const o: RawCustomerRow = {};
+          r.headers.forEach((h, i) => { o[h] = row[i] as RawCustomerRow[string]; });
+          return o;
+        });
+        const src = {
+          filename: `MotherDuck (live) · ${kind}`,
+          rowsAggregated: objects.length,
+          uploadedAt: stamp,
+          origin: "live" as const,
+          detail,
+        };
+        if (kind === "calls") applyCalls(aggregateCalls(objects), src);
+        else if (kind === "cease") applyCease(aggregateCease(objects), src);
+        else applyUsage(aggregateUsage(objects), src);
+      };
+      enrichFor("calls");
+      enrichFor("cease");
+      enrichFor("usage");
+
+      toast.success(
+        `Live query ok · ${ci?.count ?? 0} customers loaded directly from MotherDuck`,
+      );
+      onChanged();
+    } catch (e) {
+      toast.error(`Live query failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!conn) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="size-10 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <AlertTriangle className="size-5" />
+          </div>
+          <div>
+            <div className="text-base font-semibold text-foreground">MotherDuck not configured</div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Connect a MotherDuck database (online DuckDB) to query customer_info, calls, cease and
+              usage tables directly — no pulls, no Storage round-trip.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/admin/connections"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold bg-gradient-to-r from-primary to-primary-deep text-primary-foreground shadow-[var(--shadow-glow)]"
+        >
+          <Settings2 className="size-4" /> Configure MotherDuck
+          <ExternalLink className="size-3.5" />
+        </Link>
+      </div>
+    );
+  }
+
+  const cfg = conn.config as { database?: string; schema?: string; host?: string };
+  const lastRun = conn.last_run_at ? new Date(conn.last_run_at).toLocaleString("en-GB") : "Never";
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Cloud className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-base font-semibold text-foreground">{conn.name}</div>
+            <span
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+                enabled
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+              )}
+            >
+              {enabled ? "Enabled" : "Disabled"}
+            </span>
+            <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border border-primary/30 bg-primary/10 text-primary">
+              Live query
+            </span>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 break-all">
+            {cfg.database ?? "—"} · {cfg.schema ?? "main"} · {cfg.host ?? "pg.us-east-1-aws.motherduck.com"}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Last run: {lastRun}</div>
+        </div>
+        <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+          <span>{enabled ? "On" : "Off"}</span>
+          <input
+            type="checkbox"
+            checked={enabled}
+            disabled={busy === "toggle"}
+            onChange={(e) => toggle(e.target.checked)}
+            className="size-4 accent-primary"
+          />
+        </label>
+      </div>
+
+      <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
+        <strong>Live mode</strong> — when enabled, the dashboard queries MotherDuck on demand
+        instead of pulling snapshots into Storage. Click <em>Run live query</em> to refresh the
+        in-memory customer base directly from the online DuckDB.
+      </div>
+
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="space-y-1">
+          <label htmlFor="md-live-limit" className="text-[11px] font-medium text-foreground">
+            Customer sample size
+          </label>
+          <input
+            id="md-live-limit"
+            type="number"
+            min={1}
+            max={500}
+            value={limit}
+            onChange={(e) => setLimit(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+            className="w-28 h-8 px-2 text-xs rounded-md border border-border bg-card"
+          />
+        </div>
+        <div className="text-[11px] text-muted-foreground max-w-[320px]">
+          1–500 random customer_info rows, with calls / cease / usage scoped to the same IDs.
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+        <button
+          onClick={testConnection}
+          disabled={!!busy || !enabled}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 disabled:opacity-60"
+        >
+          {busy === "test" ? <Loader2 className="size-3.5 animate-spin" /> : <PlayCircle className="size-3.5" />}
+          Test connection
+        </button>
+        <button
+          onClick={runLiveQuery}
+          disabled={!!busy || !enabled}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-primary/30 text-primary hover:bg-primary/5 disabled:opacity-60"
+        >
+          {busy === "query" ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />}
+          Run live query
+        </button>
+        <Link
+          to="/admin/connections"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 ml-auto"
+        >
+          <Settings2 className="size-3.5" /> Advanced configure
+          <ExternalLink className="size-3" />
+        </Link>
+      </div>
+
+      {lastResult && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+          {(["customer_info", "calls", "cease", "usage"] as const).map((k) => {
+            const r = lastResult.results[k];
+            return (
+              <div key={k} className="rounded-md border border-border bg-card px-2 py-1.5">
+                <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {k}
+                </div>
+                <div className="text-xs font-semibold text-foreground tabular-nums">
+                  {r?.count?.toLocaleString() ?? 0} rows
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!enabled && (
+        <div className="text-[11px] text-amber-700 dark:text-amber-300">
+          Live mode is off — toggle the switch above to enable querying.
+        </div>
+      )}
+    </div>
+  );
+}
 
 type StagedFile = {
   file: File;
