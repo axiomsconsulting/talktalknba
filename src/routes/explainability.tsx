@@ -322,7 +322,8 @@ function ExplainabilityPage() {
                   className="pl-9"
                 />
               </div>
-              <div className="mt-3">
+              <div className="mt-3 space-y-2">
+                <CustomerFilterPresetsBar filters={filters} onLoad={setFilters} />
                 <CustomerFiltersBar
                   filters={filters}
                   onChange={setFilters}
