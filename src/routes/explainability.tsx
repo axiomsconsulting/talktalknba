@@ -118,7 +118,66 @@ function ExplainabilityPage() {
   }, [query, allCustomers]);
 
   const PAGE_SIZE = 5;
-  const pageCount = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+
+  // When MotherDuck live mode is on, we run a server-paged search against the
+  // online DuckDB. Otherwise we filter the in-memory store as before.
+  useEffect(() => {
+    if (!mdLiveEnabled) return;
+    let cancelled = false;
+    setLiveBusy(true);
+    setLiveError(null);
+    const handle = setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch("/api/admin/connections/search-motherduck", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ q: query, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+        });
+        const json = (await res.json()) as {
+          headers?: string[]; rows?: unknown[][]; total?: number; totalAll?: number; error?: string;
+        };
+        if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+        if (cancelled) return;
+        const objects = (json.rows ?? []).map((r) => {
+          const o: RawCustomerRow = {};
+          (json.headers ?? []).forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
+          return o;
+        });
+        setLiveRows(mapCustomers(objects, DEFAULT_MAPPING));
+        setLiveTotal(json.total ?? 0);
+        setLiveTotalAll(json.totalAll ?? 0);
+      } catch (e) {
+        if (!cancelled) setLiveError((e as Error).message);
+      } finally {
+        if (!cancelled) setLiveBusy(false);
+      }
+    }, 250); // debounce
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [mdLiveEnabled, query, page]);
+
+  const filteredCustomers = useMemo(() => {
+    if (mdLiveEnabled) return liveRows;
+    const q = query.trim().toLowerCase();
+    if (!q) return allCustomers;
+    return allCustomers.filter(
+      (c) =>
+        c.id.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        c.package.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q) ||
+        (c.persona ?? "").toLowerCase().includes(q)
+    );
+  }, [query, allCustomers, mdLiveEnabled, liveRows]);
+
+  const totalCustomersForCount = mdLiveEnabled ? liveTotalAll : allCustomers.length;
+  const matchesCount = mdLiveEnabled ? liveTotal : filteredCustomers.length;
+  const pageCount = mdLiveEnabled
+    ? Math.max(1, Math.ceil(liveTotal / PAGE_SIZE))
+    : Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
   // Reset/clamp page whenever the filtered set changes size.
   useEffect(() => {
     if (page > pageCount - 1) setPage(0);
@@ -127,8 +186,10 @@ function ExplainabilityPage() {
   useEffect(() => { setPage(0); }, [query]);
 
   const visibleCustomers = useMemo(
-    () => filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
-    [filteredCustomers, page],
+    () => mdLiveEnabled
+      ? liveRows
+      : filteredCustomers.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredCustomers, page, mdLiveEnabled, liveRows],
   );
 
   // Auto-select the first real customer once live data lands so the detail
