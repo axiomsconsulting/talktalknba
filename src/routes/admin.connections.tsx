@@ -323,7 +323,24 @@ function ConnectionsAdminPage() {
     }
   };
 
-  const cancelPull = async () => {
+  const pullMotherduck = async () => {
+    setBusy("motherduck-pull");
+    try {
+      const res = (await callServer(`/api/admin/connections/pull-motherduck`, {})) as {
+        jobId?: string;
+        filesTotal?: number;
+      } | null;
+      if (res?.jobId) {
+        toast.success(`Queued — ${res.filesTotal ?? 0} table(s) to pull`);
+        await refreshPullJob(res.jobId);
+      }
+      await reload();
+    } catch (e) {
+      toast.error(`Pull failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  };
     if (!pullJob) return;
     setBusy("azure_repo-cancel");
     try {
