@@ -18,6 +18,7 @@ import {
   Download,
   StopCircle,
   Cloud,
+  UploadCloud,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/admin/connections")({
   component: ConnectionsAdminPage,
 });
 
-type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck";
+type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload";
 type RunStatus = "pending" | "running" | "success" | "error";
 
 type DatabricksQuery = { kind: string; sql: string };
@@ -225,7 +226,9 @@ function ConnectionsAdminPage() {
           ? "Google Drive"
           : kind === "motherduck"
             ? "MotherDuck"
-            : "Azure DevOps";
+            : kind === "local_upload"
+              ? "Local upload"
+              : "Azure DevOps";
     const payload = {
       kind,
       name: patch.name ?? existing?.name ?? defaultName,
@@ -403,13 +406,23 @@ function ConnectionsAdminPage() {
   const gdr = (conns ?? []).find((c) => c.kind === "gdrive");
   const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
   const mdr = (conns ?? []).find((c) => c.kind === "motherduck");
+  const lup = (conns ?? []).find((c) => c.kind === "local_upload");
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
-        title="Live data connections"
-        description="Configure where the platform pulls customer, usage, calls, cease and model artefact data from. All connectors are optional — without them, the dashboard shows the bundled sample data."
+        eyebrow="Admin · Advanced setup"
+        title="Connector configuration"
+        description={
+          <>
+            Deep configuration for each data connector — credentials, schemas, file paths and pull
+            jobs. For day-to-day source switching and toggles, use the{" "}
+            <Link to="/data" className="text-primary underline-offset-2 hover:underline">
+              Data control plane
+            </Link>
+            .
+          </>
+        }
       />
 
       <Tabs defaultValue="azure_repo" className="mt-6">
@@ -425,6 +438,9 @@ function ConnectionsAdminPage() {
           </TabsTrigger>
           <TabsTrigger value="gdrive" className="gap-2">
             <HardDrive className="size-4" /> Google Drive
+          </TabsTrigger>
+          <TabsTrigger value="local_upload" className="gap-2">
+            <UploadCloud className="size-4" /> Local upload
           </TabsTrigger>
           <TabsTrigger value="status" className="gap-2">
             <Cpu className="size-4" /> Status & runs
@@ -477,6 +493,14 @@ function ConnectionsAdminPage() {
             onToggleEnabled={(v) => toggleEnabled("gdrive", v)}
             onTest={() => test("gdrive")}
             onIngest={() => ingest("gdrive")}
+          />
+        </TabsContent>
+
+        <TabsContent value="local_upload" className="mt-4">
+          <LocalUploadAdminPanel
+            conn={lup}
+            busy={busy}
+            onToggleEnabled={(v) => toggleEnabled("local_upload", v)}
           />
         </TabsContent>
 
@@ -1583,6 +1607,55 @@ function MotherDuckPanel({
               <StopCircle className="size-4" /> Stop pull
             </Button>
           ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LocalUploadAdminPanel({
+  conn,
+  busy,
+  onToggleEnabled,
+}: {
+  conn?: Connection;
+  busy: string | null;
+  onToggleEnabled: (value: boolean) => void;
+}) {
+  const enabled = conn?.enabled ?? true;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <UploadCloud className="size-4" /> Local upload
+            </CardTitle>
+            <CardDescription>
+              Drag-and-drop CSV / Parquet files into the dataset library on the{" "}
+              <Link to="/data" className="text-primary underline-offset-2 hover:underline">
+                Data control plane
+              </Link>
+              . Disable to hide the upload surface and clear any active upload-origin selection.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={enabled ? "border-success/30 text-success bg-success/10" : "border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10"}>
+              {enabled ? "Enabled" : "Disabled"}
+            </Badge>
+            <Switch
+              checked={enabled}
+              onCheckedChange={(v) => onToggleEnabled(v)}
+              disabled={busy === "local_upload"}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+          When disabled the dashboard ignores any previously uploaded files and reverts to the
+          next configured live source (or the bundled sample data). Re-enabling restores access
+          to the dataset library so analysts can drop fresh files.
         </div>
       </CardContent>
     </Card>
