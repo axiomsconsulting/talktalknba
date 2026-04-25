@@ -326,7 +326,7 @@ function ExplainabilityPage() {
         {/* Local explainability */}
         <div className="grid lg:grid-cols-[420px_1fr] gap-5">
           {/* Customer search */}
-          <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden flex flex-col max-h-[640px]">
+          <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden flex flex-col max-h-[820px]">
             <div className="px-5 py-4 border-b border-border">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
                 Customer Search
