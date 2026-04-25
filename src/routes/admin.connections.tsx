@@ -765,12 +765,14 @@ function GDrivePanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onIngest,
 }: {
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onIngest: () => void;
 }) {
@@ -908,6 +910,7 @@ function AzurePanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onIngest,
   onPull,
   onCancel,
@@ -916,6 +919,7 @@ function AzurePanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onIngest: () => void;
   onPull: () => void;
   onCancel: () => void;
@@ -1442,6 +1446,7 @@ function MotherDuckPanel({
   conn,
   busy,
   onSave,
+  onToggleEnabled,
   onTest,
   onPull,
   onCancel,
@@ -1450,6 +1455,7 @@ function MotherDuckPanel({
   conn?: Connection;
   busy: string | null;
   onSave: (patch: Partial<Connection>) => void;
+  onToggleEnabled: (value: boolean) => void;
   onTest: () => void;
   onPull: (customerLimit?: number) => void;
   onCancel: () => void;
