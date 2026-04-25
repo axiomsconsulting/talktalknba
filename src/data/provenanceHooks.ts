@@ -32,7 +32,7 @@ export function useModelProv(metric: string, formula?: string): Provenance | nul
 /** Provenance for figures derived from the customer dataset (upload or live). */
 export function useDatasetProv(metric: string, formula?: string): Provenance | null {
   const source = useCustomerStore((s) => s.source);
-  if (source.kind === "mock") return null;
+  if (source.kind === "mock" || source.kind === "empty") return null;
   return {
     kind: source.origin === "live" ? "live" : "upload",
     source: `${source.detail ?? source.filename} · ${metric}`,
@@ -43,7 +43,7 @@ export function useDatasetProv(metric: string, formula?: string): Provenance | n
 /** Provenance for deterministic rule output applied to a connected dataset. */
 export function useRuleProv(rule: string, formula?: string): Provenance | null {
   const source = useCustomerStore((s) => s.source);
-  if (source.kind === "mock") return null;
+  if (source.kind === "mock" || source.kind === "empty") return null;
   return {
     kind: "rule",
     source: `Heuristic rule · ${rule} · applied to ${source.detail ?? source.filename}`,
