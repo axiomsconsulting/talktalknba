@@ -406,13 +406,23 @@ function ConnectionsAdminPage() {
   const gdr = (conns ?? []).find((c) => c.kind === "gdrive");
   const azr = (conns ?? []).find((c) => c.kind === "azure_repo");
   const mdr = (conns ?? []).find((c) => c.kind === "motherduck");
+  const lup = (conns ?? []).find((c) => c.kind === "local_upload");
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
-        title="Live data connections"
-        description="Configure where the platform pulls customer, usage, calls, cease and model artefact data from. All connectors are optional — without them, the dashboard shows the bundled sample data."
+        eyebrow="Admin · Advanced setup"
+        title="Connector configuration"
+        description={
+          <>
+            Deep configuration for each data connector — credentials, schemas, file paths and pull
+            jobs. For day-to-day source switching and toggles, use the{" "}
+            <Link to="/data" className="text-primary underline-offset-2 hover:underline">
+              Data control plane
+            </Link>
+            .
+          </>
+        }
       />
 
       <Tabs defaultValue="azure_repo" className="mt-6">
@@ -428,6 +438,9 @@ function ConnectionsAdminPage() {
           </TabsTrigger>
           <TabsTrigger value="gdrive" className="gap-2">
             <HardDrive className="size-4" /> Google Drive
+          </TabsTrigger>
+          <TabsTrigger value="local_upload" className="gap-2">
+            <UploadCloud className="size-4" /> Local upload
           </TabsTrigger>
           <TabsTrigger value="status" className="gap-2">
             <Cpu className="size-4" /> Status & runs
