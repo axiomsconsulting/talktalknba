@@ -58,7 +58,7 @@ type DatasetRow = {
 
 type ConnectionRow = {
   id: string;
-  kind: "databricks" | "gdrive" | "azure_repo";
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck";
   name: string;
   enabled: boolean;
   last_run_at: string | null;
@@ -73,20 +73,20 @@ export const Route = createFileRoute("/data")({
       {
         name: "description",
         content:
-          "Pick a customer data source — Sample, Local upload, Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
+          "Pick a customer data source — Sample, Local upload, MotherDuck (live), Google Drive or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
       },
       { property: "og:title", content: "Data Library — TalkTalk NBA" },
       {
         property: "og:description",
         content:
-          "Centralised data control plane: choose between sample, uploaded, Google Drive or Databricks sources and see which signals are live.",
+          "Centralised data control plane: choose between sample, uploaded, MotherDuck-live, Google Drive or Databricks sources and see which signals are live.",
       },
     ],
   }),
   component: DataPage,
 });
 
-type SourceKey = "sample" | "upload" | "gdrive" | "databricks";
+type SourceKey = "sample" | "upload" | "motherduck" | "gdrive" | "databricks";
 
 function DataPage() {
   const [datasets, setDatasets] = useState<DatasetRow[]>([]);
