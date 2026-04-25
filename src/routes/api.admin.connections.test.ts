@@ -21,8 +21,8 @@ export const Route = createFileRoute("/api/admin/connections/test")({
 
         const body = (await request.json().catch(() => null)) as { kind?: string } | null;
         const kind = body?.kind;
-        if (kind !== "databricks" && kind !== "gdrive" && kind !== "motherduck") {
-          return jsonError(400, "kind must be 'databricks', 'gdrive', or 'motherduck'");
+        if (kind !== "databricks" && kind !== "motherduck") {
+          return jsonError(400, "kind must be 'databricks' or 'motherduck'");
         }
 
         const { data: conn, error } = await supabaseAdmin
@@ -34,23 +34,6 @@ export const Route = createFileRoute("/api/admin/connections/test")({
         if (!conn) return jsonError(404, "Connection not configured yet");
 
         try {
-          if (kind === "gdrive") {
-            const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
-            const cfg = (conn.config ?? {}) as { root_folder_id?: string };
-            if (!cfg.root_folder_id) return jsonError(400, "root_folder_id missing — save Drive config first");
-            const res = await fetch(
-              `${GATEWAY_URLS.drive}/files/${cfg.root_folder_id}?fields=id,name,mimeType`,
-              { headers },
-            );
-            if (!res.ok) return jsonError(res.status, await res.text());
-            const data = (await res.json()) as { name?: string; mimeType?: string };
-            await supabaseAdmin
-              .from("data_connections")
-              .update({ last_status: "success", last_error: null, last_run_at: new Date().toISOString() })
-              .eq("id", conn.id);
-            return jsonOk({ ok: true, folder: data.name, mime: data.mimeType });
-          }
-
           if (kind === "motherduck") {
             const cfg = (conn.config ?? {}) as Partial<MotherDuckConfig>;
             if (!cfg.database) return jsonError(400, "database missing — save MotherDuck config first");
