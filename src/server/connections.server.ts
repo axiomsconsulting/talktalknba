@@ -51,7 +51,7 @@ export async function requireAdmin(request: Request): Promise<string> {
 
 /** Mark a connection as running and capture the result. */
 export async function withConnectionRun<T>(
-  kind: "databricks" | "gdrive" | "azure_repo",
+  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck",
   fn: () => Promise<T>,
 ): Promise<T> {
   const start = await supabaseAdmin
