@@ -327,7 +327,7 @@ function ActiveSourcesOverview({
   onReset,
   onJump,
 }: {
-  activeSourceKey: SourceKey;
+  activeSourceKey: SourceKey | "none";
   customerCount: number;
   source: ReturnType<typeof useCustomerStore.getState>["source"];
   gdriveConn: ConnectionRow | undefined;
