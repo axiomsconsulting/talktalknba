@@ -256,11 +256,13 @@ function DataPage() {
               />
             </TabsList>
 
-            <TabsContent value="sample" className="mt-5">
+            <TabsContent value="sample" className="mt-5 space-y-4">
+              <SampleToggle conn={sampleConn} onChanged={refresh} />
               <SamplePanel
                 isActive={activeSourceKey === "sample"}
                 onActivate={reset}
                 customerCount={customers.length}
+                disabled={sampleConn?.enabled === false}
               />
             </TabsContent>
 
