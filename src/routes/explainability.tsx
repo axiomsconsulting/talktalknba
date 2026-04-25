@@ -412,6 +412,44 @@ function ExplainabilityPage() {
           <CustomerDetail customer={selected} rules={rules} />
         </div>
       </div>
+
+      {/* Right-side drawer with the same full profile, surfaced from the
+          search row's "Profile" button. Useful when running a wide table
+          search and not wanting to lose the inline panel context. */}
+      <Sheet
+        open={drawerOpenId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDrawerOpenId(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-[640px] p-0 overflow-y-auto"
+        >
+          {(() => {
+            const drawerCustomer = drawerOpenId
+              ? pool.find((c) => c.id === drawerOpenId) ?? null
+              : null;
+            if (!drawerCustomer) return null;
+            return (
+              <>
+                <SheetHeader className="px-5 sm:px-7 pt-6 pb-2 text-left">
+                  <SheetTitle className="text-base font-semibold">
+                    Customer profile
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground">
+                    Full attributes, behavioural signals, SHAP drivers and the
+                    computed Next Best Action.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="p-3 sm:p-5">
+                  <CustomerDetail customer={drawerCustomer} rules={rules} />
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </AppShell>
   );
 }
