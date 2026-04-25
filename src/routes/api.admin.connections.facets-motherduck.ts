@@ -65,7 +65,34 @@ export const Route = createFileRoute("/api/admin/connections/facets-motherduck")
           }
         };
 
-        const distinctList = async (col: string, limit = 100): Promise<string[]> => {
+        // Introspect actual column names — schemas vary between projects
+        // (e.g. crm_package_name vs package, sales_channel vs region).
+        let availableCols = new Set<string>();
+        try {
+          const colsOut = await motherduckQuery(
+            fullCfg,
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_name = $1
+             ${cfg.schema ? "AND table_schema = $2" : ""}`,
+            cfg.schema ? ["customer_info", cfg.schema] : ["customer_info"],
+          );
+          availableCols = new Set(
+            (colsOut.rows ?? []).map((r) => String(r[0] ?? "").toLowerCase()),
+          );
+        } catch (e) {
+          console.warn("[facets-motherduck] column introspection failed", (e as Error)?.message);
+        }
+        const has = (c: string) => availableCols.has(c.toLowerCase());
+        const pick = (...candidates: string[]): string | null => {
+          for (const c of candidates) if (has(c)) return c;
+          return null;
+        };
+
+        const distinctList = async (
+          col: string | null,
+          limit = 100,
+        ): Promise<string[]> => {
+          if (!col) return [];
           const r = await safeQuery<{ rows: unknown[][] }>(
             `SELECT DISTINCT CAST(${col} AS VARCHAR) FROM ${ci}
              WHERE ${col} IS NOT NULL AND CAST(${col} AS VARCHAR) <> ''
@@ -78,11 +105,12 @@ export const Route = createFileRoute("/api/admin/connections/facets-motherduck")
         };
 
         const numericRange = async (
-          col: string,
+          colExpr: string | null,
         ): Promise<{ min: number; max: number }> => {
+          if (!colExpr) return { min: 0, max: 0 };
           const r = await safeQuery<{ rows: unknown[][] }>(
-            `SELECT COALESCE(MIN(TRY_CAST(${col} AS DOUBLE)), 0),
-                    COALESCE(MAX(TRY_CAST(${col} AS DOUBLE)), 0)
+            `SELECT COALESCE(MIN(TRY_CAST(${colExpr} AS DOUBLE)), 0),
+                    COALESCE(MAX(TRY_CAST(${colExpr} AS DOUBLE)), 0)
              FROM ${ci}`,
             { rows: [[0, 0]] },
           );
@@ -96,6 +124,16 @@ export const Route = createFileRoute("/api/admin/connections/facets-motherduck")
         );
         const totalCustomers = Number((totalRow.rows ?? [[0]])[0]?.[0] ?? 0);
 
+        const packageCol = pick("crm_package_name", "package", "package_name", "product_name");
+        const regionCol = pick("region", "country_region", "billing_region", "sales_channel");
+        const contractStatusCol = pick("contract_status", "contract_state");
+        const tenureExpr = pick("tenure_months") ?? (has("tenure_days") ? "(tenure_days / 30.0)" : null);
+        const mrrExpr = pick("mrr", "monthly_revenue", "arpu", "monthly_arpu");
+        const downloadExpr = pick("monthly_download_gb", "monthly_data_gb", "download_gb");
+        const speedDeficitExpr = pick("speed_deficit_pct");
+        const loyaltyExpr = pick("loyalty_calls_90d", "calls_90d");
+        const holdExpr = pick("total_hold_seconds", "hold_seconds");
+
         const [
           regions,
           packages,
@@ -107,16 +145,15 @@ export const Route = createFileRoute("/api/admin/connections/facets-motherduck")
           loyaltyCalls90d,
           holdSeconds,
         ] = await Promise.all([
-          distinctList("region"),
-          distinctList("package", 200),
-          distinctList("contract_status"),
-          numericRange("tenure_months"),
-          // MRR may live under different aliases — coalesce common names.
-          numericRange("COALESCE(mrr, monthly_revenue, arpu, 0)"),
-          numericRange("COALESCE(monthly_download_gb, monthly_data_gb, 0)"),
-          numericRange("COALESCE(speed_deficit_pct, 0)"),
-          numericRange("COALESCE(loyalty_calls_90d, calls_90d, 0)"),
-          numericRange("COALESCE(total_hold_seconds, hold_seconds, 0)"),
+          distinctList(regionCol),
+          distinctList(packageCol, 200),
+          distinctList(contractStatusCol),
+          numericRange(tenureExpr),
+          numericRange(mrrExpr),
+          numericRange(downloadExpr),
+          numericRange(speedDeficitExpr),
+          numericRange(loyaltyExpr),
+          numericRange(holdExpr),
         ]);
 
         return jsonOk({
