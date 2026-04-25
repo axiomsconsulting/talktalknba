@@ -1403,3 +1403,150 @@ function PullProgress({ job, disabled }: { job: PullJob | null; disabled: boolea
     </div>
   );
 }
+
+// ---------- MotherDuck panel ----------
+
+function MotherDuckPanel({
+  conn,
+  busy,
+  onSave,
+  onTest,
+  onPull,
+  onCancel,
+  pullJob,
+}: {
+  conn?: Connection;
+  busy: string | null;
+  onSave: (patch: Partial<Connection>) => void;
+  onTest: () => void;
+  onPull: () => void;
+  onCancel: () => void;
+  pullJob: PullJob | null;
+}) {
+  const cfg = (conn?.config as MotherDuckConfig | undefined) ?? {};
+  const [database, setDatabase] = useState(cfg.database ?? "file");
+  const [schema, setSchema] = useState(cfg.schema ?? "main");
+  const [host, setHost] = useState(cfg.host ?? "pg.us-east-1-aws.motherduck.com");
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [customerLimit, setCustomerLimit] = useState<number>(50);
+
+  useEffect(() => {
+    const c = (conn?.config as MotherDuckConfig | undefined) ?? {};
+    setDatabase(c.database ?? "file");
+    setSchema(c.schema ?? "main");
+    setHost(c.host ?? "pg.us-east-1-aws.motherduck.com");
+    setEnabled(conn?.enabled ?? true);
+  }, [conn?.id]);
+
+  const save = () =>
+    onSave({
+      name: "MotherDuck",
+      enabled,
+      schedule_cron: null,
+      config: {
+        database: database || "file",
+        schema: schema || "main",
+        host: host || undefined,
+      },
+    });
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Cloud className="size-4" /> MotherDuck (online DuckDB)
+            </CardTitle>
+            <CardDescription>
+              Queries customer_info, calls, cease and usage tables from a MotherDuck database via the
+              Postgres endpoint. The token is read from the <code className="font-mono">MOTHERDUCK_TOKEN</code> secret.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={conn?.last_status ?? null} />
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="md-db">Database</Label>
+            <Input id="md-db" value={database} onChange={(e) => setDatabase(e.target.value)} placeholder="file" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="md-schema">Schema</Label>
+            <Input id="md-schema" value={schema} onChange={(e) => setSchema(e.target.value)} placeholder="main" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="md-host">Host</Label>
+            <Input
+              id="md-host"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="pg.us-east-1-aws.motherduck.com"
+              className="font-mono text-xs"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+          Expected tables (resolved as <span className="font-mono">{schema || "main"}.&lt;name&gt;</span>):{" "}
+          <span className="font-mono">customer_info</span>, <span className="font-mono">calls</span>,{" "}
+          <span className="font-mono">cease</span>, <span className="font-mono">usage</span>. All four
+          must include <span className="font-mono">unique_customer_identifier</span> for the random
+          customer sampling to keep cross-table rows consistent.
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="md-limit">Customer limit (random sample)</Label>
+          <Input
+            id="md-limit"
+            type="number"
+            min={1}
+            max={100}
+            value={customerLimit}
+            onChange={(e) => setCustomerLimit(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+            className="w-32"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            1–100. The pull samples this many customer_info rows, then constrains calls / cease / usage
+            to the same IDs. Stored in the same shared pull-job card as the other connectors.
+          </p>
+        </div>
+
+        {conn?.last_error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Last error: {conn.last_error}
+          </div>
+        ) : null}
+
+        <PullProgress job={pullJob} disabled={!!busy} />
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button onClick={save} disabled={busy === "motherduck"}>
+            {busy === "motherduck" ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            Save
+          </Button>
+          <Button variant="outline" onClick={onTest} disabled={!conn || !!busy}>
+            <PlayCircle className="size-4" /> Test connection
+          </Button>
+          <Button onClick={onPull} disabled={!conn || !!busy || isPullActive(pullJob)}>
+            {busy === "motherduck-pull" || isPullActive(pullJob) ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {isPullActive(pullJob) ? "Pulling…" : "Pull data now"}
+          </Button>
+          {isPullActive(pullJob) ? (
+            <Button variant="destructive" onClick={onCancel} disabled={busy === "azure_repo-cancel"}>
+              <StopCircle className="size-4" /> Stop pull
+            </Button>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
