@@ -417,31 +417,49 @@ function ActiveSourcesOverview({
   ];
 
   const activeLabel =
-    activeSourceKey === "sample"
-      ? "Sample data"
-      : activeSourceKey === "upload"
-        ? "Local upload"
-        : activeSourceKey === "motherduck"
-          ? "MotherDuck (live)"
-          : activeSourceKey === "gdrive"
-            ? "Google Drive"
-            : "Databricks";
+    activeSourceKey === "none"
+      ? "No source enabled"
+      : activeSourceKey === "sample"
+        ? "Sample data"
+        : activeSourceKey === "upload"
+          ? "Local upload"
+          : activeSourceKey === "motherduck"
+            ? "MotherDuck (live)"
+            : activeSourceKey === "gdrive"
+              ? "Google Drive"
+              : "Databricks";
+
+  const isEmpty = activeSourceKey === "none";
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div className="px-5 sm:px-7 py-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Database className="size-5" />
+          <div
+            className={cn(
+              "size-10 rounded-lg flex items-center justify-center shrink-0",
+              isEmpty
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "bg-primary/10 text-primary",
+            )}
+          >
+            {isEmpty ? <AlertTriangle className="size-5" /> : <Database className="size-5" />}
           </div>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
               Active customer source
             </div>
             <div className="text-base font-semibold text-foreground mt-0.5">
-              {activeLabel} · {customerCount.toLocaleString()} customers loaded
+              {isEmpty
+                ? `${activeLabel} · 0 customers loaded`
+                : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
             </div>
-            {source.kind === "uploaded" ? (
+            {isEmpty ? (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Every connector — sample, local upload, MotherDuck, Google Drive and Databricks
+                — is disabled. Enable at least one below to populate the dashboards.
+              </div>
+            ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
                 {(source as { detail?: string }).detail ?? source.filename} · activated{" "}
                 {new Date(source.uploadedAt).toLocaleString("en-GB")}
@@ -453,7 +471,7 @@ function ActiveSourcesOverview({
             )}
           </div>
         </div>
-        {activeSourceKey !== "sample" && (
+        {activeSourceKey !== "sample" && activeSourceKey !== "none" && (
           <button
             onClick={onReset}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60"
