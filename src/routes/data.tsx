@@ -589,6 +589,86 @@ function SamplePanel({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Local upload connection toggle — makes the dataset library behave like the
+// other live integrations (enable/disable persists in data_connections).
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LocalUploadToggle({
+  conn,
+  onChanged,
+}: {
+  conn: ConnectionRow | undefined;
+  onChanged: () => void;
+}) {
+  const [enabled, setEnabled] = useState(conn?.enabled ?? true);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+
+  async function toggle(value: boolean) {
+    if (!conn) {
+      toast.error("Local upload connection row missing — please refresh");
+      return;
+    }
+    setBusy(true);
+    setEnabled(value);
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", conn.id);
+    setBusy(false);
+    if (error) {
+      setEnabled(!value);
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      return;
+    }
+    if (!value) {
+      // Disabling local upload also wipes any active upload-origin selection
+      // so the dashboards stop reporting it as live.
+      await useCustomerStore.getState().clearAllUploads();
+    }
+    toast.success(`Local upload ${value ? "enabled" : "disabled"}`);
+    onChanged();
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-4 sm:p-5 flex items-start gap-3">
+      <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <UploadCloud className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-semibold text-foreground">Local upload</div>
+          <span
+            className={cn(
+              "inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border",
+              enabled
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            )}
+          >
+            {enabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">
+          Drag-and-drop CSV / Parquet files into the dataset library. Disable to hide the
+          upload surface and clear any active upload-origin selection.
+        </div>
+      </div>
+      <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+        <span>{enabled ? "On" : "Off"}</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy}
+          onChange={(e) => toggle(e.target.checked)}
+          className="size-4 accent-primary"
+        />
+      </label>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Live connection panel — shared between Google Drive & Databricks
 // ─────────────────────────────────────────────────────────────────────────────
 
