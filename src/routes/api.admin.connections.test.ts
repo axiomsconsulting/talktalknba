@@ -6,6 +6,8 @@ import {
   gatewayHeaders,
   GATEWAY_URLS,
   databricksRunSql,
+  motherduckQuery,
+  type MotherDuckConfig,
 } from "@/server/connections.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
