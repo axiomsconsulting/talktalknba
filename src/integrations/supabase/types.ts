@@ -532,7 +532,11 @@ export type Database = {
     Enums: {
       account_status: "pending" | "active" | "rejected"
       app_role: "admin" | "operator" | "analyst" | "approver"
-      data_connection_kind: "databricks" | "gdrive" | "azure_repo"
+      data_connection_kind:
+        | "databricks"
+        | "gdrive"
+        | "azure_repo"
+        | "motherduck"
       data_run_status: "pending" | "running" | "success" | "error"
     }
     CompositeTypes: {
@@ -663,7 +667,12 @@ export const Constants = {
     Enums: {
       account_status: ["pending", "active", "rejected"],
       app_role: ["admin", "operator", "analyst", "approver"],
-      data_connection_kind: ["databricks", "gdrive", "azure_repo"],
+      data_connection_kind: [
+        "databricks",
+        "gdrive",
+        "azure_repo",
+        "motherduck",
+      ],
       data_run_status: ["pending", "running", "success", "error"],
     },
   },
