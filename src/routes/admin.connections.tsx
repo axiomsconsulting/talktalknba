@@ -40,7 +40,7 @@ export const Route = createFileRoute("/admin/connections")({
   component: ConnectionsAdminPage,
 });
 
-type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload";
+type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload" | "sample";
 type RunStatus = "pending" | "running" | "success" | "error";
 
 type DatabricksQuery = { kind: string; sql: string };
