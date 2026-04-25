@@ -70,6 +70,13 @@ type CustomerStore = {
 
   /** Persists the active selection to DB (idempotent, admin-only). */
   persistActive: (args: PersistArgs) => Promise<void>;
+
+  /**
+   * Wipes every active "upload"-origin selection (customer_info + enrichments)
+   * from the in-memory store *and* the active_data_sources table, restoring
+   * the bundled sample dataset. Used when the dataset library is emptied.
+   */
+  clearAllUploads: () => Promise<void>;
 };
 
 function enrichCustomers(
