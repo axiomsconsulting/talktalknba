@@ -245,6 +245,30 @@ function ConnectionsAdminPage() {
     await reload();
   };
 
+  /** Persist just the enabled flag immediately when the toggle changes. */
+  const toggleEnabled = async (kind: ConnectionKind, value: boolean) => {
+    const existing = conns?.find((c) => c.kind === kind);
+    if (!existing) {
+      // No row yet — fall back to a full upsert so the toggle still persists.
+      await upsert(kind, { enabled: value });
+      return;
+    }
+    // Optimistic local update
+    setConns((prev) =>
+      (prev ?? []).map((c) => (c.id === existing.id ? { ...c, enabled: value } : c)),
+    );
+    const { error } = await supabase
+      .from("data_connections")
+      .update({ enabled: value })
+      .eq("id", existing.id);
+    if (error) {
+      toast.error(`Could not ${value ? "enable" : "disable"}: ${error.message}`);
+      await reload();
+      return;
+    }
+    toast.success(`${existing.name} ${value ? "enabled" : "disabled"}`);
+  };
+
   const test = async (kind: ConnectionKind) => {
     setBusy(`${kind}-test`);
     try {
