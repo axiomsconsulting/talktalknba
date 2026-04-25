@@ -117,19 +117,21 @@ function DataPage() {
 
   const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
+  const mdConn = connections.find((c) => c.kind === "motherduck");
 
   // Derive which source is currently powering the customer base
   const activeSourceKey: SourceKey = useMemo(() => {
     if (source.kind === "mock") return "sample";
     const detail = (source as { detail?: string }).detail ?? "";
+    if (detail.toLowerCase().includes("motherduck")) return "motherduck";
     if (detail.toLowerCase().includes("google drive")) return "gdrive";
     if (detail.toLowerCase().includes("databricks")) return "databricks";
     if ((source as { origin?: string }).origin === "live") {
-      // Best-effort: live but unknown provenance — show as gdrive if connected
+      if (mdConn?.enabled) return "motherduck";
       return gdriveConn?.enabled ? "gdrive" : "databricks";
     }
     return "upload";
-  }, [source, gdriveConn?.enabled]);
+  }, [source, gdriveConn?.enabled, mdConn?.enabled]);
 
   return (
     <AppShell>
@@ -248,6 +250,7 @@ function DataPage() {
 function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState>["source"]): SourceKey {
   if (source.kind === "mock") return "sample";
   const detail = (source as { detail?: string }).detail ?? "";
+  if (detail.toLowerCase().includes("motherduck")) return "motherduck";
   if (detail.toLowerCase().includes("google drive")) return "gdrive";
   if (detail.toLowerCase().includes("databricks")) return "databricks";
   return "upload";
