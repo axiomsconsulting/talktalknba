@@ -20,12 +20,20 @@ export const Route = createFileRoute("/api/public/hooks/pull-motherduck-worker")
   server: {
     handlers: {
       POST: async () => {
-        // Find the oldest motherduck job that still has work to do
+        // Find oldest active pull_job whose connection is a MotherDuck one.
+        // pull_jobs has no FK to data_connections so we do a two-step lookup.
+        const { data: mdConns } = await supabaseAdmin
+          .from("data_connections")
+          .select("id")
+          .eq("kind", "motherduck");
+        const mdIds = (mdConns ?? []).map((c) => c.id);
+        if (mdIds.length === 0) return json(200, { idle: true });
+
         const { data: job, error: jobErr } = await supabaseAdmin
           .from("pull_jobs")
-          .select("*, data_connections!inner(kind)")
+          .select("*")
           .in("status", ["queued", "downloading", "parsing", "uploading"])
-          .eq("data_connections.kind", "motherduck")
+          .in("connection_id", mdIds)
           .order("started_at", { ascending: true })
           .limit(1)
           .maybeSingle();
