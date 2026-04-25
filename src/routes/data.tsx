@@ -116,7 +116,6 @@ function DataPage() {
     setSelectedSource(deriveInitialSource(source));
   }, [source.kind, (source as { detail?: string }).detail]);
 
-  const gdriveConn = connections.find((c) => c.kind === "gdrive");
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
   const localConn = connections.find((c) => c.kind === "local_upload");
@@ -128,7 +127,6 @@ function DataPage() {
     connections.length > 0 &&
     !sampleConn?.enabled &&
     !mdConn?.enabled &&
-    !gdriveConn?.enabled &&
     !dbxConn?.enabled &&
     !localConn?.enabled;
 
@@ -139,7 +137,6 @@ function DataPage() {
     } else if (
       sampleConn?.enabled &&
       !mdConn?.enabled &&
-      !gdriveConn?.enabled &&
       !dbxConn?.enabled &&
       !localConn?.enabled &&
       source.kind === "empty"
@@ -151,7 +148,6 @@ function DataPage() {
     allDisabled,
     sampleConn?.enabled,
     mdConn?.enabled,
-    gdriveConn?.enabled,
     dbxConn?.enabled,
     localConn?.enabled,
     source.kind,
@@ -161,13 +157,12 @@ function DataPage() {
   ]);
 
   // Derive which source is currently powering the customer base.
-  // Priority (highest → lowest): MotherDuck → Google Drive → Databricks → Local upload → Sample.
+  // Priority (highest → lowest): MotherDuck → Databricks → Local upload → Sample.
   // The first *enabled* source in this list wins, regardless of which detail
   // string the in-memory store currently carries — so toggling MotherDuck on
   // immediately re-labels every dashboard as "MotherDuck (live)".
   const activeSourceKey: SourceKey | "none" = useMemo(() => {
     if (mdConn?.enabled) return "motherduck";
-    if (gdriveConn?.enabled) return "gdrive";
     if (dbxConn?.enabled) return "databricks";
     if (localConn?.enabled && source.kind === "uploaded" && (source as { origin?: string }).origin !== "live") {
       return "upload";
@@ -180,7 +175,6 @@ function DataPage() {
   }, [
     source,
     mdConn?.enabled,
-    gdriveConn?.enabled,
     dbxConn?.enabled,
     localConn?.enabled,
     sampleConn?.enabled,
