@@ -1,0 +1,38 @@
+[
+    {
+        "feature": "tenure_days",
+        "importance": 0.4854
+    },
+    {
+        "feature": "loyalty_calls",
+        "importance": 0.1181
+    },
+    {
+        "feature": "ooc_days",
+        "importance": 0.1051
+    },
+    {
+        "feature": "total_talk_time",
+        "importance": 0.0795
+    },
+    {
+        "feature": "total_hold_time",
+        "importance": 0.0705
+    },
+    {
+        "feature": "avg_download_mbs",
+        "importance": 0.052
+    },
+    {
+        "feature": "contract_dd_cancels",
+        "importance": 0.0382
+    },
+    {
+        "feature": "speed_deficit",
+        "importance": 0.0302
+    },
+    {
+        "feature": "dd_cancel_60_day",
+        "importance": 0.021
+    }
+]

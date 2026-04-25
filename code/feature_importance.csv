@@ -1,0 +1,16 @@
+feature,importance
+tenure_days,0.31426623463630676
+contract_dd_cancels,0.19455412030220032
+dd_cancel_60_day,0.13592150807380676
+ooc_days,0.08583184331655502
+avg_talk_seconds,0.07783982902765274
+avg_hold_seconds,0.0660301223397255
+speed,0.0395318977534771
+line_speed,0.029801979660987854
+avg_upload_mbs,0.022705156356096268
+avg_download_mbs,0.01913266070187092
+loyalty_calls_90d,0.014384671114385128
+technology,0.0
+sales_channel,0.0
+crm_package_name,0.0
+contract_status,0.0

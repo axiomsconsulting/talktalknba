@@ -1,0 +1,1907 @@
+{
+  "model_type": "XGBoost",
+  "threshold": 0.4099999999999999,
+  "scored_n": 3545538,
+  "customers": [
+    {
+      "customer_id": "5ce86ea491705d4a7cbd0e676988d7ffbd1283247aa1580f56d4f676703d0111",
+      "rank": 1,
+      "churn_prob": 0.9999545812606812,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.098898410797119
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3899297714233398
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3433643579483032
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 144.0,
+        "tenure_days": 3562.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 1480.0,
+        "avg_talk_seconds": 237.0,
+        "avg_download_mbs": null,
+        "avg_upload_mbs": null,
+        "technology": "FTTP",
+        "sales_channel": "Retail",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "be400ed8e14560b924af5221607cf9e6353429321c06107ab51766a461cfd4d6",
+      "rank": 2,
+      "churn_prob": 0.9999500513076782,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.31694221496582
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2442104816436768
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1285442113876343
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 280.0,
+        "tenure_days": 1366.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 431.0,
+        "avg_talk_seconds": 245.66666666666666,
+        "avg_download_mbs": 19077.474688235296,
+        "avg_upload_mbs": 2520.929582352941,
+        "technology": "FTTP",
+        "sales_channel": "Online - Affiliate",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "82bb5a9989f9c7e506772e714b3516641aa085cf61a2d71641e103e17091abd4",
+      "rank": 3,
+      "churn_prob": 0.999947190284729,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.37634801864624
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3902816772460938
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3709355592727661
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -24.0,
+        "tenure_days": 4947.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 297.5,
+        "avg_talk_seconds": 268.5,
+        "avg_download_mbs": 6312.574327433628,
+        "avg_upload_mbs": 876.6254159292035,
+        "technology": "FTTP",
+        "sales_channel": "Migrated Customer",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "236064a8652529184a9d43f39ac16a28df9ebf6ca086b0983bf2988e0ba0633b",
+      "rank": 4,
+      "churn_prob": 0.9999346733093262,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.231691837310791
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2527520656585693
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1052745580673218
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -3.0,
+        "tenure_days": 1463.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 322.6666666666667,
+        "avg_talk_seconds": 348.0,
+        "avg_download_mbs": 27910.34794329897,
+        "avg_upload_mbs": 5341.997989690722,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "236064a8652529184a9d43f39ac16a28df9ebf6ca086b0983bf2988e0ba0633b",
+      "rank": 5,
+      "churn_prob": 0.9999295473098755,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.184159278869629
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.238755226135254
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.081648826599121
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -3.0,
+        "tenure_days": 1463.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 322.6666666666667,
+        "avg_talk_seconds": 348.0,
+        "avg_download_mbs": 27910.34794329897,
+        "avg_upload_mbs": 5341.997989690722,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "2ecbab8152e595c25df93ac3fe94c0558a47902e94bb58aa70ae81d066599f0b",
+      "rank": 6,
+      "churn_prob": 0.9999266862869263,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.054033279418945
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2993243932724
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.0257134437561035
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -37.0,
+        "tenure_days": 1045.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 165.0,
+        "avg_talk_seconds": 234.0,
+        "avg_download_mbs": null,
+        "avg_upload_mbs": null,
+        "technology": "FTTP",
+        "sales_channel": "Online - Search",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "03 Soon to be OOC"
+      }
+    },
+    {
+      "customer_id": "44f0f20f9d79c6179b9cbf2fb61a644440ef19beead65853de912d918fda8b02",
+      "rank": 7,
+      "churn_prob": 0.9999212026596069,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.300832271575928
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1846730709075928
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0420666933059692
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 219.0,
+        "tenure_days": 583.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 218.5,
+        "avg_talk_seconds": 209.75,
+        "avg_download_mbs": 5259.518333333333,
+        "avg_upload_mbs": 1217.3572083333333,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "44f0f20f9d79c6179b9cbf2fb61a644440ef19beead65853de912d918fda8b02",
+      "rank": 8,
+      "churn_prob": 0.9999208450317383,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.29246187210083
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1730949878692627
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0310847759246826
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 219.0,
+        "tenure_days": 583.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 218.5,
+        "avg_talk_seconds": 209.75,
+        "avg_download_mbs": 5259.518333333333,
+        "avg_upload_mbs": 1217.3572083333333,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "6b133d3ec9fe98deea804c7922aad54cab73649b7db7ec06847b0c721b4bb5f0",
+      "rank": 9,
+      "churn_prob": 0.9999196529388428,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.281774997711182
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.339516520500183
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.1733585596084595
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 20.0,
+        "tenure_days": 1114.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 662.0,
+        "avg_talk_seconds": 1095.0,
+        "avg_download_mbs": 2180.4896382978723,
+        "avg_upload_mbs": 1108.88235106383,
+        "technology": "FTTP",
+        "sales_channel": "Retail",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "b7df941605b78b77674f745cedecfb012f02c2248cf389b87f7331939d99f007",
+      "rank": 10,
+      "churn_prob": 0.9999169111251831,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.392817974090576
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.0351378917694092
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.9990780353546143
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -6.0,
+        "tenure_days": 358.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 275.5,
+        "avg_talk_seconds": 327.0,
+        "avg_download_mbs": 16864.126,
+        "avg_upload_mbs": 1872.6834096385542,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "6d8f422f2b795817fe986018b80f1c2bf610c4bb7a6e8bd58da0507df44e6d31",
+      "rank": 11,
+      "churn_prob": 0.9999154806137085,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.000035285949707
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.5056506395339966
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.1991807222366333
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 238.0,
+        "tenure_days": 1940.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 702.0,
+        "avg_talk_seconds": 505.0,
+        "avg_download_mbs": 371.61930769230776,
+        "avg_upload_mbs": 17.19779120879121,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "0a541615fa479dcd495ce03d613a5511ec0940d3aed27234d49e9c002db332cf",
+      "rank": 12,
+      "churn_prob": 0.9999146461486816,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.290105819702148
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2727601528167725
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1187762022018433
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 228.0,
+        "tenure_days": 1526.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 164.25,
+        "avg_talk_seconds": 105.25,
+        "avg_download_mbs": 15826.840344632768,
+        "avg_upload_mbs": 15158.444288135594,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "6d8f422f2b795817fe986018b80f1c2bf610c4bb7a6e8bd58da0507df44e6d31",
+      "rank": 13,
+      "churn_prob": 0.9999141693115234,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 3.992891788482666
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4724749326705933
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.2240992784500122
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 238.0,
+        "tenure_days": 1940.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 702.0,
+        "avg_talk_seconds": 505.0,
+        "avg_download_mbs": 371.61930769230776,
+        "avg_upload_mbs": 17.19779120879121,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "cb4c5df0737ed1cd1fe2078327ba8c4b94bee97b46792cf11953d59829829042",
+      "rank": 14,
+      "churn_prob": 0.9999134540557861,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.191133499145508
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2379482984542847
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.9431577324867249
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -21.0,
+        "tenure_days": 1439.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 204.25,
+        "avg_talk_seconds": 257.75,
+        "avg_download_mbs": 6826.187305263158,
+        "avg_upload_mbs": 1649.2847052631578,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "7fe281f2fbb5260b4235151ba704edc91c0b88abd16457e4533cd52339d5bf34",
+      "rank": 15,
+      "churn_prob": 0.9999125003814697,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.366180419921875
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.5065914392471313
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3923509120941162
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 86.0,
+        "tenure_days": 4969.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 232.38095238095238,
+        "avg_talk_seconds": 365.95238095238096,
+        "avg_download_mbs": 1699.9597638190955,
+        "avg_upload_mbs": 897.2148040201006,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "a0c5bff464ff88899aaa6d3e4f86ae390069dbe8671cb04fb60c311393d43e73",
+      "rank": 16,
+      "churn_prob": 0.9999116659164429,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.5154290199279785
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4079838991165161
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.2669246196746826
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -132.0,
+        "tenure_days": 4548.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 394.0,
+        "avg_talk_seconds": 639.8,
+        "avg_download_mbs": 5887.70764527027,
+        "avg_upload_mbs": 1675.053804054054,
+        "technology": "FTTP",
+        "sales_channel": "Migrated Customer",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "86de786d5f141fd465a1a838489aa376378e3bfb178e8bdfc1f925704bc8782c",
+      "rank": 17,
+      "churn_prob": 0.9999116659164429,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 3.9944469928741455
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2919988632202148
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.0445542335510254
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -97.0,
+        "tenure_days": 1164.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 121.28571428571429,
+        "avg_talk_seconds": 237.14285714285714,
+        "avg_download_mbs": 23.869467889908258,
+        "avg_upload_mbs": 4.148706422018349,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "8fd32822fee95eb70f7716f786f8d1c5a936a82d7e8c009afebfae03e1f28ceb",
+      "rank": 18,
+      "churn_prob": 0.9999092817306519,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.308450698852539
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1636146306991577
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.015832781791687
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -307.0,
+        "tenure_days": 879.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 389.0,
+        "avg_talk_seconds": 351.0,
+        "avg_download_mbs": 31279.00980827068,
+        "avg_upload_mbs": 2432.865815789474,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "c4b71fd553fd74637f40743e98095dd1b852368112251c692b3a755656e9f489",
+      "rank": 19,
+      "churn_prob": 0.9999089241027832,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.283053874969482
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2575372457504272
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0419809818267822
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -70.0,
+        "tenure_days": 1191.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 184.0,
+        "avg_talk_seconds": 234.0,
+        "avg_download_mbs": 9898.816282229966,
+        "avg_upload_mbs": 1728.5972090592334,
+        "technology": "FTTP",
+        "sales_channel": "Online - Search",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "03 Soon to be OOC"
+      }
+    },
+    {
+      "customer_id": "b7df941605b78b77674f745cedecfb012f02c2248cf389b87f7331939d99f007",
+      "rank": 20,
+      "churn_prob": 0.9999086856842041,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.391483783721924
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.0498766899108887
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0042074918746948
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -6.0,
+        "tenure_days": 358.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 275.5,
+        "avg_talk_seconds": 327.0,
+        "avg_download_mbs": 16864.126,
+        "avg_upload_mbs": 1872.6834096385542,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "d6a70368eb744e006a5cdca74a59999091cbe70f1bfb1a0527b0ac53882f1f70",
+      "rank": 21,
+      "churn_prob": 0.9999076128005981,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.3040266036987305
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2494643926620483
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.944957971572876
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -92.0,
+        "tenure_days": 1019.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 243.0,
+        "avg_talk_seconds": 356.0,
+        "avg_download_mbs": 13020.36852434457,
+        "avg_upload_mbs": 1720.5280374531835,
+        "technology": "FTTP",
+        "sales_channel": "Online - Search",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "8fd32822fee95eb70f7716f786f8d1c5a936a82d7e8c009afebfae03e1f28ceb",
+      "rank": 22,
+      "churn_prob": 0.9999074935913086,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.316207408905029
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1901335716247559
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0452886819839478
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -307.0,
+        "tenure_days": 879.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 389.0,
+        "avg_talk_seconds": 351.0,
+        "avg_download_mbs": 31279.00980827068,
+        "avg_upload_mbs": 2432.865815789474,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "6a5c00e18ac9ae15e0b27caf25ddfb2275b0098c1c9bd6d1919b9f7b4f3f0bdd",
+      "rank": 23,
+      "churn_prob": 0.9999068975448608,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 3.9994142055511475
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1180475950241089
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 0.9304775595664978
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -174.0,
+        "tenure_days": 374.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 357.3333333333333,
+        "avg_talk_seconds": 450.6666666666667,
+        "avg_download_mbs": null,
+        "avg_upload_mbs": null,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "c7d276d3066b569768084b45139c1350f5e8b004b9e3154dc5e5fd6d55b77732",
+      "rank": 24,
+      "churn_prob": 0.9999058246612549,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 3.9749321937561035
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3642035722732544
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3525524139404297
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 424.0,
+        "tenure_days": 4582.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 313.5,
+        "avg_talk_seconds": 328.3333333333333,
+        "avg_download_mbs": 67.5231724137931,
+        "avg_upload_mbs": 14.348706896551725,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "6b133d3ec9fe98deea804c7922aad54cab73649b7db7ec06847b0c721b4bb5f0",
+      "rank": 25,
+      "churn_prob": 0.9999055862426758,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.252407073974609
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3176604509353638
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1571738719940186
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": 20.0,
+        "tenure_days": 1114.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 662.0,
+        "avg_talk_seconds": 1095.0,
+        "avg_download_mbs": 2180.4896382978723,
+        "avg_upload_mbs": 1108.88235106383,
+        "technology": "FTTP",
+        "sales_channel": "Retail",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "ff475bf9bf2d1ad98a5615f3fdaf8927ead8bed3a1aa7eff4b516e457517dbd0",
+      "rank": 26,
+      "churn_prob": 0.999903678894043,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.326542377471924
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3838175535202026
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.362627625465393
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -120.0,
+        "tenure_days": 4110.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 131.5,
+        "avg_talk_seconds": 215.0,
+        "avg_download_mbs": 1700.00220657277,
+        "avg_upload_mbs": 278.0776995305164,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "c4b71fd553fd74637f40743e98095dd1b852368112251c692b3a755656e9f489",
+      "rank": 27,
+      "churn_prob": 0.9999028444290161,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.275979995727539
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.257445216178894
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.048344612121582
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -70.0,
+        "tenure_days": 1191.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 184.0,
+        "avg_talk_seconds": 234.0,
+        "avg_download_mbs": 9898.816282229966,
+        "avg_upload_mbs": 1728.5972090592334,
+        "technology": "FTTP",
+        "sales_channel": "Online - Search",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "03 Soon to be OOC"
+      }
+    },
+    {
+      "customer_id": "ff475bf9bf2d1ad98a5615f3fdaf8927ead8bed3a1aa7eff4b516e457517dbd0",
+      "rank": 28,
+      "churn_prob": 0.9999024868011475,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.331206798553467
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.381077527999878
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3686461448669434
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.99,
+      "features": {
+        "ooc_days": -120.0,
+        "tenure_days": 4110.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 131.5,
+        "avg_talk_seconds": 215.0,
+        "avg_download_mbs": 1700.00220657277,
+        "avg_upload_mbs": 278.0776995305164,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "2417ae5b5f98b0b539daf17f7f344c5d89b0406d3ff56207a54102d22f097885",
+      "rank": 29,
+      "churn_prob": 0.9998996257781982,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.236922740936279
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2518013715744019
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0317695140838623
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 29.0,
+        "tenure_days": 1564.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 160.0,
+        "avg_talk_seconds": 250.0,
+        "avg_download_mbs": 10624.654751295337,
+        "avg_upload_mbs": 1031.4012176165802,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "96c590ab08d511595a0cd694063a6a6d964c7a098b51ffba6c27903cda7f8ac3",
+      "rank": 30,
+      "churn_prob": 0.9998995065689087,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.499428749084473
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3363498449325562
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.0791120529174805
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -290.0,
+        "tenure_days": 2596.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 431.6666666666667,
+        "avg_talk_seconds": 642.0,
+        "avg_download_mbs": 6808.807624031008,
+        "avg_upload_mbs": 804.0405968992247,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "9edf344720a810219bf73c5d53c477d5bbd434eb0207988a04f0c72dd2e285b3",
+      "rank": 31,
+      "churn_prob": 0.9998992681503296,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.2398552894592285
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3333394527435303
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.071974754333496
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -18.0,
+        "tenure_days": 1427.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 228.33333333333334,
+        "avg_talk_seconds": 357.0,
+        "avg_download_mbs": 36647.02125,
+        "avg_upload_mbs": 6273.7683,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "7624daa8d666029d9bd4c4c41e47e929b7ec394cfb3c7b7fbb156ec3f665d8f8",
+      "rank": 32,
+      "churn_prob": 0.9998986721038818,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.404025554656982
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3575189113616943
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3573917150497437
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 33.0,
+        "tenure_days": 4390.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 124.25,
+        "avg_talk_seconds": 374.0,
+        "avg_download_mbs": 6032.135887218045,
+        "avg_upload_mbs": 538.2303609022557,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "f3b87437c9287459c1a0b1c6adec0997cee1d4695331919def775fde1ff794fd",
+      "rank": 33,
+      "churn_prob": 0.9998983144760132,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.356113910675049
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4122469425201416
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.256461501121521
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -194.0,
+        "tenure_days": 2734.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 351.0,
+        "avg_talk_seconds": 568.6666666666666,
+        "avg_download_mbs": 3293.1916802030455,
+        "avg_upload_mbs": 162.4607969543147,
+        "technology": "FTTP",
+        "sales_channel": "Migrated Customer",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "2b6b347191ff2f764d68859d5cad930cff35d5b37ab0ab27c859e594767dc2f4",
+      "rank": 34,
+      "churn_prob": 0.9998952150344849,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.225186347961426
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.1176472902297974
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.9702039361000061
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -105.0,
+        "tenure_days": 624.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 149.5,
+        "avg_talk_seconds": 177.0,
+        "avg_download_mbs": 6900.588133333334,
+        "avg_upload_mbs": 1091.9876666666667,
+        "technology": "FTTP",
+        "sales_channel": "Online - Affiliate",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "082dfd1824b6177e868aafb851c7a608ff61bd0b865a150e737f9a4cfcb02111",
+      "rank": 35,
+      "churn_prob": 0.9998917579650879,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.283142566680908
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3266385793685913
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.073594093322754
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -95.0,
+        "tenure_days": 2050.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 532.2,
+        "avg_talk_seconds": 686.8,
+        "avg_download_mbs": 5876.535522222222,
+        "avg_upload_mbs": 2691.600937037037,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "9edf344720a810219bf73c5d53c477d5bbd434eb0207988a04f0c72dd2e285b3",
+      "rank": 36,
+      "churn_prob": 0.9998912811279297,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.200870990753174
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.315808653831482
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0594767332077026
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -18.0,
+        "tenure_days": 1427.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 228.33333333333334,
+        "avg_talk_seconds": 357.0,
+        "avg_download_mbs": 36647.02125,
+        "avg_upload_mbs": 6273.7683,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "04 Coming OOC"
+      }
+    },
+    {
+      "customer_id": "3dfe42e99c921e1f5d813424522f0f73bf4950bebc0da038dc119995fe9a96d5",
+      "rank": 37,
+      "churn_prob": 0.9998884201049805,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.413591384887695
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4064791202545166
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.216614007949829
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -149.0,
+        "tenure_days": 2028.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 371.5,
+        "avg_talk_seconds": 635.2,
+        "avg_download_mbs": 3167.9238108108107,
+        "avg_upload_mbs": 244.76525225225225,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "eed241b79795ea29c5aefc8c7dea0bcba63b5086c9fd990096598f4d80610b43",
+      "rank": 38,
+      "churn_prob": 0.999887228012085,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.372086048126221
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3193516731262207
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0709075927734375
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 273.0,
+        "tenure_days": 1335.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 353.0,
+        "avg_talk_seconds": 670.0,
+        "avg_download_mbs": 6105.395597402598,
+        "avg_upload_mbs": 962.9593961038961,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "b040ecb0dd6ad0f46aa050d22867ef11258eedbf822c62c856d3be0dcf529f2a",
+      "rank": 39,
+      "churn_prob": 0.9998863935470581,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.279959201812744
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4778302907943726
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1217060089111328
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 169.0,
+        "tenure_days": 2633.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 97.5,
+        "avg_talk_seconds": 182.125,
+        "avg_download_mbs": 8604.872150753768,
+        "avg_upload_mbs": 1364.677135678392,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "3aa3bddfd7352788cf3097b5842bf8b5f6b2924f052d8218c1d360175e2d8863",
+      "rank": 40,
+      "churn_prob": 0.9998862743377686,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.013002872467041
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2149726152420044
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0594096183776855
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -240.0,
+        "tenure_days": 858.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 479.0,
+        "avg_talk_seconds": 390.0,
+        "avg_download_mbs": 9512.651189944134,
+        "avg_upload_mbs": 6334.035977653631,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "be123b0ce1e86173d0c9561dae50ff3a33f0f9cd593af62525e618dfb3ad2bcd",
+      "rank": 41,
+      "churn_prob": 0.9998854398727417,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.319659233093262
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2984473705291748
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0686463117599487
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 98.0,
+        "tenure_days": 1184.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 231.0,
+        "avg_talk_seconds": 507.6,
+        "avg_download_mbs": 20739.78440425532,
+        "avg_upload_mbs": 3052.904489361702,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "3d63534e37f93fa31f6fc191f05e9a2c52e2fca9f35a71c6956da2cb7be29ad3",
+      "rank": 42,
+      "churn_prob": 0.9998831748962402,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.297539710998535
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3985595703125
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0505893230438232
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 149.0,
+        "tenure_days": 2032.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 255.33333333333334,
+        "avg_talk_seconds": 367.5,
+        "avg_download_mbs": 23160.71392,
+        "avg_upload_mbs": 1281.5897599999998,
+        "technology": "FTTP",
+        "sales_channel": "Online - Search",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "aebfeb735239f8b2bbd69d37dedd8a55d15d5c0b19a756463c49927ed4ffd8f8",
+      "rank": 43,
+      "churn_prob": 0.9998831748962402,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.268459320068359
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.5146836042404175
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4326786994934082
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 137.0,
+        "tenure_days": 5242.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 145.07692307692307,
+        "avg_talk_seconds": 342.46153846153845,
+        "avg_download_mbs": 1555.0863547169813,
+        "avg_upload_mbs": 112.4035924528302,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "d61d67478004aa39771842f0bcbe70dfc11993c578568f61347191eafc9175a7",
+      "rank": 44,
+      "churn_prob": 0.9998822212219238,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.624307632446289
+        },
+        {
+          "feature": "tenure_days",
+          "impact": 2.3563427925109863
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.9993584752082825
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 318.0,
+        "tenure_days": 119.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 228.92307692307693,
+        "avg_talk_seconds": 717.7692307692307,
+        "avg_download_mbs": 3353.87652991453,
+        "avg_upload_mbs": 171.91277777777776,
+        "technology": "FTTP",
+        "sales_channel": "Unknown",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "4d86e67df6e47d91fe085741e9c24c274be8622babe6a415421c959e74d0af5a",
+      "rank": 45,
+      "churn_prob": 0.9998806715011597,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.563490867614746
+        },
+        {
+          "feature": "contract_dd_cancels",
+          "impact": 1.3187297582626343
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3145246505737305
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -341.0,
+        "tenure_days": 4894.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 124.0,
+        "avg_talk_seconds": 431.0,
+        "avg_download_mbs": 8597.74027756654,
+        "avg_upload_mbs": 2125.173787072243,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "b8a540a41a35486abcea6928ab702e5c3235831f7383aefe1fe13200f3a52148",
+      "rank": 46,
+      "churn_prob": 0.999879002571106,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.1825785636901855
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.2373782396316528
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1372368335723877
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -116.0,
+        "tenure_days": 1693.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 392.0,
+        "avg_talk_seconds": 459.0,
+        "avg_download_mbs": 46294.48739097744,
+        "avg_upload_mbs": 38841.91109774436,
+        "technology": "FTTP",
+        "sales_channel": "Online - Affiliate",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "02 In Contract"
+      }
+    },
+    {
+      "customer_id": "ca3c4ab4ac908384e64936bbe3ce4ad492ac5f12a600017c31be8a1296c29fc4",
+      "rank": 47,
+      "churn_prob": 0.9998784065246582,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.17755651473999
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.019782304763794
+        },
+        {
+          "feature": "line_speed",
+          "impact": 0.9551704525947571
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": -85.0,
+        "tenure_days": 462.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 349.875,
+        "avg_talk_seconds": 398.375,
+        "avg_download_mbs": 13169.754261538461,
+        "avg_upload_mbs": 1454.0017384615385,
+        "technology": "FTTP",
+        "sales_channel": "Inbound",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "03 Soon to be OOC"
+      }
+    },
+    {
+      "customer_id": "eed241b79795ea29c5aefc8c7dea0bcba63b5086c9fd990096598f4d80610b43",
+      "rank": 48,
+      "churn_prob": 0.9998779296875,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.357980728149414
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3233938217163086
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.0695161819458008
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 273.0,
+        "tenure_days": 1335.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 353.0,
+        "avg_talk_seconds": 670.0,
+        "avg_download_mbs": 6105.395597402598,
+        "avg_upload_mbs": 962.9593961038961,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    },
+    {
+      "customer_id": "d61c7b568a8b96cfe57698193cc62289891b1aa0fad50d6bfa05fa59b93cec40",
+      "rank": 49,
+      "churn_prob": 0.9998775720596313,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.3990020751953125
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.3717565536499023
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1843703985214233
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 3.0,
+        "tenure_days": 2374.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 0.0,
+        "dd_cancel_60_day": 0.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 134.77777777777777,
+        "avg_talk_seconds": 320.0,
+        "avg_download_mbs": 49135.71467647059,
+        "avg_upload_mbs": 2651.8128823529414,
+        "technology": "FTTP",
+        "sales_channel": "Online - Other",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "05 Newly OOC"
+      }
+    },
+    {
+      "customer_id": "b040ecb0dd6ad0f46aa050d22867ef11258eedbf822c62c856d3be0dcf529f2a",
+      "rank": 50,
+      "churn_prob": 0.9998775720596313,
+      "reason_codes": [
+        {
+          "feature": "speed",
+          "impact": 4.269874095916748
+        },
+        {
+          "feature": "dd_cancel_60_day",
+          "impact": 1.4787181615829468
+        },
+        {
+          "feature": "line_speed",
+          "impact": 1.1267858743667603
+        }
+      ],
+      "recommended_nba": "Free fibre upgrade audit",
+      "expected_save_gbp": 149.98,
+      "features": {
+        "ooc_days": 169.0,
+        "tenure_days": 2633.0,
+        "speed": 1000.0,
+        "line_speed": 0.0,
+        "contract_dd_cancels": 1.0,
+        "dd_cancel_60_day": 1.0,
+        "loyalty_calls_90d": null,
+        "avg_hold_seconds": 97.5,
+        "avg_talk_seconds": 182.125,
+        "avg_download_mbs": 8604.872150753768,
+        "avg_upload_mbs": 1364.677135678392,
+        "technology": "FTTP",
+        "sales_channel": "Online - Ambient",
+        "crm_package_name": "Ultra Fibre Optic",
+        "contract_status": "06 OOC"
+      }
+    }
+  ]
+}

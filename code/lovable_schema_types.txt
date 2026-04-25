@@ -1,0 +1,39 @@
+TALKTALK DATA MODEL SCHEMA:
+
+{
+    "Table: customer_info": {
+        "unique_customer_identifier": "VARCHAR",
+        "datevalue": "DATE",
+        "contract_status": "VARCHAR",
+        "contract_dd_cancels": "BIGINT",
+        "dd_cancel_60_day": "BIGINT",
+        "ooc_days": "BIGINT",
+        "technology": "VARCHAR",
+        "speed": "BIGINT",
+        "line_speed": "DOUBLE",
+        "sales_channel": "VARCHAR",
+        "crm_package_name": "VARCHAR",
+        "tenure_days": "BIGINT"
+    },
+    "Table: usage": {
+        "unique_customer_identifier": "VARCHAR",
+        "calendar_date": "DATE",
+        "usage_download_mbs": "DOUBLE",
+        "usage_upload_mbs": "DOUBLE"
+    },
+    "Table: calls": {
+        "unique_customer_identifier": "VARCHAR",
+        "event_date": "DATE",
+        "call_type": "VARCHAR",
+        "call_type_key": "VARCHAR",
+        "talk_time_seconds": "DOUBLE",
+        "hold_time_seconds": "DOUBLE"
+    },
+    "Table: cease": {
+        "unique_customer_identifier": "VARCHAR",
+        "cease_placed_date": "DATE",
+        "cease_completed_date": "DATE",
+        "reason_description": "VARCHAR",
+        "reason_description_insight": "VARCHAR"
+    }
+}
