@@ -64,9 +64,33 @@ function ExplainabilityPage() {
   // shows real customers (not the bundled personas) after a hard refresh.
   useEffect(() => { void hydrateLiveCustomers(); }, []);
 
+  // Detect whether MotherDuck is the active live source — if so, the
+  // customer search runs against the online DuckDB instead of the in-memory
+  // store, so we can browse / search the full customer base.
+  const [mdLiveEnabled, setMdLiveEnabled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const { data } = await supabase
+        .from("data_connections")
+        .select("enabled")
+        .eq("kind", "motherduck")
+        .maybeSingle();
+      if (alive) setMdLiveEnabled(!!data?.enabled);
+    })();
+    return () => { alive = false; };
+  }, []);
+
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string>(allCustomers[0]?.id ?? personas[0].id);
+
+  // Live MotherDuck search state.
+  const [liveRows, setLiveRows] = useState<Customer[]>([]);
+  const [liveTotal, setLiveTotal] = useState(0);
+  const [liveTotalAll, setLiveTotalAll] = useState(0);
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   const importanceData = useMemo(
     () =>
