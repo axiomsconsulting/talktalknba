@@ -51,7 +51,7 @@ export async function requireAdmin(request: Request): Promise<string> {
 
 /** Mark a connection as running and capture the result. */
 export async function withConnectionRun<T>(
-  kind: "databricks" | "gdrive" | "azure_repo" | "motherduck",
+  kind: "databricks" | "motherduck",
   fn: () => Promise<T>,
 ): Promise<T> {
   const start = await supabaseAdmin
@@ -70,7 +70,6 @@ export async function withConnectionRun<T>(
   } catch (e) {
     let msg: string;
     if (e instanceof Response) {
-      // jsonError throws a Response — read its body so we capture the real reason.
       try {
         const body = await e.clone().text();
         msg = `HTTP ${e.status}: ${body.slice(0, 500)}`;
@@ -94,12 +93,11 @@ export async function withConnectionRun<T>(
   }
 }
 
-const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 const DBX_GATEWAY = "https://connector-gateway.lovable.dev/databricks";
 
-export function gatewayHeaders(connectorEnv: "GOOGLE_DRIVE_API_KEY" | "DATABRICKS_API_KEY") {
+export function gatewayHeaders(connectorEnv: "DATABRICKS_API_KEY") {
   const lovableKey = process.env.LOVABLE_API_KEY;
-  // Prefer suffixed env names (e.g. GOOGLE_DRIVE_API_KEY_1) over the bare name —
+  // Prefer suffixed env names (e.g. DATABRICKS_API_KEY_1) over the bare name —
   // a suffix means the platform has issued a fresh credential after a previous
   // workspace connection was disconnected, and the bare env var may now be stale.
   let connKey: string | undefined;
@@ -110,10 +108,7 @@ export function gatewayHeaders(connectorEnv: "GOOGLE_DRIVE_API_KEY" | "DATABRICK
   if (!connKey) connKey = process.env[connectorEnv];
   if (!lovableKey) throw jsonError(412, "LOVABLE_API_KEY missing — connect a Lovable connector");
   if (!connKey)
-    throw jsonError(
-      412,
-      `${connectorEnv} missing — link the ${connectorEnv === "GOOGLE_DRIVE_API_KEY" ? "Google Drive" : "Databricks"} connector to this project`,
-    );
+    throw jsonError(412, `${connectorEnv} missing — link the Databricks connector to this project`);
   return {
     Authorization: `Bearer ${lovableKey}`,
     "X-Connection-Api-Key": connKey,
@@ -121,94 +116,7 @@ export function gatewayHeaders(connectorEnv: "GOOGLE_DRIVE_API_KEY" | "DATABRICK
   } as Record<string, string>;
 }
 
-export const GATEWAY_URLS = { drive: DRIVE_GATEWAY, databricks: DBX_GATEWAY };
-
-/** Find a child folder by name under a parent folder. */
-export async function driveFindChildFolder(
-  parentId: string,
-  name: string,
-): Promise<string | null> {
-  const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
-  const q = encodeURIComponent(
-    `'${parentId}' in parents and name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-  );
-  const res = await fetch(`${GATEWAY_URLS.drive}/files?q=${q}&fields=files(id,name)`, {
-    headers,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw jsonError(res.status, `Drive folder lookup failed: ${text}`);
-  }
-  const json = (await res.json()) as { files?: Array<{ id: string; name: string }> };
-  return json.files?.[0]?.id ?? null;
-}
-
-export type DriveFile = {
-  id: string;
-  name: string;
-  mimeType: string;
-  size?: string;
-  modifiedTime?: string;
-  md5Checksum?: string;
-};
-
-/** List files inside a folder, following pagination. */
-export async function driveListFolder(folderId: string): Promise<DriveFile[]> {
-  const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
-  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-  const out: DriveFile[] = [];
-  let pageToken: string | undefined;
-  do {
-    const url =
-      `${GATEWAY_URLS.drive}/files?q=${q}` +
-      `&fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)` +
-      `&pageSize=1000` +
-      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      const text = await res.text();
-      throw jsonError(res.status, `Drive list failed: ${text}`);
-    }
-    const json = (await res.json()) as {
-      files?: DriveFile[];
-      nextPageToken?: string;
-    };
-    if (json.files) out.push(...json.files);
-    pageToken = json.nextPageToken;
-  } while (pageToken);
-  return out;
-}
-
-/** Download a Google Drive file's bytes via alt=media (raw blob). */
-export async function driveDownloadFile(fileId: string): Promise<Uint8Array> {
-  const headers = gatewayHeaders("GOOGLE_DRIVE_API_KEY");
-  const res = await fetch(
-    `${GATEWAY_URLS.drive}/files/${encodeURIComponent(fileId)}?alt=media`,
-    { headers },
-  );
-  if (!res.ok) {
-    const text = await res.text();
-    throw jsonError(res.status, `Drive download failed: ${text.slice(0, 300)}`);
-  }
-  return new Uint8Array(await res.arrayBuffer());
-}
-
-/** Classify a Drive file name into a dataset kind based on filename keywords.
- *  All files live in a single shared folder (no subfolders), so we infer the
- *  dataset from the name. Returns null when the file doesn't match any kind. */
-export function classifyDriveFileName(
-  name: string,
-): "customer_info" | "calls" | "cease" | "usage" | "model_artefacts" | null {
-  const n = name.toLowerCase();
-  // Order matters — check more specific patterns first.
-  if (/(model[_-]?artefact|model[_-]?artifact|\.pkl$|\.joblib$|\.onnx$|model_metrics|top_50_customers)/i.test(n))
-    return "model_artefacts";
-  if (/cease/.test(n)) return "cease";
-  if (/(call|loyalty[_-]?call)/.test(n)) return "calls";
-  if (/(usage|speed[_-]?test|broadband)/.test(n)) return "usage";
-  if (/(customer[_-]?info|customers?\b|profile)/.test(n)) return "customer_info";
-  return null;
-}
+export const GATEWAY_URLS = { databricks: DBX_GATEWAY };
 
 /** Run a Databricks SQL query and wait briefly for the result. */
 export async function databricksRunSql(warehouseId: string, sql: string) {
@@ -243,6 +151,7 @@ export async function databricksTriggerJob(jobId: string, runName?: string) {
   }
   return (await res.json()) as { run_id?: number; number_in_job?: number };
 }
+
 
 /* ------------------------------------------------------------------ */
 /*  Azure DevOps Repos helpers                                         */
