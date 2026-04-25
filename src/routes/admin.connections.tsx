@@ -37,35 +37,15 @@ export const Route = createFileRoute("/admin/connections")({
   component: ConnectionsAdminPage,
 });
 
-type ConnectionKind = "databricks" | "gdrive" | "azure_repo" | "motherduck" | "local_upload" | "sample";
+type ConnectionKind = "databricks" | "motherduck" | "local_upload" | "sample";
 type RunStatus = "pending" | "running" | "success" | "error";
 
 type DatabricksQuery = { kind: string; sql: string };
-type GDriveSubfolders = {
-  customer_info?: string;
-  calls?: string;
-  cease?: string;
-  usage?: string;
-  model_artefacts?: string;
-};
 type DatabricksConfig = {
   host?: string;
   warehouse_id?: string;
   job_id?: string;
   queries?: DatabricksQuery[];
-};
-type GDriveConfig = {
-  root_folder_id?: string;
-  root_folder_url?: string;
-  subfolders?: GDriveSubfolders;
-};
-type AzureRepoConfig = {
-  organization?: string;
-  project?: string;
-  repository?: string;
-  branch?: string;
-  anonymous?: boolean;
-  files?: Record<string, string>;
 };
 type MotherDuckConfig = {
   database?: string;
@@ -81,8 +61,6 @@ type Connection = {
   name: string;
   config:
     | DatabricksConfig
-    | GDriveConfig
-    | AzureRepoConfig
     | MotherDuckConfig
     | Record<string, unknown>;
   schedule_cron: string | null;
