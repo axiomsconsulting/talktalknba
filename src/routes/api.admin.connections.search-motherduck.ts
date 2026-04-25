@@ -87,24 +87,59 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
           );
           const totalAll = Number(totalAllOut.rows?.[0]?.[0] ?? 0);
 
+          // Introspect available columns once so the WHERE/SELECT clauses
+          // never reference a column that doesn't exist on this MotherDuck
+          // table (the schema differs project-by-project — e.g. `crm_package_name`
+          // vs `package`, no `region` column at all, etc.). This avoids the
+          // DuckDB Binder Error when a column is missing.
+          const colsOut = await motherduckQuery(
+            fullCfg,
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_name = $1
+             ${cfg.schema ? "AND table_schema = $2" : ""}`,
+            cfg.schema ? ["customer_info", cfg.schema] : ["customer_info"],
+          );
+          const availableCols = new Set<string>(
+            (colsOut.rows ?? []).map((r) => String(r[0] ?? "").toLowerCase()),
+          );
+          const has = (c: string) => availableCols.has(c.toLowerCase());
+
+          // Pick the first existing column from a list of candidates, or
+          // return a SQL literal expression that the rest of the query can
+          // safely cast / coalesce.
+          const pick = (...candidates: string[]): string | null => {
+            for (const c of candidates) if (has(c)) return c;
+            return null;
+          };
+
+          const packageCol = pick("crm_package_name", "package", "package_name", "product_name");
+          const regionCol = pick("region", "country_region", "billing_region", "sales_channel");
+          const contractStatusCol = pick("contract_status", "contract_state");
+          const tenureCol = pick("tenure_months") ?? (has("tenure_days") ? "(tenure_days / 30.0)" : null);
+          const mrrCol = pick("mrr", "monthly_revenue", "arpu", "monthly_arpu");
+          const downloadCol = pick("monthly_download_gb", "monthly_data_gb", "download_gb");
+          const speedDeficitCol = pick("speed_deficit_pct");
+          const loyaltyCol = pick("loyalty_calls_90d", "calls_90d");
+          const holdCol = pick("total_hold_seconds", "hold_seconds");
+
           // Build WHERE clauses & values defensively. Each clause is wrapped
-          // in TRY_CAST so a missing column never aborts the whole query.
+          // in TRY_CAST so a bad cell never aborts the whole query.
           const whereParts: string[] = [];
           const values: unknown[] = [];
           let p = 1;
 
-          const addInList = (col: string, vals: string[] | undefined) => {
-            if (!vals || vals.length === 0) return;
+          const addInList = (col: string | null, vals: string[] | undefined) => {
+            if (!col || !vals || vals.length === 0) return;
             const placeholders = vals.map(() => `$${p++}`).join(", ");
             whereParts.push(`CAST(COALESCE(${col}, '') AS VARCHAR) IN (${placeholders})`);
             values.push(...vals);
           };
 
           const addRange = (
-            colExpr: string,
+            colExpr: string | null,
             range: { min?: number; max?: number } | undefined,
           ) => {
-            if (!range) return;
+            if (!colExpr || !range) return;
             const min = Number(range.min);
             const max = Number(range.max);
             if (Number.isFinite(min)) {
@@ -117,26 +152,27 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
             }
           };
 
-          addInList("region", f.regions);
-          addInList("package", f.packages);
-          addInList("contract_status", f.contractStatuses);
-          addRange("COALESCE(tenure_months, 0)", f.tenureMonths);
-          addRange("COALESCE(mrr, monthly_revenue, arpu, 0)", f.mrrGbp);
-          addRange("COALESCE(monthly_download_gb, monthly_data_gb, 0)", f.monthlyDownloadGb);
-          addRange("COALESCE(speed_deficit_pct, 0)", f.speedDeficitPct);
-          addRange("COALESCE(loyalty_calls_90d, calls_90d, 0)", f.loyaltyCalls90d);
-          addRange("COALESCE(total_hold_seconds, hold_seconds, 0)", f.holdSeconds);
+          addInList(regionCol, f.regions);
+          addInList(packageCol, f.packages);
+          addInList(contractStatusCol, f.contractStatuses);
+          addRange(tenureCol, f.tenureMonths);
+          addRange(mrrCol, f.mrrGbp);
+          addRange(downloadCol, f.monthlyDownloadGb);
+          addRange(speedDeficitCol, f.speedDeficitPct);
+          addRange(loyaltyCol, f.loyaltyCalls90d);
+          addRange(holdCol, f.holdSeconds);
 
           if (id) {
             whereParts.push(`unique_customer_identifier = $${p++}`);
             values.push(id);
           } else if (q) {
             const like = `%${q}%`;
-            whereParts.push(
-              `(CAST(unique_customer_identifier AS VARCHAR) ILIKE $${p}` +
-                ` OR CAST(COALESCE(package, '') AS VARCHAR) ILIKE $${p}` +
-                ` OR CAST(COALESCE(region, '') AS VARCHAR) ILIKE $${p})`,
-            );
+            // Always search on customer id (guaranteed to exist).
+            const orParts = [`CAST(unique_customer_identifier AS VARCHAR) ILIKE $${p}`];
+            if (packageCol) orParts.push(`CAST(COALESCE(${packageCol}, '') AS VARCHAR) ILIKE $${p}`);
+            if (regionCol) orParts.push(`CAST(COALESCE(${regionCol}, '') AS VARCHAR) ILIKE $${p}`);
+            if (contractStatusCol) orParts.push(`CAST(COALESCE(${contractStatusCol}, '') AS VARCHAR) ILIKE $${p}`);
+            whereParts.push(`(${orParts.join(" OR ")})`);
             values.push(like);
             p++;
           }
