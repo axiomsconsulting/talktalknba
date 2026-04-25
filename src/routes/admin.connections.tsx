@@ -19,6 +19,7 @@ import {
   StopCircle,
   Cloud,
   UploadCloud,
+  Sparkles,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
