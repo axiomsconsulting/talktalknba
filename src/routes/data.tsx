@@ -338,6 +338,7 @@ function ActiveSourcesOverview({
   dbxConn,
   mdConn,
   localConn,
+  sampleConn,
   onReset,
   onJump,
 }: {
@@ -348,6 +349,7 @@ function ActiveSourcesOverview({
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
   localConn: ConnectionRow | undefined;
+  sampleConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
