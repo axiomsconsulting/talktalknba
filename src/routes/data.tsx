@@ -798,7 +798,7 @@ function LocalUploadToggle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Live connection panel — shared between Google Drive & Databricks
+// Live connection panel — Databricks
 // ─────────────────────────────────────────────────────────────────────────────
 
 function LiveConnectionPanel({
@@ -806,13 +806,13 @@ function LiveConnectionPanel({
   conn,
   onChanged,
 }: {
-  kind: "gdrive" | "databricks";
+  kind: "databricks";
   conn: ConnectionRow | undefined;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<"test" | "ingest" | null>(null);
-  const Icon = kind === "gdrive" ? HardDrive : Cloud;
-  const label = kind === "gdrive" ? "Google Drive" : "Databricks";
+  const Icon = Cloud;
+  const label = "Databricks";
 
   async function run(action: "test" | "ingest") {
     setBusy(action);
@@ -848,9 +848,7 @@ function LiveConnectionPanel({
           <div>
             <div className="text-base font-semibold text-foreground">{label} not configured</div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {kind === "gdrive"
-                ? "Connect a shared Google Drive folder containing your customer_info, calls, cease, usage and model artefact files."
-                : "Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables."}
+              Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables.
             </p>
           </div>
         </div>
@@ -866,14 +864,9 @@ function LiveConnectionPanel({
   }
 
   const lastRun = conn.last_run_at ? new Date(conn.last_run_at).toLocaleString("en-GB") : "Never";
-  const cfgSummary =
-    kind === "gdrive"
-      ? `Root folder: ${(conn.config as { root_folder_url?: string; root_folder_id?: string }).root_folder_url ??
-          (conn.config as { root_folder_id?: string }).root_folder_id ??
-          "—"}`
-      : `Workspace: ${(conn.config as { host?: string }).host ?? "—"} · warehouse ${
-          (conn.config as { warehouse_id?: string }).warehouse_id ?? "—"
-        }`;
+  const cfgSummary = `Workspace: ${(conn.config as { host?: string }).host ?? "—"} · warehouse ${
+    (conn.config as { warehouse_id?: string }).warehouse_id ?? "—"
+  }`;
 
   return (
     <div className="rounded-lg border border-border bg-[var(--surface-sunken)]/40 p-5 sm:p-6 space-y-4">
