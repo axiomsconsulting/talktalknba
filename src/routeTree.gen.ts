@@ -31,6 +31,7 @@ import { Route as ApiPublicHooksPollDriveRouteImport } from './routes/api.public
 import { Route as ApiAdminTrainingKitRouteImport } from './routes/api.admin.training.kit'
 import { Route as ApiAdminTrainingImportRouteImport } from './routes/api.admin.training.import'
 import { Route as ApiAdminConnectionsTestRouteImport } from './routes/api.admin.connections.test'
+import { Route as ApiAdminConnectionsSnapshotMotherduckRouteImport } from './routes/api.admin.connections.snapshot-motherduck'
 import { Route as ApiAdminConnectionsSearchMotherduckRouteImport } from './routes/api.admin.connections.search-motherduck'
 import { Route as ApiAdminConnectionsRetrainRouteImport } from './routes/api.admin.connections.retrain'
 import { Route as ApiAdminConnectionsQueryMotherduckRouteImport } from './routes/api.admin.connections.query-motherduck'
@@ -40,6 +41,7 @@ import { Route as ApiAdminConnectionsPullDriveRouteImport } from './routes/api.a
 import { Route as ApiAdminConnectionsPullAzureRouteImport } from './routes/api.admin.connections.pull-azure'
 import { Route as ApiAdminConnectionsPreviewAzureRouteImport } from './routes/api.admin.connections.preview-azure'
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
+import { Route as ApiAdminConnectionsFacetsMotherduckRouteImport } from './routes/api.admin.connections.facets-motherduck'
 import { Route as ApiAdminConnectionsCancelPullRouteImport } from './routes/api.admin.connections.cancel-pull'
 
 const StrategyRoute = StrategyRouteImport.update({
@@ -156,6 +158,12 @@ const ApiAdminConnectionsTestRoute = ApiAdminConnectionsTestRouteImport.update({
   path: '/api/admin/connections/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminConnectionsSnapshotMotherduckRoute =
+  ApiAdminConnectionsSnapshotMotherduckRouteImport.update({
+    id: '/api/admin/connections/snapshot-motherduck',
+    path: '/api/admin/connections/snapshot-motherduck',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminConnectionsSearchMotherduckRoute =
   ApiAdminConnectionsSearchMotherduckRouteImport.update({
     id: '/api/admin/connections/search-motherduck',
@@ -210,6 +218,12 @@ const ApiAdminConnectionsIngestRoute =
     path: '/api/admin/connections/ingest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminConnectionsFacetsMotherduckRoute =
+  ApiAdminConnectionsFacetsMotherduckRouteImport.update({
+    id: '/api/admin/connections/facets-motherduck',
+    path: '/api/admin/connections/facets-motherduck',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminConnectionsCancelPullRoute =
   ApiAdminConnectionsCancelPullRouteImport.update({
     id: '/api/admin/connections/cancel-pull',
@@ -233,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
+  '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -242,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
+  '/api/admin/connections/snapshot-motherduck': typeof ApiAdminConnectionsSnapshotMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -267,6 +283,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
+  '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -276,6 +293,7 @@ export interface FileRoutesByTo {
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
+  '/api/admin/connections/snapshot-motherduck': typeof ApiAdminConnectionsSnapshotMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -302,6 +320,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
+  '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
   '/api/admin/connections/preview-azure': typeof ApiAdminConnectionsPreviewAzureRoute
   '/api/admin/connections/pull-azure': typeof ApiAdminConnectionsPullAzureRoute
@@ -311,6 +330,7 @@ export interface FileRoutesById {
   '/api/admin/connections/query-motherduck': typeof ApiAdminConnectionsQueryMotherduckRoute
   '/api/admin/connections/retrain': typeof ApiAdminConnectionsRetrainRoute
   '/api/admin/connections/search-motherduck': typeof ApiAdminConnectionsSearchMotherduckRoute
+  '/api/admin/connections/snapshot-motherduck': typeof ApiAdminConnectionsSnapshotMotherduckRoute
   '/api/admin/connections/test': typeof ApiAdminConnectionsTestRoute
   '/api/admin/training/import': typeof ApiAdminTrainingImportRoute
   '/api/admin/training/kit': typeof ApiAdminTrainingKitRoute
@@ -338,6 +358,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
+    | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -347,6 +368,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/search-motherduck'
+    | '/api/admin/connections/snapshot-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -372,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
+    | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -381,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/search-motherduck'
+    | '/api/admin/connections/snapshot-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -406,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/api/score-customer'
     | '/api/admin/connections/cancel-pull'
+    | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
     | '/api/admin/connections/preview-azure'
     | '/api/admin/connections/pull-azure'
@@ -415,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/admin/connections/query-motherduck'
     | '/api/admin/connections/retrain'
     | '/api/admin/connections/search-motherduck'
+    | '/api/admin/connections/snapshot-motherduck'
     | '/api/admin/connections/test'
     | '/api/admin/training/import'
     | '/api/admin/training/kit'
@@ -441,6 +467,7 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   ApiScoreCustomerRoute: typeof ApiScoreCustomerRoute
   ApiAdminConnectionsCancelPullRoute: typeof ApiAdminConnectionsCancelPullRoute
+  ApiAdminConnectionsFacetsMotherduckRoute: typeof ApiAdminConnectionsFacetsMotherduckRoute
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
   ApiAdminConnectionsPreviewAzureRoute: typeof ApiAdminConnectionsPreviewAzureRoute
   ApiAdminConnectionsPullAzureRoute: typeof ApiAdminConnectionsPullAzureRoute
@@ -450,6 +477,7 @@ export interface RootRouteChildren {
   ApiAdminConnectionsQueryMotherduckRoute: typeof ApiAdminConnectionsQueryMotherduckRoute
   ApiAdminConnectionsRetrainRoute: typeof ApiAdminConnectionsRetrainRoute
   ApiAdminConnectionsSearchMotherduckRoute: typeof ApiAdminConnectionsSearchMotherduckRoute
+  ApiAdminConnectionsSnapshotMotherduckRoute: typeof ApiAdminConnectionsSnapshotMotherduckRoute
   ApiAdminConnectionsTestRoute: typeof ApiAdminConnectionsTestRoute
   ApiAdminTrainingImportRoute: typeof ApiAdminTrainingImportRoute
   ApiAdminTrainingKitRoute: typeof ApiAdminTrainingKitRoute
@@ -616,6 +644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/snapshot-motherduck': {
+      id: '/api/admin/connections/snapshot-motherduck'
+      path: '/api/admin/connections/snapshot-motherduck'
+      fullPath: '/api/admin/connections/snapshot-motherduck'
+      preLoaderRoute: typeof ApiAdminConnectionsSnapshotMotherduckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/connections/search-motherduck': {
       id: '/api/admin/connections/search-motherduck'
       path: '/api/admin/connections/search-motherduck'
@@ -679,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/facets-motherduck': {
+      id: '/api/admin/connections/facets-motherduck'
+      path: '/api/admin/connections/facets-motherduck'
+      fullPath: '/api/admin/connections/facets-motherduck'
+      preLoaderRoute: typeof ApiAdminConnectionsFacetsMotherduckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/connections/cancel-pull': {
       id: '/api/admin/connections/cancel-pull'
       path: '/api/admin/connections/cancel-pull'
@@ -705,6 +747,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   ApiScoreCustomerRoute: ApiScoreCustomerRoute,
   ApiAdminConnectionsCancelPullRoute: ApiAdminConnectionsCancelPullRoute,
+  ApiAdminConnectionsFacetsMotherduckRoute:
+    ApiAdminConnectionsFacetsMotherduckRoute,
   ApiAdminConnectionsIngestRoute: ApiAdminConnectionsIngestRoute,
   ApiAdminConnectionsPreviewAzureRoute: ApiAdminConnectionsPreviewAzureRoute,
   ApiAdminConnectionsPullAzureRoute: ApiAdminConnectionsPullAzureRoute,
@@ -717,6 +761,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminConnectionsRetrainRoute: ApiAdminConnectionsRetrainRoute,
   ApiAdminConnectionsSearchMotherduckRoute:
     ApiAdminConnectionsSearchMotherduckRoute,
+  ApiAdminConnectionsSnapshotMotherduckRoute:
+    ApiAdminConnectionsSnapshotMotherduckRoute,
   ApiAdminConnectionsTestRoute: ApiAdminConnectionsTestRoute,
   ApiAdminTrainingImportRoute: ApiAdminTrainingImportRoute,
   ApiAdminTrainingKitRoute: ApiAdminTrainingKitRoute,

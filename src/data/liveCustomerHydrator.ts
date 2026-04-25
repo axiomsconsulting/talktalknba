@@ -52,6 +52,16 @@ export async function hydrateLiveCustomers(opts: { force?: boolean } = {}): Prom
   if (inflight) return inflight;
   inflight = (async () => {
     try {
+      // Step 1 — if MotherDuck is the highest-priority enabled connector,
+      // pull a live snapshot directly from it (no ingest required).
+      const mdHydrated = await tryHydrateFromMotherDuck(opts.force ?? false);
+      if (mdHydrated) {
+        lastSignature = "motherduck:live";
+        return;
+      }
+
+      // Step 2 — fall back to the existing snapshot/upload path driven by
+      // active_data_sources (ingestions, manual uploads, etc.).
       const { data, error } = await supabase
         .from("active_data_sources")
         .select("kind, origin, label, rows_count, dataset_id, connection_id, remote_name");
@@ -90,6 +100,100 @@ export async function hydrateLiveCustomers(opts: { force?: boolean } = {}): Prom
     }
   })();
   return inflight;
+}
+
+/**
+ * If MotherDuck is enabled, fetch a capped live page for every dataset kind
+ * and push it through the in-memory store as the active live source.
+ *
+ * Returns true when MD provided customer data.
+ */
+async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
+  const { data: conn } = await supabase
+    .from("data_connections")
+    .select("id, enabled, name")
+    .eq("kind", "motherduck")
+    .maybeSingle();
+  if (!conn?.enabled) return false;
+
+  const store = useCustomerStore.getState();
+  const alreadyLive =
+    store.source.kind === "uploaded" &&
+    (store.source as { detail?: string }).detail?.includes("MotherDuck");
+  if (!force && alreadyLive) return true;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return false; // anonymous user — wait for auth
+
+  let snap: {
+    kinds?: Record<string, { headers: string[]; rows: unknown[][] }>;
+    errors?: Record<string, string>;
+  };
+  try {
+    const res = await fetch("/api/admin/connections/snapshot-motherduck", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ rowLimit: 5_000 }),
+    });
+    if (!res.ok) {
+      // 403 → not an admin; silently skip and fall back to snapshots
+      if (res.status === 403) return false;
+      throw new Error(`HTTP ${res.status}`);
+    }
+    snap = await res.json();
+  } catch (e) {
+    console.warn("[liveCustomerHydrator] MotherDuck snapshot fetch failed", e);
+    return false;
+  }
+
+  const kinds = snap.kinds ?? {};
+  const ci = kinds.customer_info;
+  if (!ci || ci.rows.length === 0) return false;
+
+  const label = `MotherDuck · ${conn.name ?? "live"}`;
+  const remoteName = `motherduck:${conn.id}`;
+
+  const ordered = ["customer_info", "calls", "cease", "usage"] as const;
+  for (const kind of ordered) {
+    const k = kinds[kind];
+    if (!k) continue;
+    const objects: RawCustomerRow[] = k.rows.map((r) => {
+      const o: RawCustomerRow = {};
+      k.headers.forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
+      return o;
+    });
+    await applyToStore(
+      {
+        kind,
+        origin: "live",
+        label: `${label} · ${kind}`,
+        rows_count: objects.length,
+        dataset_id: null,
+        connection_id: conn.id,
+        remote_name: remoteName,
+      },
+      objects,
+    );
+  }
+
+  // Best-effort: persist MD as the active source so refreshes keep the label.
+  const persistOps = ordered
+    .filter((k) => kinds[k])
+    .map((k) =>
+      useCustomerStore.getState().persistActive({
+        kind: k,
+        origin: "live",
+        label: `${label} · ${k}`,
+        rows: kinds[k]?.rows.length ?? 0,
+        connectionId: conn.id,
+        remoteName,
+      }),
+    );
+  await Promise.allSettled(persistOps);
+  return true;
 }
 
 async function loadRowsForActive(row: ActiveRow): Promise<RawCustomerRow[] | null> {

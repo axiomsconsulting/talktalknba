@@ -33,7 +33,26 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
           return resp instanceof Response ? resp : jsonError(500, String(resp));
         }
 
-        let body: { q?: string; limit?: number; offset?: number; id?: string } = {};
+        let body: {
+          q?: string;
+          limit?: number;
+          offset?: number;
+          id?: string;
+          filters?: {
+            regions?: string[];
+            packages?: string[];
+            contractStatuses?: string[];
+            riskTiers?: string[];
+            personas?: string[];
+            nbaTriggers?: string[];
+            tenureMonths?: { min?: number; max?: number };
+            mrrGbp?: { min?: number; max?: number };
+            monthlyDownloadGb?: { min?: number; max?: number };
+            speedDeficitPct?: { min?: number; max?: number };
+            loyaltyCalls90d?: { min?: number; max?: number };
+            holdSeconds?: { min?: number; max?: number };
+          };
+        } = {};
         try {
           body = (await request.json()) as typeof body;
         } catch {
@@ -44,6 +63,7 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
         const offset = Math.max(0, Math.floor(Number(body.offset ?? 0)) || 0);
         const q = typeof body.q === "string" ? body.q.trim() : "";
         const id = typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : null;
+        const f = body.filters ?? {};
 
         const { data: conn, error } = await supabaseAdmin
           .from("data_connections")
@@ -67,38 +87,70 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
           );
           const totalAll = Number(totalAllOut.rows?.[0]?.[0] ?? 0);
 
-          // Build search SQL.
-          let dataSql: string;
-          let countSql: string;
-          const dataValues: unknown[] = [];
-          const countValues: unknown[] = [];
+          // Build WHERE clauses & values defensively. Each clause is wrapped
+          // in TRY_CAST so a missing column never aborts the whole query.
+          const whereParts: string[] = [];
+          const values: unknown[] = [];
+          let p = 1;
+
+          const addInList = (col: string, vals: string[] | undefined) => {
+            if (!vals || vals.length === 0) return;
+            const placeholders = vals.map(() => `$${p++}`).join(", ");
+            whereParts.push(`CAST(COALESCE(${col}, '') AS VARCHAR) IN (${placeholders})`);
+            values.push(...vals);
+          };
+
+          const addRange = (
+            colExpr: string,
+            range: { min?: number; max?: number } | undefined,
+          ) => {
+            if (!range) return;
+            const min = Number(range.min);
+            const max = Number(range.max);
+            if (Number.isFinite(min)) {
+              whereParts.push(`TRY_CAST(${colExpr} AS DOUBLE) >= $${p++}`);
+              values.push(min);
+            }
+            if (Number.isFinite(max)) {
+              whereParts.push(`TRY_CAST(${colExpr} AS DOUBLE) <= $${p++}`);
+              values.push(max);
+            }
+          };
+
+          addInList("region", f.regions);
+          addInList("package", f.packages);
+          addInList("contract_status", f.contractStatuses);
+          addRange("COALESCE(tenure_months, 0)", f.tenureMonths);
+          addRange("COALESCE(mrr, monthly_revenue, arpu, 0)", f.mrrGbp);
+          addRange("COALESCE(monthly_download_gb, monthly_data_gb, 0)", f.monthlyDownloadGb);
+          addRange("COALESCE(speed_deficit_pct, 0)", f.speedDeficitPct);
+          addRange("COALESCE(loyalty_calls_90d, calls_90d, 0)", f.loyaltyCalls90d);
+          addRange("COALESCE(total_hold_seconds, hold_seconds, 0)", f.holdSeconds);
 
           if (id) {
-            dataSql = `SELECT * FROM ${tbl} WHERE unique_customer_identifier = $1 LIMIT 1`;
-            dataValues.push(id);
-            countSql = `SELECT count(*)::bigint FROM ${tbl} WHERE unique_customer_identifier = $1`;
-            countValues.push(id);
+            whereParts.push(`unique_customer_identifier = $${p++}`);
+            values.push(id);
           } else if (q) {
-            // Cast to varchar so ILIKE works against any column type we pull
-            // (uuid / numeric IDs included).
             const like = `%${q}%`;
-            const where =
-              `CAST(unique_customer_identifier AS VARCHAR) ILIKE $1` +
-              ` OR CAST(COALESCE(package, '') AS VARCHAR) ILIKE $1` +
-              ` OR CAST(COALESCE(region, '') AS VARCHAR) ILIKE $1`;
-            dataSql = `SELECT * FROM ${tbl} WHERE ${where} ORDER BY unique_customer_identifier LIMIT ${limit} OFFSET ${offset}`;
-            dataValues.push(like);
-            countSql = `SELECT count(*)::bigint FROM ${tbl} WHERE ${where}`;
-            countValues.push(like);
-          } else {
-            dataSql = `SELECT * FROM ${tbl} ORDER BY unique_customer_identifier LIMIT ${limit} OFFSET ${offset}`;
-            countSql = `SELECT count(*)::bigint FROM ${tbl}`;
+            whereParts.push(
+              `(CAST(unique_customer_identifier AS VARCHAR) ILIKE $${p}` +
+                ` OR CAST(COALESCE(package, '') AS VARCHAR) ILIKE $${p}` +
+                ` OR CAST(COALESCE(region, '') AS VARCHAR) ILIKE $${p})`,
+            );
+            values.push(like);
+            p++;
           }
 
-          const dataOut = await motherduckQuery(fullCfg, dataSql, dataValues);
+          const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
+          const dataSql = id
+            ? `SELECT * FROM ${tbl} ${whereSql} LIMIT 1`
+            : `SELECT * FROM ${tbl} ${whereSql} ORDER BY unique_customer_identifier LIMIT ${limit} OFFSET ${offset}`;
+          const countSql = `SELECT count(*)::bigint FROM ${tbl} ${whereSql}`;
+
+          const dataOut = await motherduckQuery(fullCfg, dataSql, values);
           let total = totalAll;
-          if (q || id) {
-            const countOut = await motherduckQuery(fullCfg, countSql, countValues);
+          if (whereParts.length > 0) {
+            const countOut = await motherduckQuery(fullCfg, countSql, values);
             total = Number(countOut.rows?.[0]?.[0] ?? 0);
           }
 

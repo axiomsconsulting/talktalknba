@@ -160,20 +160,31 @@ function DataPage() {
     clearAll,
   ]);
 
-  // Derive which source is currently powering the customer base
+  // Derive which source is currently powering the customer base.
+  // Priority (highest → lowest): MotherDuck → Google Drive → Databricks → Local upload → Sample.
+  // The first *enabled* source in this list wins, regardless of which detail
+  // string the in-memory store currently carries — so toggling MotherDuck on
+  // immediately re-labels every dashboard as "MotherDuck (live)".
   const activeSourceKey: SourceKey | "none" = useMemo(() => {
-    if (source.kind === "empty") return "none";
-    if (source.kind === "mock") return "sample";
-    const detail = (source as { detail?: string }).detail ?? "";
-    if (detail.toLowerCase().includes("motherduck")) return "motherduck";
-    if (detail.toLowerCase().includes("google drive")) return "gdrive";
-    if (detail.toLowerCase().includes("databricks")) return "databricks";
-    if ((source as { origin?: string }).origin === "live") {
-      if (mdConn?.enabled) return "motherduck";
-      return gdriveConn?.enabled ? "gdrive" : "databricks";
+    if (mdConn?.enabled) return "motherduck";
+    if (gdriveConn?.enabled) return "gdrive";
+    if (dbxConn?.enabled) return "databricks";
+    if (localConn?.enabled && source.kind === "uploaded" && (source as { origin?: string }).origin !== "live") {
+      return "upload";
     }
-    return "upload";
-  }, [source, gdriveConn?.enabled, mdConn?.enabled]);
+    if (sampleConn?.enabled) return "sample";
+    if (source.kind === "empty") return "none";
+    // Fallback: nothing enabled but store still carries something.
+    if (source.kind === "uploaded") return "upload";
+    return "sample";
+  }, [
+    source,
+    mdConn?.enabled,
+    gdriveConn?.enabled,
+    dbxConn?.enabled,
+    localConn?.enabled,
+    sampleConn?.enabled,
+  ]);
 
   return (
     <AppShell>
@@ -193,6 +204,7 @@ function DataPage() {
           dbxConn={dbxConn}
           mdConn={mdConn}
           localConn={localConn}
+          sampleConn={sampleConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
         />
@@ -326,6 +338,7 @@ function ActiveSourcesOverview({
   dbxConn,
   mdConn,
   localConn,
+  sampleConn,
   onReset,
   onJump,
 }: {
@@ -336,6 +349,7 @@ function ActiveSourcesOverview({
   dbxConn: ConnectionRow | undefined;
   mdConn: ConnectionRow | undefined;
   localConn: ConnectionRow | undefined;
+  sampleConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
 }) {
@@ -347,35 +361,11 @@ function ActiveSourcesOverview({
     status: "active" | "configured" | "available" | "not_configured";
   }> = [
     {
-      key: "sample",
-      icon: Sparkles,
-      title: "Sample data",
-      subtitle: "6 personas + 50 generated customers",
-      status: activeSourceKey === "sample" ? "active" : "available",
-    },
-    {
-      key: "upload",
-      icon: UploadCloud,
-      title: "Local upload",
-      subtitle:
-        activeSourceKey === "upload" && source.kind === "uploaded"
-          ? source.filename
-          : localConn?.enabled === false
-            ? "Disabled — toggle in Connections"
-            : "CSV / Parquet, drop & map",
-      status:
-        activeSourceKey === "upload"
-          ? "active"
-          : localConn?.enabled
-            ? "configured"
-            : "not_configured",
-    },
-    {
       key: "motherduck",
       icon: Cloud,
       title: "MotherDuck (live)",
       subtitle: mdConn?.enabled
-        ? `Live · ${mdConn.name}`
+        ? `Primary live source · ${mdConn.name}`
         : mdConn
           ? "Configured · disabled"
           : "Not configured",
@@ -411,6 +401,35 @@ function ActiveSourcesOverview({
         activeSourceKey === "databricks"
           ? "active"
           : dbxConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+    {
+      key: "upload",
+      icon: UploadCloud,
+      title: "Local upload",
+      subtitle:
+        activeSourceKey === "upload" && source.kind === "uploaded"
+          ? source.filename
+          : localConn?.enabled === false
+            ? "Disabled — toggle in Connections"
+            : "CSV / Parquet, drop & map",
+      status:
+        activeSourceKey === "upload"
+          ? "active"
+          : localConn?.enabled
+            ? "configured"
+            : "not_configured",
+    },
+    {
+      key: "sample",
+      icon: Sparkles,
+      title: "Sample data",
+      subtitle: "6 personas + 50 generated customers (fallback)",
+      status:
+        activeSourceKey === "sample"
+          ? "active"
+          : sampleConn?.enabled
             ? "configured"
             : "not_configured",
     },
