@@ -1,28 +1,32 @@
 unique_customer_identifier,cease_placed_date,cease_completed_date,reason_description,reason_description_insight
-8970fd42d2595dc063a823e416e5bb795a555bb6e31d72d8fd53b8af2e2405c5,2023-07-22,null,Not Known,VagueReason
-62f689100485d8d4738734be2e60b4051b7036dd3d1f20aa6c77859353109a21,2022-11-24,2023-01-04,Competitor Deals - Mobile and Broadband Deal,CompetitorDeals
-6472a9da95a49abb30c83a833d4facbebbcd6657aa11d443d8fa3cd0365b5739,2022-09-07,null,Not Known,VagueReason
-095d5f0adc982fee764c35bb8f6752af4d432296c3a504fe159e7221758c9a93,2024-02-09,null,Not Known,VagueReason
-8f676110ebcb784b3874a951104b7118bed193ef8e2c637aac8c565ac823abef,2023-11-18,2023-12-19,Cease,VagueReason
-f8f0c4a31b3b3280f60e792f8022a704a9c0588f179f84cdafee8ef2e32d15f2,2023-08-17,2023-09-19,Competitor Deals - No longer required,CompetitorDeals
-95837c5069ff9a48addb1c5fdcdf64c31cc2330aa028c8df49255e3232501349,2022-10-26,2022-11-30,Competitor Deals - No longer required,CompetitorDeals
-4d994624c7349bd4d9fb2016cb35ac14d50ee8595fb73dc7d7400f2fd5714f9e,2023-03-21,null,Not Known,VagueReason
-eca84e5bd4f4eb9a693f483ad98c24af59a61de9cab23fdc75bccd34c511407f,2024-08-03,2024-09-09,Cease,VagueReason
-1deb0ee2e943da6c2640092dc4ad5f3abc6a9417af9da7d5c7eef385248baf84,2024-03-06,2024-04-08,Competitor Deals - Better Broadband Deal,CompetitorDeals
-2e5ed2e2db64db39c6c5c64aa349bf920f6826dcfe75c45d4a25d60385e07ad1,2023-04-01,2023-04-18,Competitor Deals - Better Broadband Deal,CompetitorDeals
-182b2ab272bb0f5936ddef1b0ebc41ef7928a07be0356b0429927b27d7d87c67,2022-09-08,2022-09-28,Not Known,VagueReason
-09489001d45b26b33bf41cfd702fe33acac720642f3a8c2b282b08d5373781a3,2024-03-25,2024-04-25,Competitor Deals - Mobile and Broadband Deal,CompetitorDeals
-df8ec98f954cca4bd90fdfe8944a4b086c3cb3d31f6f29b8b08501c4c29a334e,2023-12-01,2023-12-13,Competitor Deals - No longer required,CompetitorDeals
-c0d55e7207c5bb2dd46f229e97401372073249d8db6bb6c1d2e54092adad77a9,2023-11-10,2023-12-14,Cease,VagueReason
-4e474ec042cda8f2df61fa599acd5bdb2cad82d460d20c875a5b3dc0c6ce7c92,2023-05-04,2023-05-19,Not Known,VagueReason
-db6306555807649ba084ad7191708c64382856ac4cd364f379530436757cab25,2023-04-20,2023-04-26,Cancelled By Customer,Other
-4d994624c7349bd4d9fb2016cb35ac14d50ee8595fb73dc7d7400f2fd5714f9e,2023-07-21,2023-07-27,Competitor Deals - Already Signed up for contract,CompetitorDeals
-2df91c630bc8d3482fe6b26130ae5d94820effac70251096029fdff42b6dfc62,2023-11-26,null,Not Known,VagueReason
-eb89d4d3324cf1653509e450a3da9f8a9cfbe2b376ad5c7f40857c86e5c4c2e7,2024-05-10,2024-06-12,Competitor Deals - Better Broadband Deal,CompetitorDeals
-b8f4fb33be9fe204b9de079931dc398e3ba6af441d556ca950e28ed672f5708d,2024-05-01,2024-05-08,Bereavement,Bereavement
-1f91cd418d6d9f4afb9958632b7d2327ab009b2817656a79edc72f080997eb03,2023-08-09,2023-09-01,Competitor Deals - Mobile and Broadband Deal,CompetitorDeals
-413181d0680c5b6ff1a1e00196dc8f24ffec47714f0b55e6395bd234bd8d14aa,2024-06-12,2024-07-12,Competitor Deals - Better Broadband Deal,CompetitorDeals
-413181d0680c5b6ff1a1e00196dc8f24ffec47714f0b55e6395bd234bd8d14aa,2023-01-09,null,Cancelled By Customer,Other
-75b1217140bb8ddc6bb3458315e10f58dcb4e7841517bb32b8bca149a1b832a6,2023-12-07,2024-04-23,Competitor Deals - No longer required,CompetitorDeals
-09489001d45b26b33bf41cfd702fe33acac720642f3a8c2b282b08d5373781a3,2023-07-14,null,Not Known,VagueReason
-65cac803e3a66e335d6a72614d8d35eec87893de171c370be475f23085f06f5e,2023-03-10,null,Not Known,VagueReason
+a6804e62001d8e7b4fd567bff762877e6b6842beb305a2462500e03040ec6046,2024-04-16,2024-05-01,Not Known,VagueReason
+4d471419999fbbf80149b0c41f2ec867cd569af5a2d529066707c5faeee68896,2023-12-15,null,Not Known,VagueReason
+df3a4d22f84a57f98509bd81226f515e6825248a7c20d9a3192cb28bd35fe3c5,2024-02-06,2024-02-20,Not Known,VagueReason
+a3830c81991567a35e20bd3fa16bd14693c4677622b0914a570625b5429ebaed,2023-11-27,null,Not Known,VagueReason
+fb054eb17699db67e8e50e35f973f95de74d89eabe3f7436a3d6cfe2f01fd811,2023-07-31,null,Not Known,VagueReason
+a21d4384a8b9cc0ee2a49ea3fd16f16c846bae97183cb474427ff1f96f2b6145,2024-07-30,2024-09-06,Cease,VagueReason
+fd59d592a683ca7bd3d73f2f7875f9a3b5c97208484fe4b8a15a0870dfeb582f,2022-09-12,null,Not Known,VagueReason
+4e1702d00fc32ee34a9a5fe5aaf66e16a76e9879c342c2492db71c86c8c3a1c7,2023-07-10,2023-07-25,Not Known,VagueReason
+62825f860a006ebff9ef584c849951b4d66c2488c0507fef4c64f60f47c0c862,2024-01-24,null,Not Known,VagueReason
+8c852ab94629e1ab3761377640784d2162dbe2c57263b6094555f3835d06d48a,2023-12-08,2024-04-23,Competitor Deals - Mobile and Broadband Deal,CompetitorDeals
+f049a26b67f12419c596a8ab46fdff06b34881106b57697e4a5adb4a74ccdfdc,2023-05-12,2023-05-20,Competitor Deals - Better Broadband Deal,CompetitorDeals
+62825f860a006ebff9ef584c849951b4d66c2488c0507fef4c64f60f47c0c862,2024-03-21,2024-05-09,Not Known,VagueReason
+e8df2068755772296ec415f9d99c2f5957d0e3a1d630a72ced77e091424e201d,2024-02-15,2024-02-29,Not Known,VagueReason
+328f20b11c98a693386a774d8b31d6625a53e42ad7e794883333913425216372,2024-04-24,2024-05-01,Competitor Deals - No longer required,CompetitorDeals
+1f5d557f2690fb605c352e6fc12a56e0ee04dfb1bcc9e9f0af9c9c2cb6db9616,2024-03-15,null,Not Known,VagueReason
+dccf1f7caded61cc8a42ee2b7f429ffac32a6639a2fae568b4116b731ca91cd1,2024-08-17,2024-09-16,Cease,VagueReason
+c849df2914201219b294abf70599d84a8aefee2c695ee1b435b2aa8ade86b4d5,2023-08-02,2023-09-01,Competitor Deals - Already Signed up for contract,CompetitorDeals
+0eba3d63c2925a94c01dd8c236f107134f79e8236bb6979f2c33eced376df2fb,2023-05-06,null,Competitor Deals - No longer required,CompetitorDeals
+0bf73e6a86fc969e5c17157f998757344d7990d17ab4009aac9dfdfd1c972e2a,2023-02-07,null,Not Known,VagueReason
+be488c8427bf3b1457405aea6b5b03383428f39b8363b22c5ee6c4cec13d62d5,2024-05-02,2024-05-31,Competitor Deals - No longer required,CompetitorDeals
+0eba3d63c2925a94c01dd8c236f107134f79e8236bb6979f2c33eced376df2fb,2023-10-25,null,Competitor Deals - Already Signed up for contract,CompetitorDeals
+6711f77c4a7fa7b173300b3be97255869a72f42edf2e2723f1a9bbac80090e0b,2024-05-01,null,Not Known,VagueReason
+cb6fe33b2b0aa780d79570c0950a52d5b75d680479490431809e7259cdc129d8,2024-06-21,2024-07-31,Competitor Deals - Better Broadband Deal,CompetitorDeals
+0a27480485aeb99a7ec3eeed772cc6395d5f4f586189a12ac5ed8ef7a22858c9,2023-07-08,2023-07-24,Not Known,VagueReason
+67d0dd76b873dd8d1ad4d22631f6cb98ac263ea30bcc234636e77e1b55a8a5d6,2023-11-17,null,Not Known,VagueReason
+b00e0bccf5e62e3440f0a8dfff9b903cb2b40c0cfcd9ed038921d9d7882fb7ef,2023-06-24,null,Not Known,VagueReason
+70bbaddd8b39fa467d1b963a4f8cb042bcbd733b7a6badbd99d4e0083a8a8fee,2023-02-20,2023-03-06,Not Known,VagueReason
+67d0dd76b873dd8d1ad4d22631f6cb98ac263ea30bcc234636e77e1b55a8a5d6,2023-11-17,null,Not Known,VagueReason
+e6ac6c703e471bd0a51c90d6501990d9cc3c80292c47bd5cfcfe23871d3a613c,2023-03-10,2023-03-16,Cease,VagueReason
+fd59d592a683ca7bd3d73f2f7875f9a3b5c97208484fe4b8a15a0870dfeb582f,2024-02-02,2024-02-20,Not Known,VagueReason
+0bf73e6a86fc969e5c17157f998757344d7990d17ab4009aac9dfdfd1c972e2a,2024-08-06,2024-09-05,"Home mover - moving home, line not required",HomeMove
