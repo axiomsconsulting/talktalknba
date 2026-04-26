@@ -1,6 +1,6 @@
 {
   "model_type": "XGBoost",
-  "trained_at": "2026-04-24T18:12:45.891447+00:00",
+  "trained_at": "2026-04-26T09:38:08.883701+00:00",
   "hyperparameters": {
     "objective": "binary:logistic",
     "base_score": null,
