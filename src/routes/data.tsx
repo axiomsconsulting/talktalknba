@@ -96,6 +96,7 @@ function DataPage() {
   const { customers, source, reset } = useCustomerStore();
   const clearAll = useCustomerStore((s) => s.clearAll);
   const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
+  const fullBase = useFullBaseAggregate();
 
   async function refresh() {
     setLoading(true);
