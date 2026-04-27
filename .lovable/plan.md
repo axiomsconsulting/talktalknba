@@ -1,92 +1,60 @@
-## Goal
+## Why the count is 945, not 3,545,538
 
-Add a new Jupyter notebook `code/app_replica.ipynb` that reproduces, in pure Python, every visual, statistic, and customer-level output the TalkTalk NBA app shows — including a customer-lookup cell that takes a `unique_customer_identifier` and prints the same profile / SHAP / NBA / financial breakdown that the in-app drawer displays.
+The MotherDuck connection genuinely sees the full **3.5M** customer base — that's what the facets endpoint reports. The drop to **945** happens entirely in the browser-side hydrator that powers the dashboards:
 
-It sits alongside `train.ipynb`, `score_top50.ipynb`, `score_offline_offers.ipynb` and reads the same local artefacts (`model_metrics.json`, `feature_importance.csv`, `nba_roi_params.json`, `top_50_customers.json`, `model_artefact.pkl`, `lovable_sample_*.csv`, `segment_risk_summary.csv`).
+1. On every page load, `src/data/liveCustomerHydrator.ts` calls `POST /api/admin/connections/snapshot-motherduck` with a hardcoded `rowLimit: 5_000` (line 139).
+2. The server endpoint `api.admin.connections.snapshot-motherduck.ts` itself caps `rowLimit` at **20,000** (line 41: `Math.min(20_000, …)`).
+3. The 5,000 raw `customer_info` rows are then run through `mapCustomers` in `customerMapping.ts`, which dedupes by `unique_customer_identifier` and drops rows missing required fields — that filter is what produces the **945** unique customers actually loaded into the in-memory store.
+4. Every drilldown (Explainability, Net ROI, Top Impacted, etc.) reads from this in-memory store, so they all inherit the 945-customer ceiling.
 
-## Notebook structure
+In short: the "live" badge is honest about the connection but dishonest about the scope. The analysis is **not** running on the full base — it's running on a 5,000-row uniform sample that collapses to ~945 usable customers.
 
-The notebook is organised page-by-page so a reader can map a section back to the corresponding screen in the app.
+## Why we cannot just load all 3.5M
 
-```text
-0. Setup & data loading
-1. ROI & Exec Summary    (mirrors / )
-2. Strategy & Pipeline   (mirrors /strategy)
-3. Model Evaluation      (mirrors /model)
-4. Explainability        (mirrors /explainability)
-5. NBA Rules             (mirrors /nba-rules)
-6. Customer Lookup       (drawer-equivalent for any customer_id)
-7. Top-50 most impacted  (mirrors the live table)
-```
+The dashboards (charts, sortable tables, SHAP drilldowns, ROI sims) hold every customer in browser memory and re-score them client-side on every filter change. 3.5M rows × ~40 fields would be ~1–2 GB of JSON over the wire and would lock up the tab. The right fix is **server-side aggregation for KPIs/charts** plus a **larger working sample for drilldown**, not "ship everything to the browser."
 
-### 0. Setup
-- Import `pandas`, `numpy`, `matplotlib`, `seaborn`, `json`, `pickle`, `pathlib`.
-- Load all artefacts from `./` (same folder as the other notebooks).
-- Helper `fmt_gbp`, `fmt_pct`, `fmt_int` matching the app's formatting.
-- Re-implement the scoring functions from `src/data/scoring.ts` in Python (`score_customer`, `tier_from_score`, `derive_nba_trigger`, `normalise_contract`) so customer lookup produces byte-identical SHAP contributions, risk tier and NBA trigger.
+## Plan
 
-### 1. ROI & Exec Summary
-- KPI table: total customer base, high-risk volume, baseline conversion, average ARPU, revenue-at-risk, projected saved revenue at default 18% success rate (formulas from `src/routes/index.tsx` and `nba_roi_params.json`).
-- Pie chart: risk-tier mix (High / Medium / Low) from `segment_risk_summary.csv`.
-- Bar chart: net ROI per NBA trigger using rule contact-cost × saves × LTV (mirrors `RoiSimulator` + `PerTriggerSensitivityPanel`).
-- Line chart: net ROI sensitivity to success-rate sweep (10% → 35%).
-- Stacked bar: Net ROI segment drilldown by contract status, tenure bucket, and risk tier (mirrors `NetRoiSegmentDrilldown`).
+### 1. Raise the working-sample ceiling (fast win)
+- Bump the snapshot hardcap in `api.admin.connections.snapshot-motherduck.ts` from 20,000 → **250,000**.
+- Bump the hydrator's request from `5_000` → **100,000** (configurable, see step 3).
+- Switch `customer_info` selection from `ORDER BY unique_customer_identifier LIMIT N` to `USING SAMPLE N ROWS` so the loaded set is a uniform random sample of the full base, not the alphabetically-first slice.
+- Stream the response (NDJSON) instead of buffering the full JSON array, and parse incrementally in the hydrator to keep peak memory bounded.
 
-### 2. Strategy & Pipeline
-- Markdown rendering of the 5 pipeline stages and an ASCII pipeline diagram.
-- Treatment matrix table: Risk × Contract status → NBA trigger, channel, offer (from `treatmentMatrix` in `src/data/nba.ts`).
+This alone takes drilldown from 945 → ~50–80k unique customers, statistically representative of all 3.5M.
 
-### 3. Model Evaluation
-- Hyperparameter table + dataset split.
-- Performance metrics bar chart (Accuracy / Precision / Recall / F1 / ROC-AUC) with the 0.41 threshold annotation.
-- Confusion matrix heatmap (TP/FP/FN/TN) with row %.
-- ROC curve from `model_metrics.json["roc_curve"]` with operating-point dot at threshold 0.41.
-- Per-segment precision/recall bars from `segment_metrics`.
+### 2. True full-population KPIs (correctness win)
+Add a new endpoint `POST /api/admin/connections/aggregate-motherduck` that runs the headline statistics **inside MotherDuck** against the full table — no row transfer:
+- Total customers, churn-tier distribution, revenue-at-risk, ARPU bands, region/package/contract breakdowns, tenure histogram, NBA-eligible counts.
+- Returns a small JSON aggregate (~tens of KB) regardless of base size.
 
-### 4. Explainability
-- Global feature importance bar chart from `feature_importance.csv`.
-- Distribution plots: tenure_days, ooc_days, contract_dd_cancels coloured by risk tier (sample data).
-- "Local explanation" cell: pick the first customer from `top_50_customers.json`, render a horizontal bar chart of their top SHAP contributions and the narrative (`why_this_customer`, `why_this_nba`).
+Wire the Executive Summary, ROI Simulator headline, and Strategy KPIs to this endpoint when MotherDuck is the active source, so the *numbers* reflect 3.5M even though the *drilldown table* shows the 100k sample.
 
-### 5. NBA Rules
-- Rendered table of NBA triggers from `src/data/customers.ts` (label, channel, offer, contact cost, success rate, expected save).
-- Bar chart: expected save GBP per trigger.
+### 3. Make the cap visible and adjustable
+- Show "**100,000 of 3,545,538 customers loaded** (uniform random sample · headline KPIs computed on full base)" in the Active customer source card on `/data`, replacing the misleading "945 customers loaded".
+- Add a numeric input (default 100k, max 250k) in the MotherDuck connector card so an admin can tune the working-sample size for their machine.
+- Persist the chosen size on the `data_connections.config` row so it survives reloads.
 
-### 6. Customer Lookup (the drawer in Python)
-A single parameterised cell:
-
-```python
-CUSTOMER_ID = "abc-123"   # ← edit and re-run
-profile = lookup_customer(CUSTOMER_ID)
-render_customer_profile(profile)
-```
-
-`lookup_customer` searches `lovable_sample_customer_info.csv` (and joins `calls`, `usage`, `cease`) for the id, builds the `ScoringInput`, runs the Python `score_customer`, and returns the same shape the in-app drawer renders.
-
-`render_customer_profile` prints/plots:
-- Header: ID, package, tenure, contract status, region.
-- KPI strip: risk score, risk tier, expected save (GBP), recommended NBA, channel, offer.
-- SHAP horizontal bar chart of top 6 contributions with sign-coloured bars and the `detail` text alongside.
-- Behavioural signals table (loyalty calls 90d, hold seconds, talk seconds, monthly download/upload, sold vs line speed, OOC days).
-- "Why this customer" + "Why this NBA" narrative blocks.
-- Recent calls and usage timeline plots if data exists for that id.
-
-If the id is not in the local sample, the cell falls back to `top_50_customers.json` so the cell still demonstrates the format end-to-end.
-
-### 7. Top-50 most impacted
-- Table view of `top_50_customers.json` (rank, id, churn_prob, recommended_nba, expected_save_gbp).
-- Bar chart of expected save by trigger, summed across the 50.
-- Histogram of churn probabilities.
+### 4. Targeted single-customer lookup stays full-base
+The existing `/api/admin/connections/query-motherduck` endpoint already accepts `customerId` and queries MotherDuck live for any specific identifier. Surface a "Look up any customer (full 3.5M base)" search box on the Explainability page that calls this endpoint and injects the result into the in-memory store on demand — so even though the bulk drilldown is sampled, any individual customer in the full base can be inspected.
 
 ## Technical details
 
-- Pure Python, no app or Lovable Cloud calls — runs offline like the existing notebooks.
-- Charts use matplotlib only (no extra installs) so the kernel works with the existing `pip install pandas pyarrow scikit-learn xgboost numpy [shap]` from `code/README tt.md`.
-- The Python re-implementation of `scoreCustomer` lives in a single notebook cell (clearly commented as the mirror of `src/data/scoring.ts`); risk-tier thresholds, base score 0.5, all impact weights and the NBA trigger rules are copied 1:1.
-- `lovable_sample_customer_info.csv` may not contain enrichments (loyalty calls, usage, cease insight) — the lookup uses `0` defaults exactly like `scoreCustomer` does so output stays consistent with the app.
-- Dataset volumes for the ROI charts come from `nba_roi_params.json` so the Python figures match the dashboard at the same scenario inputs.
-- README block at the top of the notebook lists every artefact it reads and which app screen each section reproduces.
+- **Files to edit**
+  - `src/routes/api.admin.connections.snapshot-motherduck.ts` — raise cap, switch to `USING SAMPLE`, stream NDJSON.
+  - `src/data/liveCustomerHydrator.ts` — request 100k, parse stream, read configured size from connection.
+  - `src/routes/api.admin.connections.aggregate-motherduck.ts` — new endpoint returning full-base aggregates.
+  - `src/routes/data.tsx` — fix the "Active customer source" line; add sample-size control.
+  - `src/routes/index.tsx` / `src/routes/strategy.tsx` / `src/components/RoiSimulator.tsx` — read headline KPIs from the new aggregate endpoint when source is MotherDuck.
+  - `src/routes/explainability.tsx` — add full-base customer lookup that hits `query-motherduck`.
 
-## Files
+- **Why ~945 specifically**: `mapCustomers` requires non-null `unique_customer_identifier`, `tenure_months`, `mrr` and a parseable `package`. On the 5,000-row alphabetical slice currently pulled, only ~945 rows satisfy all four. Switching to `USING SAMPLE` plus the larger N also raises the keep-rate because the sample is no longer biased to one corner of the table.
 
-- create `code/app_replica.ipynb`
+- **No database migrations required.** Connector config is stored in the existing `data_connections.config` JSONB column.
+
+- **No new secrets / connectors.** Uses the existing MotherDuck connection.
+
+## Out of scope (call out, do not implement)
+
+- Replacing the in-memory client store with a server-paged grid for the customer list — much larger refactor; the 100k working sample + full-base aggregates closes the credibility gap without it.
+- Caching aggregates in Postgres — MotherDuck is fast enough at this size; we can revisit if latency becomes a problem.
