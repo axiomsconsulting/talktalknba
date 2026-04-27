@@ -37,6 +37,7 @@ import { Route as ApiAdminConnectionsPullMotherduckRouteImport } from './routes/
 import { Route as ApiAdminConnectionsIngestRouteImport } from './routes/api.admin.connections.ingest'
 import { Route as ApiAdminConnectionsFacetsMotherduckRouteImport } from './routes/api.admin.connections.facets-motherduck'
 import { Route as ApiAdminConnectionsCancelPullRouteImport } from './routes/api.admin.connections.cancel-pull'
+import { Route as ApiAdminConnectionsAggregateMotherduckRouteImport } from './routes/api.admin.connections.aggregate-motherduck'
 
 const StrategyRoute = StrategyRouteImport.update({
   id: '/strategy',
@@ -189,6 +190,12 @@ const ApiAdminConnectionsCancelPullRoute =
     path: '/api/admin/connections/cancel-pull',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminConnectionsAggregateMotherduckRoute =
+  ApiAdminConnectionsAggregateMotherduckRouteImport.update({
+    id: '/api/admin/connections/aggregate-motherduck',
+    path: '/api/admin/connections/aggregate-motherduck',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
+  '/api/admin/connections/aggregate-motherduck': typeof ApiAdminConnectionsAggregateMotherduckRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
@@ -235,6 +243,7 @@ export interface FileRoutesByTo {
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
+  '/api/admin/connections/aggregate-motherduck': typeof ApiAdminConnectionsAggregateMotherduckRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
@@ -266,6 +275,7 @@ export interface FileRoutesById {
   '/admin/connections': typeof AdminConnectionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/score-customer': typeof ApiScoreCustomerRoute
+  '/api/admin/connections/aggregate-motherduck': typeof ApiAdminConnectionsAggregateMotherduckRoute
   '/api/admin/connections/cancel-pull': typeof ApiAdminConnectionsCancelPullRoute
   '/api/admin/connections/facets-motherduck': typeof ApiAdminConnectionsFacetsMotherduckRoute
   '/api/admin/connections/ingest': typeof ApiAdminConnectionsIngestRoute
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/admin/connections'
     | '/admin/users'
     | '/api/score-customer'
+    | '/api/admin/connections/aggregate-motherduck'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/admin/connections'
     | '/admin/users'
     | '/api/score-customer'
+    | '/api/admin/connections/aggregate-motherduck'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
@@ -358,6 +370,7 @@ export interface FileRouteTypes {
     | '/admin/connections'
     | '/admin/users'
     | '/api/score-customer'
+    | '/api/admin/connections/aggregate-motherduck'
     | '/api/admin/connections/cancel-pull'
     | '/api/admin/connections/facets-motherduck'
     | '/api/admin/connections/ingest'
@@ -389,6 +402,7 @@ export interface RootRouteChildren {
   AdminConnectionsRoute: typeof AdminConnectionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   ApiScoreCustomerRoute: typeof ApiScoreCustomerRoute
+  ApiAdminConnectionsAggregateMotherduckRoute: typeof ApiAdminConnectionsAggregateMotherduckRoute
   ApiAdminConnectionsCancelPullRoute: typeof ApiAdminConnectionsCancelPullRoute
   ApiAdminConnectionsFacetsMotherduckRoute: typeof ApiAdminConnectionsFacetsMotherduckRoute
   ApiAdminConnectionsIngestRoute: typeof ApiAdminConnectionsIngestRoute
@@ -603,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminConnectionsCancelPullRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/connections/aggregate-motherduck': {
+      id: '/api/admin/connections/aggregate-motherduck'
+      path: '/api/admin/connections/aggregate-motherduck'
+      fullPath: '/api/admin/connections/aggregate-motherduck'
+      preLoaderRoute: typeof ApiAdminConnectionsAggregateMotherduckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -621,6 +642,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminConnectionsRoute: AdminConnectionsRoute,
   AdminUsersRoute: AdminUsersRoute,
   ApiScoreCustomerRoute: ApiScoreCustomerRoute,
+  ApiAdminConnectionsAggregateMotherduckRoute:
+    ApiAdminConnectionsAggregateMotherduckRoute,
   ApiAdminConnectionsCancelPullRoute: ApiAdminConnectionsCancelPullRoute,
   ApiAdminConnectionsFacetsMotherduckRoute:
     ApiAdminConnectionsFacetsMotherduckRoute,
