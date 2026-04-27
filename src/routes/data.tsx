@@ -201,6 +201,7 @@ function DataPage() {
           sampleConn={sampleConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
+          fullBaseTotal={fullBase?.totalCustomers ?? null}
         />
 
         {/* 2) BEHAVIOURAL ENRICHMENT CARDS (top, always visible) */}
