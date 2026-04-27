@@ -434,12 +434,22 @@ function ActiveSourcesOverview({
             <div className="text-base font-semibold text-foreground mt-0.5">
               {isEmpty
                 ? `${activeLabel} · 0 customers loaded`
-                : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
+                : activeSourceKey === "motherduck" && fullBaseTotal && fullBaseTotal > customerCount
+                  ? `${activeLabel} · ${customerCount.toLocaleString()} of ${fullBaseTotal.toLocaleString()} customers in working sample`
+                  : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
                 Every connector — sample, local upload, MotherDuck and Databricks
                 — is disabled. Enable at least one below to populate the dashboards.
+              </div>
+            ) : activeSourceKey === "motherduck" && fullBaseTotal ? (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Uniform random sample of the full {fullBaseTotal.toLocaleString()}-customer
+                base. Headline KPIs (revenue-at-risk, segment counts) are computed
+                server-side against the full population — sampling only affects the
+                drill-down list and per-customer SHAP. Use the customer search on
+                Explainability to look up any of the {fullBaseTotal.toLocaleString()} customers individually.
               </div>
             ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
