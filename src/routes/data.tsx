@@ -974,7 +974,7 @@ function MotherDuckLivePanel({
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<"test" | "query" | "toggle" | null>(null);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(50_000);
   const [enabled, setEnabled] = useState(conn?.enabled ?? false);
   const [lastResult, setLastResult] = useState<LiveQueryResult | null>(null);
   const setActive = useCustomerStore((s) => s.setActive);
@@ -1185,14 +1185,17 @@ function MotherDuckLivePanel({
             id="md-live-limit"
             type="number"
             min={1}
-            max={500}
+            max={100_000}
+            step={1000}
             value={limit}
-            onChange={(e) => setLimit(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-            className="w-28 h-8 px-2 text-xs rounded-md border border-border bg-card"
+            onChange={(e) => setLimit(Math.max(1, Math.min(100_000, Number(e.target.value) || 1)))}
+            className="w-32 h-8 px-2 text-xs rounded-md border border-border bg-card"
           />
         </div>
-        <div className="text-[11px] text-muted-foreground max-w-[320px]">
-          1–500 random customer_info rows, with calls / cease / usage scoped to the same IDs.
+        <div className="text-[11px] text-muted-foreground max-w-[360px]">
+          1–100,000 random customer_info rows (uniform random sample of the full base),
+          with calls / cease / usage scoped to the same IDs. Headline KPIs are
+          computed server-side against all customers regardless of this cap.
         </div>
       </div>
 
