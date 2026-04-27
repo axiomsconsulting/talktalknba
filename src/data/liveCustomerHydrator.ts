@@ -136,7 +136,10 @@ async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ rowLimit: 5_000 }),
+      // 50k uniform random sample — see snapshot-motherduck.ts header for
+      // the rationale (replaces the previous 5k alphabetical slice that
+      // collapsed to ~945 unique customers after dedup).
+      body: JSON.stringify({ rowLimit: 50_000 }),
     });
     if (!res.ok) {
       // 403 → not an admin; silently skip and fall back to snapshots
