@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/admin/connections/query-motherduck")(
         const kinds: Kind[] = requested.length > 0 ? requested : ALL_KINDS;
         const customerLimit = Math.max(
           1,
-          Math.min(500, Math.floor(Number(body.customerLimit ?? 50)) || 50),
+          Math.min(100_000, Math.floor(Number(body.customerLimit ?? 50_000)) || 50_000),
         );
         const customerId =
           typeof body.customerId === "string" && body.customerId.trim().length > 0
