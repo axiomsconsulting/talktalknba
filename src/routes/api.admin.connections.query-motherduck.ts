@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/admin/connections/query-motherduck")(
             ids = [customerId];
           } else if (kinds.includes("customer_info")) {
             const tbl = motherduckTableFor(fullCfg, "customer_info");
-            const sql = `SELECT * FROM ${tbl} ORDER BY random() LIMIT ${customerLimit}`;
+            const sql = `SELECT * FROM ${tbl} USING SAMPLE ${customerLimit} ROWS`;
             const out = await motherduckQuery(fullCfg, sql);
             results.customer_info = {
               headers: out.headers,
