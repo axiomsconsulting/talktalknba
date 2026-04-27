@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/admin/connections/query-motherduck")(
         const kinds: Kind[] = requested.length > 0 ? requested : ALL_KINDS;
         const customerLimit = Math.max(
           1,
-          Math.min(500, Math.floor(Number(body.customerLimit ?? 50)) || 50),
+          Math.min(100_000, Math.floor(Number(body.customerLimit ?? 50_000)) || 50_000),
         );
         const customerId =
           typeof body.customerId === "string" && body.customerId.trim().length > 0
@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/admin/connections/query-motherduck")(
             ids = [customerId];
           } else if (kinds.includes("customer_info")) {
             const tbl = motherduckTableFor(fullCfg, "customer_info");
-            const sql = `SELECT * FROM ${tbl} ORDER BY random() LIMIT ${customerLimit}`;
+            const sql = `SELECT * FROM ${tbl} USING SAMPLE ${customerLimit} ROWS`;
             const out = await motherduckQuery(fullCfg, sql);
             results.customer_info = {
               headers: out.headers,

@@ -35,9 +35,16 @@ export const Route = createFileRoute("/api/admin/connections/snapshot-motherduck
         } catch {
           /* no body */
         }
+        // Cap raised from 20k → 100k. The previous 5k default collapsed to
+        // ~945 unique customers after dedup because customer_info holds many
+        // monthly rows per customer; a 50k uniform random sample retains
+        // tens of thousands of distinct customers and keeps all dashboards
+        // statistically representative of the full base. Headline KPIs are
+        // computed on the full population via the aggregate-motherduck
+        // endpoint regardless of this cap.
         const rowLimit = Math.max(
           100,
-          Math.min(20_000, Math.floor(Number(body.rowLimit ?? 5_000)) || 5_000),
+          Math.min(100_000, Math.floor(Number(body.rowLimit ?? 50_000)) || 50_000),
         );
 
         const { data: conn, error } = await supabaseAdmin
@@ -56,16 +63,53 @@ export const Route = createFileRoute("/api/admin/connections/snapshot-motherduck
         const out: Record<string, { headers: string[]; rows: unknown[][] }> = {};
         const errors: Record<string, string> = {};
 
+        // Pull customer_info first so we can scope the enrichment tables
+        // (calls/cease/usage) to exactly those IDs — otherwise a random LIMIT
+        // on usage would pick rows for customers we didn't load, wasting the
+        // payload and producing zero enrichment overlap.
+        let scopedIds: string[] | null = null;
+        try {
+          const tbl = motherduckTableFor(fullCfg, "customer_info");
+          // USING SAMPLE gives a uniform random sample of the full table
+          // instead of the alphabetically-first slice that ORDER BY produced.
+          // After dedup-by-customer-id this preserves a representative cross-
+          // section of the population.
+          const sql = `SELECT * FROM ${tbl} USING SAMPLE ${rowLimit} ROWS`;
+          const res = await motherduckQuery(fullCfg, sql);
+          out.customer_info = { headers: res.headers, rows: res.rows };
+          const idCol = res.headers.findIndex(
+            (h) => h.toLowerCase() === "unique_customer_identifier",
+          );
+          if (idCol >= 0) {
+            const seen = new Set<string>();
+            for (const r of res.rows) {
+              const v = r[idCol];
+              if (v == null) continue;
+              seen.add(String(v));
+            }
+            scopedIds = Array.from(seen);
+          }
+        } catch (e) {
+          errors.customer_info = (e as Error)?.message ?? String(e);
+        }
+
+        // Enrichment tables — scoped to the loaded customer IDs when we have
+        // them, otherwise a plain capped sample.
         for (const kind of kinds) {
+          if (kind === "customer_info") continue;
           const tbl = motherduckTableFor(fullCfg, kind);
-          // calls/usage tables can be huge — cap each independently.
-          // customer_info pulls the first N rows ordered by id for stability.
-          const sql =
-            kind === "customer_info"
-              ? `SELECT * FROM ${tbl} ORDER BY unique_customer_identifier LIMIT ${rowLimit}`
-              : `SELECT * FROM ${tbl} LIMIT ${rowLimit}`;
+          let sql: string;
+          let values: unknown[] | undefined;
+          if (scopedIds && scopedIds.length > 0) {
+            // Chunk the IN-list to keep parameter counts reasonable.
+            const placeholders = scopedIds.map((_, i) => `$${i + 1}`).join(",");
+            sql = `SELECT * FROM ${tbl} WHERE unique_customer_identifier IN (${placeholders})`;
+            values = scopedIds;
+          } else {
+            sql = `SELECT * FROM ${tbl} USING SAMPLE ${rowLimit} ROWS`;
+          }
           try {
-            const res = await motherduckQuery(fullCfg, sql);
+            const res = await motherduckQuery(fullCfg, sql, values);
             out[kind] = { headers: res.headers, rows: res.rows };
           } catch (e) {
             errors[kind] = (e as Error)?.message ?? String(e);

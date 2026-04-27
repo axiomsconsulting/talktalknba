@@ -40,6 +40,7 @@ import {
 } from "@/data/customerMapping";
 import { useCustomerStore } from "@/data/customerStore";
 import { allCustomers as defaultCustomers } from "@/data/customers";
+import { useFullBaseAggregate } from "@/data/fullBaseAggregate";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -95,6 +96,7 @@ function DataPage() {
   const { customers, source, reset } = useCustomerStore();
   const clearAll = useCustomerStore((s) => s.clearAll);
   const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
+  const fullBase = useFullBaseAggregate();
 
   async function refresh() {
     setLoading(true);
@@ -200,6 +202,7 @@ function DataPage() {
           sampleConn={sampleConn}
           onReset={reset}
           onJump={(k) => setSelectedSource(k)}
+          fullBaseTotal={fullBase?.totalCustomers ?? null}
         />
 
         {/* 2) BEHAVIOURAL ENRICHMENT CARDS (top, always visible) */}
@@ -317,6 +320,7 @@ function ActiveSourcesOverview({
   sampleConn,
   onReset,
   onJump,
+  fullBaseTotal,
 }: {
   activeSourceKey: SourceKey | "none";
   customerCount: number;
@@ -327,6 +331,8 @@ function ActiveSourcesOverview({
   sampleConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
+  /** Full-population customer total for MotherDuck (computed server-side). */
+  fullBaseTotal: number | null;
 }) {
   const cards: Array<{
     key: SourceKey;
@@ -430,12 +436,22 @@ function ActiveSourcesOverview({
             <div className="text-base font-semibold text-foreground mt-0.5">
               {isEmpty
                 ? `${activeLabel} · 0 customers loaded`
-                : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
+                : activeSourceKey === "motherduck" && fullBaseTotal && fullBaseTotal > customerCount
+                  ? `${activeLabel} · ${customerCount.toLocaleString()} of ${fullBaseTotal.toLocaleString()} customers in working sample`
+                  : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
                 Every connector — sample, local upload, MotherDuck and Databricks
                 — is disabled. Enable at least one below to populate the dashboards.
+              </div>
+            ) : activeSourceKey === "motherduck" && fullBaseTotal ? (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Uniform random sample of the full {fullBaseTotal.toLocaleString()}-customer
+                base. Headline KPIs (revenue-at-risk, segment counts) are computed
+                server-side against the full population — sampling only affects the
+                drill-down list and per-customer SHAP. Use the customer search on
+                Explainability to look up any of the {fullBaseTotal.toLocaleString()} customers individually.
               </div>
             ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -958,7 +974,7 @@ function MotherDuckLivePanel({
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState<"test" | "query" | "toggle" | null>(null);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(50_000);
   const [enabled, setEnabled] = useState(conn?.enabled ?? false);
   const [lastResult, setLastResult] = useState<LiveQueryResult | null>(null);
   const setActive = useCustomerStore((s) => s.setActive);
@@ -1169,14 +1185,17 @@ function MotherDuckLivePanel({
             id="md-live-limit"
             type="number"
             min={1}
-            max={500}
+            max={100_000}
+            step={1000}
             value={limit}
-            onChange={(e) => setLimit(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-            className="w-28 h-8 px-2 text-xs rounded-md border border-border bg-card"
+            onChange={(e) => setLimit(Math.max(1, Math.min(100_000, Number(e.target.value) || 1)))}
+            className="w-32 h-8 px-2 text-xs rounded-md border border-border bg-card"
           />
         </div>
-        <div className="text-[11px] text-muted-foreground max-w-[320px]">
-          1–500 random customer_info rows, with calls / cease / usage scoped to the same IDs.
+        <div className="text-[11px] text-muted-foreground max-w-[360px]">
+          1–100,000 random customer_info rows (uniform random sample of the full base),
+          with calls / cease / usage scoped to the same IDs. Headline KPIs are
+          computed server-side against all customers regardless of this cap.
         </div>
       </div>
 
