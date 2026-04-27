@@ -318,6 +318,7 @@ function ActiveSourcesOverview({
   sampleConn,
   onReset,
   onJump,
+  fullBaseTotal,
 }: {
   activeSourceKey: SourceKey | "none";
   customerCount: number;
@@ -328,6 +329,8 @@ function ActiveSourcesOverview({
   sampleConn: ConnectionRow | undefined;
   onReset: () => void;
   onJump: (k: SourceKey) => void;
+  /** Full-population customer total for MotherDuck (computed server-side). */
+  fullBaseTotal: number | null;
 }) {
   const cards: Array<{
     key: SourceKey;
