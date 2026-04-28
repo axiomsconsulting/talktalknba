@@ -116,10 +116,10 @@ async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
     .maybeSingle();
   if (!conn?.enabled) return false;
 
-  const store = useCustomerStore.getState();
+  const customerStore = useCustomerStore.getState();
   const alreadyLive =
-    store.source.kind === "uploaded" &&
-    (store.source as { detail?: string }).detail?.includes("MotherDuck");
+    customerStore.source.kind === "uploaded" &&
+    (customerStore.source as { detail?: string }).detail?.includes("MotherDuck");
   if (!force && alreadyLive) return true;
 
   const { data: { session } } = await supabase.auth.getSession();
@@ -131,11 +131,11 @@ async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
   // motherduck on demand. We just label the active source.
   const label = `MotherDuck · ${conn.name ?? "live"}`;
   const remoteName = `motherduck:${conn.id}`;
-  store.setActive([], "MotherDuck (live)", "live", `Live integration · ${label}`);
+  customerStore.setActive([], "MotherDuck (live)", "live", `Live integration · ${label}`);
 
   // Best-effort: persist MD as the active customer_info source so the label
   // survives refreshes.
-  await store.persistActive({
+  await customerStore.persistActive({
     kind: "customer_info",
     origin: "live",
     label: `${label} · customer_info`,
