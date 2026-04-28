@@ -156,7 +156,8 @@ export function NetRoiSegmentDrilldown() {
     // If no high-risk customers exist in the filtered set, fall back to
     // proportional split by total (so the chart is never empty).
     const useHigh = totalHigh > 0;
-    const denom = useHigh ? totalHigh : filtered.length;
+    const totalInGroups = Array.from(groups.values()).reduce((sum, g) => sum + g.total, 0);
+    const denom = useHigh ? totalHigh : totalInGroups || filtered.length;
 
     const monthlyArpu = roiParams.averageAnnualArpuGbp / 12;
     const avgLtvPerSave = customerLtv(monthlyArpu, "High");
