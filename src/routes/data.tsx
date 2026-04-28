@@ -115,10 +115,12 @@ function DataPage() {
     void refresh();
   }, []);
 
+  const sourceDetail = source.kind === "uploaded" ? source.detail : undefined;
+
   // Keep tabs in sync if the active source changes elsewhere
   useEffect(() => {
     setSelectedSource(deriveInitialSource(source));
-  }, [source.kind, (source as { detail?: string }).detail]);
+  }, [source, source.kind, sourceDetail]);
 
   const dbxConn = connections.find((c) => c.kind === "databricks");
   const mdConn = connections.find((c) => c.kind === "motherduck");
