@@ -436,9 +436,11 @@ function ActiveSourcesOverview({
             <div className="text-base font-semibold text-foreground mt-0.5">
               {isEmpty
                 ? `${activeLabel} · 0 customers loaded`
-                : activeSourceKey === "motherduck" && fullBaseTotal && fullBaseTotal > customerCount
-                  ? `${activeLabel} · ${customerCount.toLocaleString()} of ${fullBaseTotal.toLocaleString()} customers in working sample`
-                  : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
+                : activeSourceKey === "motherduck" && fullBaseTotal
+                  ? `${activeLabel} · ${fullBaseTotal.toLocaleString()} customers available`
+                  : activeSourceKey === "motherduck"
+                    ? `${activeLabel} · loading full customer count…`
+                    : `${activeLabel} · ${customerCount.toLocaleString()} customers loaded`}
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -447,11 +449,9 @@ function ActiveSourcesOverview({
               </div>
             ) : activeSourceKey === "motherduck" && fullBaseTotal ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                Uniform random sample of the full {fullBaseTotal.toLocaleString()}-customer
-                base. Headline KPIs (revenue-at-risk, segment counts) are computed
-                server-side against the full population — sampling only affects the
-                drill-down list and per-customer SHAP. Use the customer search on
-                Explainability to look up any of the {fullBaseTotal.toLocaleString()} customers individually.
+                Full population count is computed server-side against MotherDuck. Drill-down
+                totals use full-base aggregates, while per-customer SHAP rows load on demand
+                through Customer Search.
               </div>
             ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
