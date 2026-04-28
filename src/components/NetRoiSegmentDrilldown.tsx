@@ -108,11 +108,16 @@ function fullBaseGroupsForDimension(
 
 export function NetRoiSegmentDrilldown() {
   const customers = useCustomerStore((s) => s.customers);
+  const source = useCustomerStore((s) => s.source);
   const { rules, loaded, load } = useNbaRulesStore();
   const { successRate } = useScenarioStore();
   const [dim, setDim] = useState<Dimension>("region");
   const [filters, setFilters] = useState<CustomerFilters>(EMPTY_FILTERS);
   const facets = useCustomerFacets({ customers, liveEnabled: false });
+  const fullBase = useFullBaseAggregate();
+  const isMotherDuck =
+    source.kind === "uploaded" &&
+    ((source.detail ?? source.filename).toLowerCase().includes("motherduck"));
 
   // The drill-down is driven by the in-memory store regardless of whether
   // MotherDuck is the live source — the store is hydrated from MD on boot
@@ -125,20 +130,28 @@ export function NetRoiSegmentDrilldown() {
 
   const segments = useMemo(() => {
     const filtered = applyCustomerFilters(customers, filters);
-    if (filtered.length === 0) return [];
+    const activeFilterCount = countActiveFilters(filters);
+    const fullGroups = isMotherDuck && activeFilterCount === 0
+      ? fullBaseGroupsForDimension(dim, fullBase)
+      : null;
+    if (!fullGroups && filtered.length === 0) return [];
 
     // Group by segment value; track total + high-risk count per segment.
-    const groups = new Map<string, { total: number; high: number }>();
+    const groups = fullGroups ?? new Map<string, { total: number; high: number }>();
     let totalHigh = 0;
-    for (const c of filtered) {
-      const key = segmentValue(c, dim);
-      const slot = groups.get(key) ?? { total: 0, high: 0 };
-      slot.total += 1;
-      if (c.riskTier === "High") {
-        slot.high += 1;
-        totalHigh += 1;
+    if (fullGroups) {
+      for (const slot of groups.values()) totalHigh += slot.high;
+    } else {
+      for (const c of filtered) {
+        const key = segmentValue(c, dim);
+        const slot = groups.get(key) ?? { total: 0, high: 0 };
+        slot.total += 1;
+        if (c.riskTier === "High") {
+          slot.high += 1;
+          totalHigh += 1;
+        }
+        groups.set(key, slot);
       }
-      groups.set(key, slot);
     }
     // If no high-risk customers exist in the filtered set, fall back to
     // proportional split by total (so the chart is never empty).
@@ -174,7 +187,7 @@ export function NetRoiSegmentDrilldown() {
 
     rows.sort((a, b) => b.netRetainedGbp - a.netRetainedGbp);
     return rows;
-  }, [customers, filters, dim, rules, successRate]);
+  }, [customers, filters, dim, rules, successRate, isMotherDuck, fullBase]);
 
   const grandTotal = useMemo(
     () =>
