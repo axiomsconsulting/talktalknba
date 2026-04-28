@@ -17,15 +17,7 @@
 //      the current scenario success rate.
 
 import { useMemo, useState } from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Layers, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,12 +30,9 @@ import {
 import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { useScenarioStore } from "@/data/scenarioStore";
-import { roiParams, formatGbp, formatNumber } from "@/data/nba";
-import {
-  computeRuleFinancials,
-  summariseRuleFinancials,
-  customerLtv,
-} from "@/data/financials";
+import { roiParams, segmentSummary, formatGbp, formatNumber, type RiskTier } from "@/data/nba";
+import { useFullBaseAggregate } from "@/data/fullBaseAggregate";
+import { computeRuleFinancials, summariseRuleFinancials, customerLtv } from "@/data/financials";
 import {
   CustomerFiltersBar,
   EMPTY_FILTERS,
@@ -65,20 +54,71 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
 
 function segmentValue(c: Customer, dim: Dimension): string {
   switch (dim) {
-    case "region": return c.region || "—";
-    case "contractStatus": return c.contractStatus || "—";
-    case "riskTier": return c.riskTier || "—";
-    case "package": return c.package || "—";
+    case "region":
+      return c.region || "—";
+    case "contractStatus":
+      return c.contractStatus || "—";
+    case "riskTier":
+      return c.riskTier || "—";
+    case "package":
+      return c.package || "—";
   }
+}
+
+function normaliseContractStatus(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s.includes("ooc") || s.includes("out")) return "Out of contract";
+  if (s.includes("rolling")) return "Rolling";
+  if (s.includes("in")) return "In contract";
+  return raw || "—";
+}
+
+function fullBaseGroupsForDimension(
+  dim: Dimension,
+  fullBase: ReturnType<typeof useFullBaseAggregate>,
+): Map<string, { total: number; high: number }> | null {
+  if (dim === "riskTier") {
+    return new Map(
+      segmentSummary.map((s) => [
+        s.tier,
+        { total: s.customerCount, high: s.tier === "High" ? s.customerCount : 0 },
+      ]),
+    );
+  }
+  if (!fullBase) return null;
+  if (dim === "package") {
+    return new Map(
+      fullBase.packageBreakdown.map((r) => [r.package || "—", { total: r.customers, high: 0 }]),
+    );
+  }
+  if (dim === "contractStatus") {
+    return new Map(
+      fullBase.contractBreakdown.map((r) => [
+        normaliseContractStatus(r.status),
+        { total: r.customers, high: 0 },
+      ]),
+    );
+  }
+  if (dim === "region") {
+    return new Map(
+      fullBase.regionBreakdown.map((r) => [r.region || "—", { total: r.customers, high: 0 }]),
+    );
+  }
+  return null;
 }
 
 export function NetRoiSegmentDrilldown() {
   const customers = useCustomerStore((s) => s.customers);
+  const source = useCustomerStore((s) => s.source);
   const { rules, loaded, load } = useNbaRulesStore();
   const { successRate } = useScenarioStore();
   const [dim, setDim] = useState<Dimension>("region");
   const [filters, setFilters] = useState<CustomerFilters>(EMPTY_FILTERS);
   const facets = useCustomerFacets({ customers, liveEnabled: false });
+  const fullBase = useFullBaseAggregate();
+  const isMotherDuck =
+    source.kind === "uploaded" &&
+    (source.detail ?? source.filename).toLowerCase().includes("motherduck");
 
   // The drill-down is driven by the in-memory store regardless of whether
   // MotherDuck is the live source — the store is hydrated from MD on boot
@@ -91,25 +131,33 @@ export function NetRoiSegmentDrilldown() {
 
   const segments = useMemo(() => {
     const filtered = applyCustomerFilters(customers, filters);
-    if (filtered.length === 0) return [];
+    const activeFilterCount = countActiveFilters(filters);
+    const fullGroups =
+      isMotherDuck && activeFilterCount === 0 ? fullBaseGroupsForDimension(dim, fullBase) : null;
+    if (!fullGroups && filtered.length === 0) return [];
 
     // Group by segment value; track total + high-risk count per segment.
-    const groups = new Map<string, { total: number; high: number }>();
+    const groups = fullGroups ?? new Map<string, { total: number; high: number }>();
     let totalHigh = 0;
-    for (const c of filtered) {
-      const key = segmentValue(c, dim);
-      const slot = groups.get(key) ?? { total: 0, high: 0 };
-      slot.total += 1;
-      if (c.riskTier === "High") {
-        slot.high += 1;
-        totalHigh += 1;
+    if (fullGroups) {
+      for (const slot of groups.values()) totalHigh += slot.high;
+    } else {
+      for (const c of filtered) {
+        const key = segmentValue(c, dim);
+        const slot = groups.get(key) ?? { total: 0, high: 0 };
+        slot.total += 1;
+        if (c.riskTier === "High") {
+          slot.high += 1;
+          totalHigh += 1;
+        }
+        groups.set(key, slot);
       }
-      groups.set(key, slot);
     }
     // If no high-risk customers exist in the filtered set, fall back to
     // proportional split by total (so the chart is never empty).
     const useHigh = totalHigh > 0;
-    const denom = useHigh ? totalHigh : filtered.length;
+    const totalInGroups = Array.from(groups.values()).reduce((sum, g) => sum + g.total, 0);
+    const denom = useHigh ? totalHigh : totalInGroups || filtered.length;
 
     const monthlyArpu = roiParams.averageAnnualArpuGbp / 12;
     const avgLtvPerSave = customerLtv(monthlyArpu, "High");
@@ -140,7 +188,7 @@ export function NetRoiSegmentDrilldown() {
 
     rows.sort((a, b) => b.netRetainedGbp - a.netRetainedGbp);
     return rows;
-  }, [customers, filters, dim, rules, successRate]);
+  }, [customers, filters, dim, rules, successRate, isMotherDuck, fullBase]);
 
   const grandTotal = useMemo(
     () =>
@@ -172,8 +220,8 @@ export function NetRoiSegmentDrilldown() {
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Pro-rated against the current scenario ({Math.round(successRate * 100)}% success
-              rate). Optional filters narrow the segment universe before
-              high-risk volume is split across buckets.
+              rate). Optional filters narrow the segment universe before high-risk volume is split
+              across buckets.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -224,7 +272,10 @@ export function NetRoiSegmentDrilldown() {
         <>
           <div className="px-5 sm:px-7 py-5 grid sm:grid-cols-4 gap-3 text-xs border-b border-border bg-[var(--surface-sunken)]/50">
             <Stat label="Segments" value={segments.length.toString()} />
-            <Stat label="Total customers (filtered)" value={formatNumber(segments.reduce((s, r) => s + r.customers, 0))} />
+            <Stat
+              label="Total customers (filtered)"
+              value={formatNumber(segments.reduce((s, r) => s + r.customers, 0))}
+            />
             <Stat label="Saved (modelled)" value={formatNumber(grandTotal.saved)} />
             <Stat label="Net ROI (sum)" value={formatGbp(grandTotal.net)} accent="success" />
           </div>
@@ -331,15 +382,7 @@ export function NetRoiSegmentDrilldown() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: "success";
-}) {
+function Stat({ label, value, accent }: { label: string; value: string; accent?: "success" }) {
   return (
     <div>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
