@@ -248,6 +248,30 @@ export type Database = {
           },
         ]
       }
+      md_aggregate_cache: {
+        Row: {
+          cache_key: string
+          computed_at: string
+          id: string
+          payload: Json
+          source_signature: string | null
+        }
+        Insert: {
+          cache_key: string
+          computed_at?: string
+          id?: string
+          payload: Json
+          source_signature?: string | null
+        }
+        Update: {
+          cache_key?: string
+          computed_at?: string
+          id?: string
+          payload?: Json
+          source_signature?: string | null
+        }
+        Relationships: []
+      }
       model_runs: {
         Row: {
           artefact_paths: Json | null

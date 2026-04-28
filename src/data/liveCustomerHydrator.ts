@@ -123,79 +123,39 @@ async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
   if (!force && alreadyLive) return true;
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return false; // anonymous user — wait for auth
+  if (!session?.access_token) return false;
 
-  let snap: {
-    kinds?: Record<string, { headers: string[]; rows: unknown[][] }>;
-    errors?: Record<string, string>;
-  };
-  try {
-    const res = await fetch("/api/admin/connections/snapshot-motherduck", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      // 50k uniform random sample — see snapshot-motherduck.ts header for
-      // the rationale (replaces the previous 5k alphabetical slice that
-      // collapsed to ~945 unique customers after dedup).
-      body: JSON.stringify({ rowLimit: 50_000 }),
-    });
-    if (!res.ok) {
-      // 403 → not an admin; silently skip and fall back to snapshots
-      if (res.status === 403) return false;
-      throw new Error(`HTTP ${res.status}`);
-    }
-    snap = await res.json();
-  } catch (e) {
-    console.warn("[liveCustomerHydrator] MotherDuck snapshot fetch failed", e);
-    return false;
-  }
-
-  const kinds = snap.kinds ?? {};
-  const ci = kinds.customer_info;
-  if (!ci || ci.rows.length === 0) return false;
-
+  // No row download. Every dashboard panel reads full-base aggregates from
+  // /api/admin/connections/aggregate-motherduck (cached in md_aggregate_cache).
+  // Per-customer drilldowns hit /api/admin/connections/customer-detail-
+  // motherduck on demand. We just label the active source.
   const label = `MotherDuck · ${conn.name ?? "live"}`;
   const remoteName = `motherduck:${conn.id}`;
+  const store = useCustomerStore.getState();
+  store.setActive([], "MotherDuck (live)", "live", `Live integration · ${label}`);
 
-  const ordered = ["customer_info", "calls", "cease", "usage"] as const;
-  for (const kind of ordered) {
-    const k = kinds[kind];
-    if (!k) continue;
-    const objects: RawCustomerRow[] = k.rows.map((r) => {
-      const o: RawCustomerRow = {};
-      k.headers.forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
-      return o;
-    });
-    await applyToStore(
-      {
-        kind,
-        origin: "live",
-        label: `${label} · ${kind}`,
-        rows_count: objects.length,
-        dataset_id: null,
-        connection_id: conn.id,
-        remote_name: remoteName,
-      },
-      objects,
-    );
-  }
+  // Best-effort: persist MD as the active customer_info source so the label
+  // survives refreshes.
+  await store.persistActive({
+    kind: "customer_info",
+    origin: "live",
+    label: `${label} · customer_info`,
+    rows: 0,
+    connectionId: conn.id,
+    remoteName,
+  }).catch(() => {});
 
-  // Best-effort: persist MD as the active source so refreshes keep the label.
-  const persistOps = ordered
-    .filter((k) => kinds[k])
-    .map((k) =>
-      useCustomerStore.getState().persistActive({
-        kind: k,
-        origin: "live",
-        label: `${label} · ${k}`,
-        rows: kinds[k]?.rows.length ?? 0,
-        connectionId: conn.id,
-        remoteName,
-      }),
-    );
-  await Promise.allSettled(persistOps);
+  // Kick off the aggregate fetch (fire-and-forget — the hook on each page
+  // will subscribe).
+  void fetch("/api/admin/connections/aggregate-motherduck", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({}),
+  }).catch(() => {});
+
   return true;
 }
 
