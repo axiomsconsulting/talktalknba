@@ -16,7 +16,6 @@ import {
   Phone,
   XOctagon,
   Activity,
-  
   Cloud,
   ExternalLink,
   PlayCircle,
@@ -43,7 +42,6 @@ import { allCustomers as defaultCustomers } from "@/data/customers";
 import { useFullBaseAggregate } from "@/data/fullBaseAggregate";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
 
 type DatasetRow = {
   id: string;
@@ -95,14 +93,18 @@ function DataPage() {
   const [loading, setLoading] = useState(true);
   const { customers, source, reset } = useCustomerStore();
   const clearAll = useCustomerStore((s) => s.clearAll);
-  const [selectedSource, setSelectedSource] = useState<SourceKey>(() => deriveInitialSource(source));
+  const [selectedSource, setSelectedSource] = useState<SourceKey>(() =>
+    deriveInitialSource(source),
+  );
   const fullBase = useFullBaseAggregate();
 
   async function refresh() {
     setLoading(true);
     const [{ data: dsets }, { data: conns }] = await Promise.all([
       supabase.from("customer_datasets").select("*").order("uploaded_at", { ascending: false }),
-      supabase.from("data_connections").select("id, kind, name, enabled, last_run_at, last_status, config"),
+      supabase
+        .from("data_connections")
+        .select("id, kind, name, enabled, last_run_at, last_status, config"),
     ]);
     if (dsets) setDatasets(dsets as DatasetRow[]);
     if (conns) setConnections(conns as ConnectionRow[]);
@@ -166,7 +168,11 @@ function DataPage() {
   const activeSourceKey: SourceKey | "none" = useMemo(() => {
     if (mdConn?.enabled) return "motherduck";
     if (dbxConn?.enabled) return "databricks";
-    if (localConn?.enabled && source.kind === "uploaded" && (source as { origin?: string }).origin !== "live") {
+    if (
+      localConn?.enabled &&
+      source.kind === "uploaded" &&
+      (source as { origin?: string }).origin !== "live"
+    ) {
       return "upload";
     }
     if (sampleConn?.enabled) return "sample";
@@ -174,13 +180,7 @@ function DataPage() {
     // Fallback: nothing enabled but store still carries something.
     if (source.kind === "uploaded") return "upload";
     return "sample";
-  }, [
-    source,
-    mdConn?.enabled,
-    dbxConn?.enabled,
-    localConn?.enabled,
-    sampleConn?.enabled,
-  ]);
+  }, [source, mdConn?.enabled, dbxConn?.enabled, localConn?.enabled, sampleConn?.enabled]);
 
   return (
     <AppShell>
@@ -277,11 +277,7 @@ function DataPage() {
             </TabsContent>
 
             <TabsContent value="databricks" className="mt-5">
-              <LiveConnectionPanel
-                kind="databricks"
-                conn={dbxConn}
-                onChanged={refresh}
-              />
+              <LiveConnectionPanel kind="databricks" conn={dbxConn} onChanged={refresh} />
             </TabsContent>
           </Tabs>
         </div>
@@ -298,7 +294,9 @@ function DataPage() {
   );
 }
 
-function deriveInitialSource(source: ReturnType<typeof useCustomerStore.getState>["source"]): SourceKey {
+function deriveInitialSource(
+  source: ReturnType<typeof useCustomerStore.getState>["source"],
+): SourceKey {
   if (source.kind === "mock") return "sample";
   const detail = (source as { detail?: string }).detail ?? "";
   if (detail.toLowerCase().includes("motherduck")) return "motherduck";
@@ -361,9 +359,7 @@ function ActiveSourcesOverview({
       key: "databricks",
       icon: Cloud,
       title: "Databricks",
-      subtitle: dbxConn?.enabled
-        ? `Connected · ${dbxConn.name}`
-        : "Not configured",
+      subtitle: dbxConn?.enabled ? `Connected · ${dbxConn.name}` : "Not configured",
       status:
         activeSourceKey === "databricks"
           ? "active"
@@ -444,14 +440,14 @@ function ActiveSourcesOverview({
             </div>
             {isEmpty ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                Every connector — sample, local upload, MotherDuck and Databricks
-                — is disabled. Enable at least one below to populate the dashboards.
+                Every connector — sample, local upload, MotherDuck and Databricks — is disabled.
+                Enable at least one below to populate the dashboards.
               </div>
             ) : activeSourceKey === "motherduck" && fullBaseTotal ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                Full population count is computed server-side against MotherDuck. Drill-down
-                totals use full-base aggregates, while per-customer SHAP rows load on demand
-                through Customer Search.
+                Full population count is computed server-side against MotherDuck. Drill-down totals
+                use full-base aggregates, while per-customer SHAP rows load on demand through
+                Customer Search.
               </div>
             ) : source.kind === "uploaded" ? (
               <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -494,7 +490,9 @@ function ActiveSourcesOverview({
                 <div
                   className={cn(
                     "size-8 rounded-md flex items-center justify-center",
-                    isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   <Icon className="size-4" />
@@ -604,8 +602,8 @@ function SamplePanel({
           <div className="text-base font-semibold text-foreground">Bundled sample dataset</div>
           <p className="text-sm text-muted-foreground mt-0.5">
             6 hand-crafted personas plus 50 procedurally generated customers covering OOC,
-            speed-deficit, loyalty-call and DD-cancel cohorts. Use this as a safe playground
-            for the dashboards before connecting real data.
+            speed-deficit, loyalty-call and DD-cancel cohorts. Use this as a safe playground for the
+            dashboards before connecting real data.
           </p>
         </div>
       </div>
@@ -665,7 +663,9 @@ function SampleToggle({
   const [busy, setBusy] = useState(false);
   const reset = useCustomerStore((s) => s.reset);
   const clearAll = useCustomerStore((s) => s.clearAll);
-  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+  useEffect(() => {
+    setEnabled(conn?.enabled ?? true);
+  }, [conn?.id, conn?.enabled]);
 
   async function toggle(value: boolean) {
     if (!conn) {
@@ -715,8 +715,8 @@ function SampleToggle({
           </span>
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5">
-          The bundled 6 personas + 50 generated customers used as a safe playground when no
-          live source is wired. Disable to force the dashboards to reflect only real data.
+          The bundled 6 personas + 50 generated customers used as a safe playground when no live
+          source is wired. Disable to force the dashboards to reflect only real data.
         </div>
       </div>
       <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
@@ -747,7 +747,9 @@ function LocalUploadToggle({
 }) {
   const [enabled, setEnabled] = useState(conn?.enabled ?? true);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setEnabled(conn?.enabled ?? true); }, [conn?.id, conn?.enabled]);
+  useEffect(() => {
+    setEnabled(conn?.enabled ?? true);
+  }, [conn?.id, conn?.enabled]);
 
   async function toggle(value: boolean) {
     if (!conn) {
@@ -795,8 +797,8 @@ function LocalUploadToggle({
           </span>
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5">
-          Drag-and-drop CSV / Parquet files into the dataset library. Disable to hide the
-          upload surface and clear any active upload-origin selection.
+          Drag-and-drop CSV / Parquet files into the dataset library. Disable to hide the upload
+          surface and clear any active upload-origin selection.
         </div>
       </div>
       <label className="inline-flex items-center gap-2 text-xs text-muted-foreground shrink-0">
@@ -833,7 +835,8 @@ function LiveConnectionPanel({
   async function run(action: "test" | "ingest") {
     setBusy(action);
     try {
-      const path = action === "test" ? "/api/admin/connections/test" : "/api/admin/connections/ingest";
+      const path =
+        action === "test" ? "/api/admin/connections/test" : "/api/admin/connections/ingest";
       const res = await fetch(path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -844,7 +847,7 @@ function LiveConnectionPanel({
       toast.success(
         action === "test"
           ? `${label} connection ok`
-          : json.message ?? `Ingested ${json.files ?? 0} file(s) from ${label}`,
+          : (json.message ?? `Ingested ${json.files ?? 0} file(s) from ${label}`),
       );
       onChanged();
     } catch (e) {
@@ -864,7 +867,8 @@ function LiveConnectionPanel({
           <div>
             <div className="text-base font-semibold text-foreground">{label} not configured</div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull your churn tables.
+              Connect a Databricks workspace with a SQL warehouse so the platform can probe and pull
+              your churn tables.
             </p>
           </div>
         </div>
@@ -929,7 +933,11 @@ function LiveConnectionPanel({
           disabled={!!busy}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 disabled:opacity-60"
         >
-          {busy === "test" ? <Loader2 className="size-3.5 animate-spin" /> : <PlayCircle className="size-3.5" />}
+          {busy === "test" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <PlayCircle className="size-3.5" />
+          )}
           Test connection
         </button>
         <button
@@ -937,7 +945,11 @@ function LiveConnectionPanel({
           disabled={!!busy}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-primary/30 text-primary hover:bg-primary/5 disabled:opacity-60"
         >
-          {busy === "ingest" ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+          {busy === "ingest" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="size-3.5" />
+          )}
           Pull now
         </button>
         <Link
@@ -950,8 +962,9 @@ function LiveConnectionPanel({
       </div>
 
       <div className="text-[11px] text-muted-foreground">
-        Pulled files land in the <span className="font-medium text-foreground">Stored datasets</span>{" "}
-        library below — activate any version to swap the live customer base or refresh enrichment.
+        Pulled files land in the{" "}
+        <span className="font-medium text-foreground">Stored datasets</span> library below —
+        activate any version to swap the live customer base or refresh enrichment.
       </div>
     </div>
   );
@@ -1008,7 +1021,9 @@ function MotherDuckLivePanel({
   }
 
   async function callJson(path: string, body: unknown) {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const res = await fetch(path, {
       method: "POST",
       headers: {
@@ -1019,11 +1034,19 @@ function MotherDuckLivePanel({
     });
     const text = await res.text();
     let json: unknown = null;
-    try { json = text ? JSON.parse(text) : null; } catch { /* keep text */ }
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      /* keep text */
+    }
     if (!res.ok) {
-      const msg = (json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string")
-        ? (json as { error: string }).error
-        : text || `HTTP ${res.status}`;
+      const msg =
+        json &&
+        typeof json === "object" &&
+        "error" in json &&
+        typeof (json as { error: unknown }).error === "string"
+          ? (json as { error: string }).error
+          : text || `HTTP ${res.status}`;
       throw new Error(msg);
     }
     return json;
@@ -1058,7 +1081,9 @@ function MotherDuckLivePanel({
       if (ci && ci.rows.length > 0) {
         const objects = ci.rows.map((r) => {
           const o: RawCustomerRow = {};
-          ci.headers.forEach((h, i) => { o[h] = r[i] as RawCustomerRow[string]; });
+          ci.headers.forEach((h, i) => {
+            o[h] = r[i] as RawCustomerRow[string];
+          });
           return o;
         });
         const mapped = mapCustomers(objects, DEFAULT_MAPPING);
@@ -1072,7 +1097,9 @@ function MotherDuckLivePanel({
         if (!r || r.rows.length === 0) return;
         const objects = r.rows.map((row) => {
           const o: RawCustomerRow = {};
-          r.headers.forEach((h, i) => { o[h] = row[i] as RawCustomerRow[string]; });
+          r.headers.forEach((h, i) => {
+            o[h] = row[i] as RawCustomerRow[string];
+          });
           return o;
         });
         const src = {
@@ -1090,9 +1117,7 @@ function MotherDuckLivePanel({
       enrichFor("cease");
       enrichFor("usage");
 
-      toast.success(
-        `Live query ok · ${ci?.count ?? 0} customers loaded directly from MotherDuck`,
-      );
+      toast.success(`Live query ok · ${ci?.count ?? 0} customers loaded directly from MotherDuck`);
       onChanged();
     } catch (e) {
       toast.error(`Live query failed: ${(e as Error).message}`);
@@ -1154,7 +1179,8 @@ function MotherDuckLivePanel({
             </span>
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 break-all">
-            {cfg.database ?? "—"} · {cfg.schema ?? "main"} · {cfg.host ?? "pg.us-east-1-aws.motherduck.com"}
+            {cfg.database ?? "—"} · {cfg.schema ?? "main"} ·{" "}
+            {cfg.host ?? "pg.us-east-1-aws.motherduck.com"}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">Last run: {lastRun}</div>
         </div>
@@ -1193,9 +1219,9 @@ function MotherDuckLivePanel({
           />
         </div>
         <div className="text-[11px] text-muted-foreground max-w-[360px]">
-          1–100,000 random customer_info rows (uniform random sample of the full base),
-          with calls / cease / usage scoped to the same IDs. Headline KPIs are
-          computed server-side against all customers regardless of this cap.
+          1–100,000 random customer_info rows (uniform random sample of the full base), with calls /
+          cease / usage scoped to the same IDs. Headline KPIs are computed server-side against all
+          customers regardless of this cap.
         </div>
       </div>
 
@@ -1205,7 +1231,11 @@ function MotherDuckLivePanel({
           disabled={!!busy || !enabled}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-muted/60 disabled:opacity-60"
         >
-          {busy === "test" ? <Loader2 className="size-3.5 animate-spin" /> : <PlayCircle className="size-3.5" />}
+          {busy === "test" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <PlayCircle className="size-3.5" />
+          )}
           Test connection
         </button>
         <button
@@ -1213,7 +1243,11 @@ function MotherDuckLivePanel({
           disabled={!!busy || !enabled}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-primary/30 text-primary hover:bg-primary/5 disabled:opacity-60"
         >
-          {busy === "query" ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />}
+          {busy === "query" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Zap className="size-3.5" />
+          )}
           Run live query
         </button>
         <Link
@@ -1351,17 +1385,37 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
         const mapped = mapCustomers(staged.rows, mapping);
         if (mapped.length > 0) {
           setActive(mapped, staged.file.name, "upload", `Stored upload · ${staged.file.name}`);
-          await persist({ kind: "customer_info", origin: "upload", label: staged.file.name, rows: mapped.length });
+          await persist({
+            kind: "customer_info",
+            origin: "upload",
+            label: staged.file.name,
+            rows: mapped.length,
+          });
         }
       } else if (staged.kind === "calls") {
         applyCalls(aggregateCalls(staged.rows), src);
-        await persist({ kind: "calls", origin: "upload", label: staged.file.name, rows: staged.rows.length });
+        await persist({
+          kind: "calls",
+          origin: "upload",
+          label: staged.file.name,
+          rows: staged.rows.length,
+        });
       } else if (staged.kind === "cease") {
         applyCease(aggregateCease(staged.rows), src);
-        await persist({ kind: "cease", origin: "upload", label: staged.file.name, rows: staged.rows.length });
+        await persist({
+          kind: "cease",
+          origin: "upload",
+          label: staged.file.name,
+          rows: staged.rows.length,
+        });
       } else if (staged.kind === "usage") {
         applyUsage(aggregateUsage(staged.rows), src);
-        await persist({ kind: "usage", origin: "upload", label: staged.file.name, rows: staged.rows.length });
+        await persist({
+          kind: "usage",
+          origin: "upload",
+          label: staged.file.name,
+          rows: staged.rows.length,
+        });
       }
 
       setStaged(null);
@@ -1385,8 +1439,8 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
           <span className="font-medium text-foreground">customer_info</span> replaces the live
           customer base; <span className="font-medium text-foreground">calls</span>,{" "}
           <span className="font-medium text-foreground">cease</span> and{" "}
-          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers
-          and NBA triggers without replacing it.
+          <span className="font-medium text-foreground">usage</span> enrich the SHAP drivers and NBA
+          triggers without replacing it.
         </p>
       </div>
 
@@ -1401,7 +1455,11 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
             )}
           >
             <div className="size-12 rounded-xl bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center text-primary-foreground shadow-[var(--shadow-glow)]">
-              {parsing ? <Loader2 className="size-6 animate-spin" /> : <UploadCloud className="size-6" />}
+              {parsing ? (
+                <Loader2 className="size-6 animate-spin" />
+              ) : (
+                <UploadCloud className="size-6" />
+              )}
             </div>
             <div className="mt-4 text-base font-semibold text-foreground">
               {parsing ? "Parsing file…" : "Drag a file here, or browse"}
@@ -1549,7 +1607,8 @@ function EnrichmentPreview({
     if (kind === "cease") {
       const m = aggregateCease(rows);
       const insights: Record<string, number> = {};
-      for (const v of m.values()) insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
+      for (const v of m.values())
+        insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
       const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
       return [
         { label: "Unique customers", value: m.size.toLocaleString() },
@@ -1573,7 +1632,9 @@ function EnrichmentPreview({
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="px-4 py-3 bg-[var(--surface-sunken)] border-b border-border flex items-center gap-2">
         <Icon className="size-4 text-primary" />
-        <div className="text-sm font-semibold text-foreground capitalize">{kind} aggregation preview</div>
+        <div className="text-sm font-semibold text-foreground capitalize">
+          {kind} aggregation preview
+        </div>
         <div className="text-[11px] text-muted-foreground ml-auto">
           {columns.length} columns · {rows.length.toLocaleString()} rows
         </div>
@@ -1584,7 +1645,9 @@ function EnrichmentPreview({
             <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {r.label}
             </div>
-            <div className="mt-0.5 text-base font-semibold text-foreground tabular-nums">{r.value}</div>
+            <div className="mt-0.5 text-base font-semibold text-foreground tabular-nums">
+              {r.value}
+            </div>
           </div>
         ))}
       </div>
@@ -1619,7 +1682,8 @@ function EnrichmentStatusPanel() {
 
   const ceaseStats = useMemo(() => {
     const insights: Record<string, number> = {};
-    for (const v of ceaseMap.values()) insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
+    for (const v of ceaseMap.values())
+      insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
     const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
     return { distinct: Object.keys(insights).length, top };
   }, [ceaseMap]);
@@ -1646,8 +1710,14 @@ function EnrichmentStatusPanel() {
       metrics: callsSource
         ? [
             { label: "Loyalty calls (sum)", value: callsStats.totalLoyalty.toLocaleString() },
-            { label: "Hold time", value: `${Math.round(callsStats.totalHold / 60).toLocaleString()} min` },
-            { label: "Talk time", value: `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min` },
+            {
+              label: "Hold time",
+              value: `${Math.round(callsStats.totalHold / 60).toLocaleString()} min`,
+            },
+            {
+              label: "Talk time",
+              value: `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min`,
+            },
           ]
         : [],
     },
@@ -1662,7 +1732,10 @@ function EnrichmentStatusPanel() {
         ? [
             { label: "Distinct insights", value: ceaseStats.distinct.toString() },
             { label: "Top reason", value: ceaseStats.top ? `${ceaseStats.top[0]}` : "—" },
-            { label: "Top count", value: ceaseStats.top ? ceaseStats.top[1].toLocaleString() : "—" },
+            {
+              label: "Top count",
+              value: ceaseStats.top ? ceaseStats.top[1].toLocaleString() : "—",
+            },
           ]
         : [],
     },
@@ -1689,11 +1762,13 @@ function EnrichmentStatusPanel() {
         <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
           Behavioural enrichment
         </div>
-        <h2 className="mt-1 text-lg font-semibold text-foreground">Calls · cease · usage signals</h2>
+        <h2 className="mt-1 text-lg font-semibold text-foreground">
+          Calls · cease · usage signals
+        </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           These signals are layered on top of whichever source is active. Activate an extract from
-          the library below — or pull a fresh one from a live integration — and it will be aggregated
-          by customer ID and folded into the SHAP waterfall and NBA trigger derivation.
+          the library below — or pull a fresh one from a live integration — and it will be
+          aggregated by customer ID and folded into the SHAP waterfall and NBA trigger derivation.
         </p>
       </div>
       <div className="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -1705,14 +1780,18 @@ function EnrichmentStatusPanel() {
               key={t.kind}
               className={cn(
                 "rounded-lg border p-4 flex flex-col gap-2",
-                active ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-[var(--surface-sunken)]/40",
+                active
+                  ? "border-primary/30 bg-primary/5"
+                  : "border-dashed border-border bg-[var(--surface-sunken)]/40",
               )}
             >
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
                     "size-9 rounded-md flex items-center justify-center",
-                    active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   <Icon className="size-4" />
@@ -1740,13 +1819,17 @@ function EnrichmentStatusPanel() {
                     <span className="font-mono text-primary">{t.source!.filename}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {t.source!.detail ?? (t.source!.origin === "live" ? "Live integration" : "Stored upload")} ·{" "}
-                    {t.size.toLocaleString()} customers enriched · activated{" "}
+                    {t.source!.detail ??
+                      (t.source!.origin === "live" ? "Live integration" : "Stored upload")}{" "}
+                    · {t.size.toLocaleString()} customers enriched · activated{" "}
                     {new Date(t.source!.uploadedAt).toLocaleString("en-GB")}
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-1.5">
                     {t.metrics.map((m) => (
-                      <div key={m.label} className="rounded-md border border-border bg-card px-2 py-1.5">
+                      <div
+                        key={m.label}
+                        className="rounded-md border border-border bg-card px-2 py-1.5"
+                      >
                         <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
                           {m.label}
                         </div>
@@ -1768,7 +1851,8 @@ function EnrichmentStatusPanel() {
                 </>
               ) : (
                 <div className="text-[11px] text-muted-foreground italic">
-                  No {t.kind} extract loaded — upload one or activate a stored {t.kind} file from the library.
+                  No {t.kind} extract loaded — upload one or activate a stored {t.kind} file from
+                  the library.
                 </div>
               )}
             </div>
@@ -1792,7 +1876,11 @@ const MAPPING_FIELDS: Array<{ key: keyof FieldMapping; label: string; hint: stri
   { key: "ddCancel60", label: "DD cancel (60d)", hint: "1/0 flag" },
   { key: "contractDdCancels", label: "DD cancels (lifetime)", hint: "Count" },
   { key: "speed", label: "Sold speed (Mbps)", hint: "Headline package speed" },
-  { key: "lineSpeed", label: "Line speed (Mbps)", hint: "Realised throughput — drives speed deficit" },
+  {
+    key: "lineSpeed",
+    label: "Line speed (Mbps)",
+    hint: "Realised throughput — drives speed deficit",
+  },
   { key: "technology", label: "Technology", hint: "FTTC / FTTP / G.Fast / etc." },
   { key: "arpuOverride", label: "ARPU column (optional)", hint: "Override package-derived ARPU" },
   {
@@ -1830,7 +1918,10 @@ function MappingEditor({
             <div key={f.key} className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-foreground">{f.label}</label>
-                <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={sample}>
+                <span
+                  className="text-[10px] text-muted-foreground truncate max-w-[120px]"
+                  title={sample}
+                >
                   e.g. {sample}
                 </span>
               </div>
@@ -1855,19 +1946,18 @@ function MappingEditor({
   );
 }
 
-function PreviewMapped({
-  rows,
-  mapping,
-}: {
-  rows: RawCustomerRow[];
-  mapping: FieldMapping;
-}) {
-  const preview = useMemo(() => mapCustomers(rows.slice(0, 200), mapping).slice(0, 5), [rows, mapping]);
+function PreviewMapped({ rows, mapping }: { rows: RawCustomerRow[]; mapping: FieldMapping }) {
+  const preview = useMemo(
+    () => mapCustomers(rows.slice(0, 200), mapping).slice(0, 5),
+    [rows, mapping],
+  );
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="px-4 py-3 bg-[var(--surface-sunken)] border-b border-border flex items-center gap-2">
         <Eye className="size-4 text-primary" />
-        <div className="text-sm font-semibold text-foreground">Mapping preview · first 5 customers</div>
+        <div className="text-sm font-semibold text-foreground">
+          Mapping preview · first 5 customers
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -1891,7 +1981,9 @@ function PreviewMapped({
                   {(c.tenureDays / 365).toFixed(1)} yrs
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
-                  {(c.shap.find((s) => s.feature === "ooc_days")?.detail ?? "").match(/-?\d+/)?.[0] ?? "—"}
+                  {(c.shap.find((s) => s.feature === "ooc_days")?.detail ?? "").match(
+                    /-?\d+/,
+                  )?.[0] ?? "—"}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-semibold">
                   {(c.riskScore * 100).toFixed(0)}
@@ -2000,13 +2092,31 @@ function DatasetTable({
         };
         if (d.kind === "calls") {
           applyCalls(aggregateCalls(rows), src);
-          await persist({ kind: "calls", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+          await persist({
+            kind: "calls",
+            origin: "upload",
+            label: d.filename,
+            rows: rows.length,
+            datasetId: d.id,
+          });
         } else if (d.kind === "cease") {
           applyCease(aggregateCease(rows), src);
-          await persist({ kind: "cease", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+          await persist({
+            kind: "cease",
+            origin: "upload",
+            label: d.filename,
+            rows: rows.length,
+            datasetId: d.id,
+          });
         } else if (d.kind === "usage") {
           applyUsage(aggregateUsage(rows), src);
-          await persist({ kind: "usage", origin: "upload", label: d.filename, rows: rows.length, datasetId: d.id });
+          await persist({
+            kind: "usage",
+            origin: "upload",
+            label: d.filename,
+            rows: rows.length,
+            datasetId: d.id,
+          });
         }
       }
     } catch (err) {
@@ -2034,10 +2144,7 @@ function DatasetTable({
       // After delete, check whether the dataset library is now empty. If so,
       // wipe every upload-origin selection and auto-disable the "Local upload"
       // connection so the UI stops advertising it as a live source.
-      const { data: remaining } = await supabase
-        .from("customer_datasets")
-        .select("id")
-        .limit(1);
+      const { data: remaining } = await supabase.from("customer_datasets").select("id").limit(1);
       if (!remaining || remaining.length === 0) {
         await useCustomerStore.getState().clearAllUploads();
         await supabase
@@ -2061,7 +2168,9 @@ function DatasetTable({
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
       <div className="px-5 sm:px-7 py-5 border-b border-border">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Library</div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+          Library
+        </div>
         <h2 className="mt-1 text-lg font-semibold text-foreground">Stored datasets</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Every upload — or pull from a live integration — is kept here. Activate any version to
@@ -2091,8 +2200,8 @@ function DatasetTable({
             {!loading && datasets.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground text-sm">
-                  No datasets uploaded yet. Drop a file in the Local upload tab or pull from a
-                  live integration to get started.
+                  No datasets uploaded yet. Drop a file in the Local upload tab or pull from a live
+                  integration to get started.
                 </td>
               </tr>
             )}
