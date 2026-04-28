@@ -44,8 +44,13 @@ export const Route = createFileRoute("/api/admin/connections/aggregate-motherduc
 
         // 1. Return cached payload unless `force` is set.
         if (!force) {
-          const { data: cached } = await supabaseAdmin
-            .from("md_aggregate_cache")
+          const { data: cached } = await (supabaseAdmin.from("md_aggregate_cache") as unknown as {
+            select: (cols: string) => {
+              eq: (col: string, val: string) => {
+                maybeSingle: () => Promise<{ data: { payload: unknown; computed_at: string } | null }>;
+              };
+            };
+          })
             .select("payload, computed_at")
             .eq("cache_key", CACHE_KEY)
             .maybeSingle();
