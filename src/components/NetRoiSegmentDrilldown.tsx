@@ -38,7 +38,8 @@ import {
 import { useCustomerStore } from "@/data/customerStore";
 import { useNbaRulesStore } from "@/data/nbaRulesStore";
 import { useScenarioStore } from "@/data/scenarioStore";
-import { roiParams, formatGbp, formatNumber } from "@/data/nba";
+import { roiParams, segmentSummary, formatGbp, formatNumber, type RiskTier } from "@/data/nba";
+import { useFullBaseAggregate } from "@/data/fullBaseAggregate";
 import {
   computeRuleFinancials,
   summariseRuleFinancials,
@@ -70,6 +71,39 @@ function segmentValue(c: Customer, dim: Dimension): string {
     case "riskTier": return c.riskTier || "—";
     case "package": return c.package || "—";
   }
+}
+
+function normaliseContractStatus(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s.includes("ooc") || s.includes("out")) return "Out of contract";
+  if (s.includes("rolling")) return "Rolling";
+  if (s.includes("in")) return "In contract";
+  return raw || "—";
+}
+
+function fullBaseGroupsForDimension(
+  dim: Dimension,
+  fullBase: ReturnType<typeof useFullBaseAggregate>,
+): Map<string, { total: number; high: number }> | null {
+  if (dim === "riskTier") {
+    return new Map(
+      segmentSummary.map((s) => [
+        s.tier,
+        { total: s.customerCount, high: s.tier === "High" ? s.customerCount : 0 },
+      ]),
+    );
+  }
+  if (!fullBase) return null;
+  if (dim === "package") {
+    return new Map(fullBase.packageBreakdown.map((r) => [r.package || "—", { total: r.customers, high: 0 }]));
+  }
+  if (dim === "contractStatus") {
+    return new Map(fullBase.contractBreakdown.map((r) => [normaliseContractStatus(r.status), { total: r.customers, high: 0 }]));
+  }
+  if (dim === "region") {
+    return new Map(fullBase.regionBreakdown.map((r) => [r.region || "—", { total: r.customers, high: 0 }]));
+  }
+  return null;
 }
 
 export function NetRoiSegmentDrilldown() {
