@@ -131,7 +131,6 @@ async function tryHydrateFromMotherDuck(force: boolean): Promise<boolean> {
   // motherduck on demand. We just label the active source.
   const label = `MotherDuck · ${conn.name ?? "live"}`;
   const remoteName = `motherduck:${conn.id}`;
-  const store = useCustomerStore.getState();
   store.setActive([], "MotherDuck (live)", "live", `Live integration · ${label}`);
 
   // Best-effort: persist MD as the active customer_info source so the label
