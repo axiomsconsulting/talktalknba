@@ -1925,12 +1925,14 @@ function EnrichmentStatusPanel() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    onClick={() => clear(t.kind)}
-                    className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start"
-                  >
-                    <Trash2 className="size-3" /> Clear enrichment
-                  </button>
+                  {t.source!.origin !== "live" && (
+                    <button
+                      onClick={() => clear(t.kind)}
+                      className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start"
+                    >
+                      <Trash2 className="size-3" /> Clear enrichment
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="text-[11px] text-muted-foreground italic">
