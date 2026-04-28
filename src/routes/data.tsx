@@ -1662,44 +1662,120 @@ function EnrichmentPreview({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function EnrichmentStatusPanel() {
-  const callsSource = useCustomerStore((s) => s.callsSource);
-  const ceaseSource = useCustomerStore((s) => s.ceaseSource);
-  const usageSource = useCustomerStore((s) => s.usageSource);
+  const customerSource = useCustomerStore((s) => s.source);
+  const callsSourceLocal = useCustomerStore((s) => s.callsSource);
+  const ceaseSourceLocal = useCustomerStore((s) => s.ceaseSource);
+  const usageSourceLocal = useCustomerStore((s) => s.usageSource);
   const callsMap = useCustomerStore((s) => s.callsMap);
   const ceaseMap = useCustomerStore((s) => s.ceaseMap);
   const usageMap = useCustomerStore((s) => s.usageMap);
   const clear = useCustomerStore((s) => s.clearEnrichment);
+  const aggregate = useFullBaseAggregate();
+
+  // When MotherDuck is the live source we don't load per-row maps client-side
+  // any more — synthesize the enrichment "source" markers from the server
+  // aggregate so the tiles light up with live counts/averages.
+  const isLiveMd =
+    customerSource.kind === "uploaded" &&
+    customerSource.origin === "live" &&
+    (customerSource.detail ?? "").includes("MotherDuck");
+
+  const mdLabel = isLiveMd ? customerSource.filename : null;
+  const mdDetail = isLiveMd ? customerSource.detail : undefined;
+  const mdAt = isLiveMd ? customerSource.uploadedAt : new Date().toISOString();
+
+  const callsSource =
+    callsSourceLocal ??
+    (isLiveMd && aggregate?.callsCoverage
+      ? {
+          filename: `${mdLabel} · calls`,
+          rowsAggregated: aggregate.callsCoverage.customersWithLoyaltyCalls,
+          uploadedAt: mdAt,
+          origin: "live" as const,
+          detail: mdDetail,
+        }
+      : null);
+  const ceaseSource =
+    ceaseSourceLocal ??
+    (isLiveMd && aggregate?.ceaseCoverage
+      ? {
+          filename: `${mdLabel} · cease`,
+          rowsAggregated: aggregate.ceaseCoverage.customers,
+          uploadedAt: mdAt,
+          origin: "live" as const,
+          detail: mdDetail,
+        }
+      : null);
+  const usageSource =
+    usageSourceLocal ??
+    (isLiveMd && aggregate?.usageCoverage
+      ? {
+          filename: `${mdLabel} · usage`,
+          rowsAggregated: aggregate.usageCoverage.customersWithUsage,
+          uploadedAt: mdAt,
+          origin: "live" as const,
+          detail: mdDetail,
+        }
+      : null);
 
   const callsStats = useMemo(() => {
-    let totalLoyalty = 0;
-    let totalHold = 0;
-    let totalTalk = 0;
-    for (const v of callsMap.values()) {
-      totalLoyalty += v.loyaltyCalls90d;
-      totalHold += v.totalHoldSeconds;
-      totalTalk += v.totalTalkSeconds;
+    if (callsSourceLocal) {
+      let totalLoyalty = 0;
+      let totalHold = 0;
+      let totalTalk = 0;
+      for (const v of callsMap.values()) {
+        totalLoyalty += v.loyaltyCalls90d;
+        totalHold += v.totalHoldSeconds;
+        totalTalk += v.totalTalkSeconds;
+      }
+      return { totalLoyalty, totalHold, totalTalk };
     }
-    return { totalLoyalty, totalHold, totalTalk };
-  }, [callsMap]);
+    if (isLiveMd && aggregate?.callsCoverage) {
+      return {
+        totalLoyalty: aggregate.callsCoverage.sumLoyaltyCalls,
+        totalHold: aggregate.callsCoverage.sumHoldSeconds,
+        totalTalk: 0,
+      };
+    }
+    return { totalLoyalty: 0, totalHold: 0, totalTalk: 0 };
+  }, [callsMap, callsSourceLocal, isLiveMd, aggregate]);
 
   const ceaseStats = useMemo(() => {
-    const insights: Record<string, number> = {};
-    for (const v of ceaseMap.values())
-      insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
-    const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
-    return { distinct: Object.keys(insights).length, top };
-  }, [ceaseMap]);
+    if (ceaseSourceLocal) {
+      const insights: Record<string, number> = {};
+      for (const v of ceaseMap.values())
+        insights[v.insight ?? "Other"] = (insights[v.insight ?? "Other"] ?? 0) + 1;
+      const top = Object.entries(insights).sort((a, b) => b[1] - a[1])[0];
+      return { distinct: Object.keys(insights).length, top };
+    }
+    if (isLiveMd && aggregate?.ceaseCoverage) {
+      return {
+        distinct: 1,
+        top: ["Live aggregate", aggregate.ceaseCoverage.customers] as [string, number],
+      };
+    }
+    return { distinct: 0, top: undefined as [string, number] | undefined };
+  }, [ceaseMap, ceaseSourceLocal, isLiveMd, aggregate]);
 
   const usageStats = useMemo(() => {
-    let totalDl = 0;
-    let totalUl = 0;
-    for (const v of usageMap.values()) {
-      totalDl += v.monthlyDownloadGb;
-      totalUl += v.monthlyUploadGb;
+    if (usageSourceLocal) {
+      let totalDl = 0;
+      let totalUl = 0;
+      for (const v of usageMap.values()) {
+        totalDl += v.monthlyDownloadGb;
+        totalUl += v.monthlyUploadGb;
+      }
+      const n = usageMap.size || 1;
+      return { avgDl: Math.round(totalDl / n), avgUl: Math.round(totalUl / n) };
     }
-    const n = usageMap.size || 1;
-    return { avgDl: Math.round(totalDl / n), avgUl: Math.round(totalUl / n) };
-  }, [usageMap]);
+    if (isLiveMd && aggregate?.usageCoverage) {
+      return {
+        avgDl: Math.round(aggregate.usageCoverage.avgDownloadGb),
+        avgUl: Math.round(aggregate.usageCoverage.avgUploadGb),
+      };
+    }
+    return { avgDl: 0, avgUl: 0 };
+  }, [usageMap, usageSourceLocal, isLiveMd, aggregate]);
 
   const tiles = [
     {
@@ -1708,7 +1784,7 @@ function EnrichmentStatusPanel() {
       title: "Calls extract",
       description: "Loyalty calls, hold time, talk time, preferred channel",
       source: callsSource,
-      size: callsMap.size,
+      size: callsMap.size || callsSource?.rowsAggregated || 0,
       metrics: callsSource
         ? [
             { label: "Loyalty calls (sum)", value: callsStats.totalLoyalty.toLocaleString() },
@@ -1718,7 +1794,9 @@ function EnrichmentStatusPanel() {
             },
             {
               label: "Talk time",
-              value: `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min`,
+              value: callsStats.totalTalk
+                ? `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min`
+                : "—",
             },
           ]
         : [],
@@ -1729,7 +1807,7 @@ function EnrichmentStatusPanel() {
       title: "Cease extract",
       description: "Reason-description insight (e.g. CompetitorDeals)",
       source: ceaseSource,
-      size: ceaseMap.size,
+      size: ceaseMap.size || ceaseSource?.rowsAggregated || 0,
       metrics: ceaseSource
         ? [
             { label: "Distinct insights", value: ceaseStats.distinct.toString() },
@@ -1747,12 +1825,15 @@ function EnrichmentStatusPanel() {
       title: "Usage extract",
       description: "Monthly download / upload vs package capacity",
       source: usageSource,
-      size: usageMap.size,
+      size: usageMap.size || usageSource?.rowsAggregated || 0,
       metrics: usageSource
         ? [
             { label: "Avg download / mo", value: `${usageStats.avgDl} GB` },
             { label: "Avg upload / mo", value: `${usageStats.avgUl} GB` },
-            { label: "Customers", value: usageMap.size.toLocaleString() },
+            {
+              label: "Customers",
+              value: (usageMap.size || usageSource?.rowsAggregated || 0).toLocaleString(),
+            },
           ]
         : [],
     },
@@ -1844,12 +1925,14 @@ function EnrichmentStatusPanel() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    onClick={() => clear(t.kind)}
-                    className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start"
-                  >
-                    <Trash2 className="size-3" /> Clear enrichment
-                  </button>
+                  {t.source!.origin !== "live" && (
+                    <button
+                      onClick={() => clear(t.kind)}
+                      className="mt-1 text-[11px] text-muted-foreground hover:text-[var(--risk-high)] inline-flex items-center gap-1 self-start"
+                    >
+                      <Trash2 className="size-3" /> Clear enrichment
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="text-[11px] text-muted-foreground italic">
