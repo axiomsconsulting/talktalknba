@@ -1784,7 +1784,7 @@ function EnrichmentStatusPanel() {
       title: "Calls extract",
       description: "Loyalty calls, hold time, talk time, preferred channel",
       source: callsSource,
-      size: callsMap.size,
+      size: callsMap.size || callsSource?.rowsAggregated || 0,
       metrics: callsSource
         ? [
             { label: "Loyalty calls (sum)", value: callsStats.totalLoyalty.toLocaleString() },
@@ -1794,7 +1794,9 @@ function EnrichmentStatusPanel() {
             },
             {
               label: "Talk time",
-              value: `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min`,
+              value: callsStats.totalTalk
+                ? `${Math.round(callsStats.totalTalk / 60).toLocaleString()} min`
+                : "—",
             },
           ]
         : [],
@@ -1805,7 +1807,7 @@ function EnrichmentStatusPanel() {
       title: "Cease extract",
       description: "Reason-description insight (e.g. CompetitorDeals)",
       source: ceaseSource,
-      size: ceaseMap.size,
+      size: ceaseMap.size || ceaseSource?.rowsAggregated || 0,
       metrics: ceaseSource
         ? [
             { label: "Distinct insights", value: ceaseStats.distinct.toString() },
@@ -1823,12 +1825,15 @@ function EnrichmentStatusPanel() {
       title: "Usage extract",
       description: "Monthly download / upload vs package capacity",
       source: usageSource,
-      size: usageMap.size,
+      size: usageMap.size || usageSource?.rowsAggregated || 0,
       metrics: usageSource
         ? [
             { label: "Avg download / mo", value: `${usageStats.avgDl} GB` },
             { label: "Avg upload / mo", value: `${usageStats.avgUl} GB` },
-            { label: "Customers", value: usageMap.size.toLocaleString() },
+            {
+              label: "Customers",
+              value: (usageMap.size || usageSource?.rowsAggregated || 0).toLocaleString(),
+            },
           ]
         : [],
     },
