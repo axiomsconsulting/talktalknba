@@ -399,17 +399,20 @@ export const Route = createFileRoute("/api/admin/connections/aggregate-motherduc
 
         // 9. Persist to cache (admin context — bypasses RLS via service role).
         try {
-          await supabaseAdmin
-            .from("md_aggregate_cache")
-            .upsert(
-              {
-                cache_key: CACHE_KEY,
-                payload: payload as unknown as Record<string, unknown>,
-                computed_at: payload.computedAt,
-                source_signature: `${conn.id}:${cfg.database}:${cfg.schema ?? "main"}`,
-              },
-              { onConflict: "cache_key" },
-            );
+          await (supabaseAdmin.from("md_aggregate_cache") as unknown as {
+            upsert: (
+              row: Record<string, unknown>,
+              opts: { onConflict: string },
+            ) => Promise<{ error: unknown }>;
+          }).upsert(
+            {
+              cache_key: CACHE_KEY,
+              payload,
+              computed_at: payload.computedAt,
+              source_signature: `${conn.id}:${cfg.database}:${cfg.schema ?? "main"}`,
+            },
+            { onConflict: "cache_key" },
+          );
         } catch (e) {
           console.warn("[aggregate-motherduck] cache write failed", (e as Error)?.message);
         }
