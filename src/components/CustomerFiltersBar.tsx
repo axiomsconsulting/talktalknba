@@ -43,6 +43,8 @@ export type CustomerFilters = {
   speedDeficitPct: { min: number; max: number } | null;
   loyaltyCalls90d: { min: number; max: number } | null;
   holdSeconds: { min: number; max: number } | null;
+  // 0..1 — model churn probability
+  churnProbability: { min: number; max: number } | null;
 };
 
 export const EMPTY_FILTERS: CustomerFilters = {
@@ -58,6 +60,7 @@ export const EMPTY_FILTERS: CustomerFilters = {
   speedDeficitPct: null,
   loyaltyCalls90d: null,
   holdSeconds: null,
+  churnProbability: null,
 };
 
 export type FilterFacets = {
@@ -227,6 +230,12 @@ export function applyCustomerFilters(
     const hold = c.signals?.totalHoldSeconds ?? 0;
     if (f.holdSeconds && (hold < f.holdSeconds.min || hold > f.holdSeconds.max)) return false;
 
+    if (
+      f.churnProbability &&
+      (c.riskScore < f.churnProbability.min || c.riskScore > f.churnProbability.max)
+    )
+      return false;
+
     return true;
   });
 }
@@ -246,6 +255,7 @@ export function filtersToQueryBody(f: CustomerFilters) {
   if (f.speedDeficitPct) out.speedDeficitPct = f.speedDeficitPct;
   if (f.loyaltyCalls90d) out.loyaltyCalls90d = f.loyaltyCalls90d;
   if (f.holdSeconds) out.holdSeconds = f.holdSeconds;
+  if (f.churnProbability) out.churnProbability = f.churnProbability;
   return out;
 }
 
@@ -264,6 +274,7 @@ export function countActiveFilters(f: CustomerFilters): number {
   if (f.speedDeficitPct) n++;
   if (f.loyaltyCalls90d) n++;
   if (f.holdSeconds) n++;
+  if (f.churnProbability) n++;
   return n;
 }
 
