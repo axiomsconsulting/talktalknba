@@ -12,7 +12,8 @@
 
 import type { RiskTier } from "./nba";
 import type { NbaRule } from "./nbaRulesStore";
-import type { NbaTriggerKey } from "./customers";
+import type { Customer, NbaTriggerKey } from "./customers";
+import { arpuFromLineSpeed, TALKTALK_PRODUCTS, type Product } from "./products";
 
 // Annualised churn rates inferred from segment_risk_summary average scores.
 // (Tuned so total expected losses ≈ revenue at risk in the dashboard.)
