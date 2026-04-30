@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Loader2,
 } from "lucide-react";
 import {
   Sheet,
