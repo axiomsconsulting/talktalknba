@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Crown, Sparkles, RefreshCcw, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Crown, Sparkles, RefreshCcw, Loader2, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProvenanceTag } from "@/components/ProvenanceTag";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { CustomerDetail } from "@/components/CustomerDetail";
+import { useCustomerStore } from "@/data/customerStore";
+import { useNbaRulesStore } from "@/data/nbaRulesStore";
+import { DEFAULT_MAPPING, mapCustomers, type RawCustomerRow } from "@/data/customerMapping";
+import type { Customer } from "@/data/customers";
 
 type Reason = { feature: string; impact: number };
 type TopCustomer = {
@@ -40,6 +52,17 @@ export function TopImpactedCustomers() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 5;
 
+  // Drawer state for the per-customer profile.
+  const [drawerOpenId, setDrawerOpenId] = useState<string | null>(null);
+  const [drawerCustomer, setDrawerCustomer] = useState<Customer | null>(null);
+  const [drawerBusy, setDrawerBusy] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+  const [drawerLimited, setDrawerLimited] = useState(false);
+
+  const allCustomers = useCustomerStore((s) => s.customers);
+  const { rules, loaded: rulesLoaded, load: loadRules } = useNbaRulesStore();
+  useEffect(() => { if (!rulesLoaded) loadRules(); }, [rulesLoaded, loadRules]);
+
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -57,6 +80,53 @@ export function TopImpactedCustomers() {
   useEffect(() => {
     void load();
   }, []);
+
+  const openProfile = async (customerId: string) => {
+    setDrawerOpenId(customerId);
+    setDrawerError(null);
+    setDrawerLimited(false);
+
+    // Try in-memory first.
+    const local = allCustomers.find((c) => c.id === customerId);
+    if (local) {
+      setDrawerCustomer(local);
+      return;
+    }
+
+    // Fall back to MotherDuck single-row lookup.
+    setDrawerCustomer(null);
+    setDrawerBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/connections/customer-detail-motherduck", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ customerId }),
+      });
+      const json = (await res.json()) as {
+        kinds?: { customer_info?: { headers: string[]; rows: unknown[][] } };
+        error?: string;
+      };
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      const ci = json.kinds?.customer_info;
+      if (!ci || ci.rows.length === 0) {
+        setDrawerError("Customer not found in MotherDuck base.");
+        return;
+      }
+      const o: RawCustomerRow = {};
+      ci.headers.forEach((h, i) => { o[h] = ci.rows[0][i] as RawCustomerRow[string]; });
+      const mapped = mapCustomers([o], DEFAULT_MAPPING)[0] ?? null;
+      setDrawerCustomer(mapped);
+      setDrawerLimited(true);
+    } catch (e) {
+      setDrawerError((e as Error).message);
+    } finally {
+      setDrawerBusy(false);
+    }
+  };
 
   const empty = !loading && rows.length === 0;
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
@@ -121,6 +191,7 @@ export function TopImpactedCustomers() {
                   <th className="px-3 py-2 text-left">Top reasons</th>
                   <th className="px-3 py-2 text-left">Recommended NBA</th>
                   <th className="px-3 py-2 text-right">Expected save</th>
+                  <th className="px-3 py-2 text-right w-[80px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -136,9 +207,16 @@ export function TopImpactedCustomers() {
                     <tr key={r.id} className="border-t border-border hover:bg-muted/30 align-top">
                       <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.rank}</td>
                       <td className="px-3 py-2 font-mono text-[11px] leading-tight w-[120px] break-all">
-                        {idLines.map((line, i) => (
-                          <div key={i}>{line}</div>
-                        ))}
+                        <button
+                          type="button"
+                          onClick={() => openProfile(id)}
+                          className="text-left text-primary hover:underline"
+                          title="Open customer profile"
+                        >
+                          {idLines.map((line, i) => (
+                            <div key={i}>{line}</div>
+                          ))}
+                        </button>
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         <span
@@ -171,6 +249,17 @@ export function TopImpactedCustomers() {
                       </td>
                       <td className="px-3 py-2 text-[12px]">{r.recommended_nba ?? "—"}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{gbp(r.expected_save_gbp)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openProfile(id)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          title="Open full profile"
+                        >
+                          <Maximize2 className="size-3" />
+                          Profile
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -198,6 +287,50 @@ export function TopImpactedCustomers() {
           </div>
         </>
       )}
+
+      <Sheet
+        open={drawerOpenId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDrawerOpenId(null);
+            setDrawerCustomer(null);
+            setDrawerError(null);
+            setDrawerLimited(false);
+          }
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-[640px] p-0 overflow-y-auto">
+          <SheetHeader className="px-5 sm:px-7 pt-6 pb-2 text-left">
+            <SheetTitle className="text-base font-semibold">Customer profile</SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              Top-50 ranked customer · full attributes, behavioural signals, SHAP drivers and the
+              computed Next Best Action.
+            </SheetDescription>
+          </SheetHeader>
+          {drawerLimited && drawerCustomer && (
+            <div className="mx-5 sm:mx-7 mt-2 px-3 py-2 text-[11px] bg-amber-500/10 border border-amber-500/30 rounded text-amber-700">
+              Data is limited — single-row lookup against the full MotherDuck base. Behavioural
+              signals may be incomplete.
+            </div>
+          )}
+          <div className="p-3 sm:p-5">
+            {drawerBusy && (
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground gap-2">
+                <Loader2 className="size-4 animate-spin text-primary" />
+                Loading profile from MotherDuck…
+              </div>
+            )}
+            {drawerError && !drawerBusy && (
+              <div className="px-4 py-6 text-sm text-[var(--risk-high)] text-center">
+                {drawerError}
+              </div>
+            )}
+            {drawerCustomer && !drawerBusy && (
+              <CustomerDetail customer={drawerCustomer} rules={rules} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }
