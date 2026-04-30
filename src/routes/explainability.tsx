@@ -470,11 +470,41 @@ function ExplainabilityPage() {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredCustomers.length === 0 && (
+            <div className="flex-1 overflow-y-auto relative">
+              {(liveBusy || fallbackBusy) && (
+                <div className="absolute inset-0 z-10 bg-card/70 backdrop-blur-[1px] flex items-center justify-center">
+                  <div className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+                    <Loader2 className="size-3.5 animate-spin text-primary" />
+                    {fallbackBusy ? "Looking up ID in MotherDuck…" : "Searching MotherDuck…"}
+                  </div>
+                </div>
+              )}
+              {filteredCustomers.length === 0 && !fallbackRow && !fallbackBusy && (
                 <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                   No customers match {appliedQuery ? `"${appliedQuery}"` : "the current filters"}.
+                  {fallbackError && (
+                    <div className="mt-2 text-[11px] text-[var(--risk-high)]">
+                      MotherDuck lookup failed: {fallbackError}
+                    </div>
+                  )}
                 </div>
+              )}
+              {fallbackRow && filteredCustomers.length === 0 && (
+                <>
+                  <div className="px-5 py-2 text-[11px] bg-amber-500/10 border-b border-amber-500/30 text-amber-700">
+                    Data is limited — single-row lookup against the full MotherDuck base. Behavioural signals may be incomplete.
+                  </div>
+                  <CustomerRow
+                    key={fallbackRow.id}
+                    customer={fallbackRow}
+                    selected={selectedId === fallbackRow.id}
+                    onSelect={() => setSelectedId(fallbackRow.id)}
+                    onExpand={() => {
+                      setSelectedId(fallbackRow.id);
+                      setDrawerOpenId(fallbackRow.id);
+                    }}
+                  />
+                </>
               )}
               {visibleCustomers.map((c) => (
                 <CustomerRow
