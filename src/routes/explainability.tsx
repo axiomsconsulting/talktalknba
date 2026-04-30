@@ -214,6 +214,64 @@ function ExplainabilityPage() {
     );
   }, [appliedQuery, allCustomers, mdLiveEnabled, liveRows, appliedFilters]);
 
+  // ── MotherDuck single-ID fallback ────────────────────────────────────────
+  // If the user pastes a UUID-like identifier and nothing matches locally
+  // (or in the live search result set), look it up directly against the full
+  // 3.5M base via customer-detail-motherduck. Surface a "data is limited"
+  // banner so the analyst knows the row came from a partial lookup.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const [fallbackRow, setFallbackRow] = useState<Customer | null>(null);
+  const [fallbackBusy, setFallbackBusy] = useState(false);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
+  const trimmedQuery = appliedQuery.trim();
+  const shouldFallback =
+    !!trimmedQuery &&
+    UUID_RE.test(trimmedQuery) &&
+    !liveBusy &&
+    filteredCustomers.length === 0;
+  useEffect(() => {
+    if (!shouldFallback) {
+      setFallbackRow(null);
+      setFallbackError(null);
+      return;
+    }
+    let cancelled = false;
+    setFallbackBusy(true);
+    setFallbackError(null);
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch("/api/admin/connections/customer-detail-motherduck", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ customerId: trimmedQuery }),
+        });
+        const json = (await res.json()) as {
+          kinds?: { customer_info?: { headers: string[]; rows: unknown[][] } };
+          error?: string;
+        };
+        if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+        const ci = json.kinds?.customer_info;
+        if (!ci || ci.rows.length === 0) {
+          if (!cancelled) setFallbackRow(null);
+          return;
+        }
+        const o: RawCustomerRow = {};
+        ci.headers.forEach((h, i) => { o[h] = ci.rows[0][i] as RawCustomerRow[string]; });
+        const mapped = mapCustomers([o], DEFAULT_MAPPING)[0] ?? null;
+        if (!cancelled) setFallbackRow(mapped);
+      } catch (e) {
+        if (!cancelled) setFallbackError((e as Error).message);
+      } finally {
+        if (!cancelled) setFallbackBusy(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [shouldFallback, trimmedQuery]);
+
   const totalCustomersForCount = mdLiveEnabled ? liveTotalAll : allCustomers.length;
   const matchesCount = mdLiveEnabled ? liveTotal : filteredCustomers.length;
   const pageCount = mdLiveEnabled
