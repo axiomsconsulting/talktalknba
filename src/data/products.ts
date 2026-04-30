@@ -202,3 +202,32 @@ export function averageBroadbandArpu(products: Product[]): number {
   const sum = broadband.reduce((acc, p) => acc + p.monthlyPriceGbp, 0);
   return sum / broadband.length;
 }
+
+/**
+ * Pick the live broadband product whose headline speed is closest to the
+ * customer's measured line speed, and return its monthly price. Used by the
+ * per-customer expected-save calculation so a customer on a 65 Mbps line is
+ * costed against Fibre 65 (£26) rather than a flat £25 average.
+ *
+ * Returns null when no broadband products are active or the speed is invalid.
+ */
+export function arpuFromLineSpeed(
+  speedMbps: number,
+  products: Product[] = TALKTALK_PRODUCTS,
+): { product: Product; arpu: number } | null {
+  if (!Number.isFinite(speedMbps) || speedMbps <= 0) return null;
+  const broadband = products.filter(
+    (p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U"),
+  );
+  if (broadband.length === 0) return null;
+  let best = broadband[0];
+  let bestDelta = Math.abs(best.speedMbps - speedMbps);
+  for (const p of broadband) {
+    const d = Math.abs(p.speedMbps - speedMbps);
+    if (d < bestDelta) {
+      best = p;
+      bestDelta = d;
+    }
+  }
+  return { product: best, arpu: best.monthlyPriceGbp };
+}

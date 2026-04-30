@@ -25,6 +25,12 @@ export type NbaRule = {
     monthlyDownloadGb: number | null;
   };
   costPerContactGbp: number;
+  // One-off cash credit applied to the customer's account (e.g. £15 service
+  // credit alongside an engineer dispatch). 0 when not applicable.
+  flatCreditGbp: number;
+  // Cost of an engineer visit added to cost-to-serve when the rule includes
+  // an engineer dispatch. 0 when not applicable.
+  engineerCostGbp: number;
   isActive: boolean;
   displayOrder: number;
 };
@@ -54,6 +60,8 @@ type DbRow = {
   min_speed_deficit_pct: number | null;
   min_monthly_download_gb: number | null;
   cost_per_contact_gbp: number;
+  flat_credit_gbp: number | null;
+  engineer_cost_gbp: number | null;
   is_active: boolean;
   display_order: number;
 };
@@ -76,6 +84,8 @@ function fromDb(r: DbRow): NbaRule {
       monthlyDownloadGb: r.min_monthly_download_gb == null ? null : Number(r.min_monthly_download_gb),
     },
     costPerContactGbp: Number(r.cost_per_contact_gbp),
+    flatCreditGbp: r.flat_credit_gbp == null ? 0 : Number(r.flat_credit_gbp),
+    engineerCostGbp: r.engineer_cost_gbp == null ? 0 : Number(r.engineer_cost_gbp),
     isActive: r.is_active,
     displayOrder: r.display_order,
   };
@@ -119,6 +129,8 @@ export const useNbaRulesStore = create<RulesState>((set, get) => ({
         min_speed_deficit_pct: rule.thresholds.speedDeficitPct,
         min_monthly_download_gb: rule.thresholds.monthlyDownloadGb,
         cost_per_contact_gbp: rule.costPerContactGbp,
+        flat_credit_gbp: rule.flatCreditGbp,
+        engineer_cost_gbp: rule.engineerCostGbp,
         is_active: rule.isActive,
       })
       .eq("id", rule.id);
