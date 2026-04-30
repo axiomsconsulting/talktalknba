@@ -400,6 +400,25 @@ export function CustomerFiltersBar({
         step={30}
         onChange={(v) => onChange({ ...filters, holdSeconds: v })}
       />
+      <RangeFilter
+        label="Churn prob (%)"
+        bounds={{ min: 0, max: 100 }}
+        value={
+          filters.churnProbability
+            ? {
+                min: Math.round(filters.churnProbability.min * 100),
+                max: Math.round(filters.churnProbability.max * 100),
+              }
+            : null
+        }
+        step={1}
+        onChange={(v) =>
+          onChange({
+            ...filters,
+            churnProbability: v ? { min: v.min / 100, max: v.max / 100 } : null,
+          })
+        }
+      />
 
       {active > 0 && (
         <Button
