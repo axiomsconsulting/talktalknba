@@ -364,6 +364,30 @@ function RuleEditor({
               onValueChange={(v) => onPatch({ costPerContactGbp: v[0] / 100 })}
             />
           </FieldRow>
+          <FieldRow
+            label={`Flat credit · ${formatGbp(rule.flatCreditGbp ?? 0)}`}
+            hint="One-off cash credit applied to the customer's account (e.g. £15 service credit)"
+          >
+            <Slider
+              value={[(rule.flatCreditGbp ?? 0) * 100]}
+              min={0}
+              max={10000}
+              step={50}
+              onValueChange={(v) => onPatch({ flatCreditGbp: v[0] / 100 })}
+            />
+          </FieldRow>
+          <FieldRow
+            label={`Engineer dispatch cost · ${formatGbp(rule.engineerCostGbp ?? 0)}`}
+            hint="Added to cost-to-serve when the rule includes an engineer visit. £0 when not applicable."
+          >
+            <Slider
+              value={[(rule.engineerCostGbp ?? 0) * 100]}
+              min={0}
+              max={20000}
+              step={100}
+              onValueChange={(v) => onPatch({ engineerCostGbp: v[0] / 100 })}
+            />
+          </FieldRow>
         </Section>
 
         {/* Eligibility */}

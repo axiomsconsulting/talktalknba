@@ -1,60 +1,127 @@
-## Why the count is 945, not 3,545,538
+# Plan
 
-The MotherDuck connection genuinely sees the full **3.5M** customer base — that's what the facets endpoint reports. The drop to **945** happens entirely in the browser-side hydrator that powers the dashboards:
+Four independent fixes on the **Explainability** page and supporting data layer.
 
-1. On every page load, `src/data/liveCustomerHydrator.ts` calls `POST /api/admin/connections/snapshot-motherduck` with a hardcoded `rowLimit: 5_000` (line 139).
-2. The server endpoint `api.admin.connections.snapshot-motherduck.ts` itself caps `rowLimit` at **20,000** (line 41: `Math.min(20_000, …)`).
-3. The 5,000 raw `customer_info` rows are then run through `mapCustomers` in `customerMapping.ts`, which dedupes by `unique_customer_identifier` and drops rows missing required fields — that filter is what produces the **945** unique customers actually loaded into the in-memory store.
-4. Every drilldown (Explainability, Net ROI, Top Impacted, etc.) reads from this in-memory store, so they all inherit the 945-customer ceiling.
+---
 
-In short: the "live" badge is honest about the connection but dishonest about the scope. The analysis is **not** running on the full base — it's running on a 5,000-row uniform sample that collapses to ~945 usable customers.
+## 1. Accurate per-customer expected-save calculation
 
-## Why we cannot just load all 3.5M
+**Problem.** Two places use bad assumptions:
+- `code/2 score_top50.ipynb` (and the bundled copy in `src/data/trainingScripts.ts`) computes `expected_save = churn_prob × £25 ARPU × 12 × 0.5`. The 50% success rate is a **portfolio** assumption, not an individual one, and £25 is a flat ARPU.
+- `src/routes/explainability.tsx` `CustomerDetail` does `ltv − dilution − costToServe`, which doesn't even multiply by churn probability and ignores flat credits / engineer dispatch costs.
 
-The dashboards (charts, sortable tables, SHAP drilldowns, ROI sims) hold every customer in browser memory and re-score them client-side on every filter change. 3.5M rows × ~40 fields would be ~1–2 GB of JSON over the wire and would lock up the tab. The right fix is **server-side aggregation for KPIs/charts** plus a **larger working sample for drilldown**, not "ship everything to the browser."
+**Fix — new helper `computeCustomerExpectedSave()` in `src/data/financials.ts`:**
 
-## Plan
+For an individual customer:
+```
+arpuMonthly      = nearestArpuFromLineSpeed(customer)         // see §1a
+horizonMonths    = matchedRule.contractMonths || 24
+churnProb        = customer.riskScore
+discountPct      = matchedRule.discountPct
+flatCreditGbp    = matchedRule.flatCreditGbp ?? 0             // NEW field
+costPerContact   = matchedRule.costPerContactGbp
+engineerCostGbp  = matchedRule.engineerCostGbp ?? 0           // NEW field
 
-### 1. Raise the working-sample ceiling (fast win)
-- Bump the snapshot hardcap in `api.admin.connections.snapshot-motherduck.ts` from 20,000 → **250,000**.
-- Bump the hydrator's request from `5_000` → **100,000** (configurable, see step 3).
-- Switch `customer_info` selection from `ORDER BY unique_customer_identifier LIMIT N` to `USING SAMPLE N ROWS` so the loaded set is a uniform random sample of the full base, not the alphabetically-first slice.
-- Stream the response (NDJSON) instead of buffering the full JSON array, and parse incrementally in the hydrator to keep peak memory bounded.
+grossRetained    = churnProb × arpuMonthly × horizonMonths
+discountDilution = churnProb × arpuMonthly × horizonMonths × (discountPct/100)
+flatCredit       = churnProb × flatCreditGbp                  // one-off, weighted
+costToServe      = costPerContact + engineerCostGbp           // per individual
+expectedSaveGbp  = grossRetained − discountDilution − flatCredit − costToServe
+```
 
-This alone takes drilldown from 945 → ~50–80k unique customers, statistically representative of all 3.5M.
+Key change vs today: **NO 50% success-rate factor at the individual level** — that's a campaign-level conversion rate, not a per-customer probability.
 
-### 2. True full-population KPIs (correctness win)
-Add a new endpoint `POST /api/admin/connections/aggregate-motherduck` that runs the headline statistics **inside MotherDuck** against the full table — no row transfer:
-- Total customers, churn-tier distribution, revenue-at-risk, ARPU bands, region/package/contract breakdowns, tenure histogram, NBA-eligible counts.
-- Returns a small JSON aggregate (~tens of KB) regardless of base size.
+### 1a. ARPU from line speed via TalkTalk catalogue
 
-Wire the Executive Summary, ROI Simulator headline, and Strategy KPIs to this endpoint when MotherDuck is the active source, so the *numbers* reflect 3.5M even though the *drilldown table* shows the 100k sample.
+New helper `arpuFromLineSpeed(speedMbps, products)` in `src/data/products.ts`:
+- Only consider active Broadband + TalkTalk U products.
+- Return `monthlyPriceGbp` of the product whose `speedMbps` is closest to the customer's `signals.lineSpeedMbps` (fallback to current `customer.monthlyArpu` if no signal).
 
-### 3. Make the cap visible and adjustable
-- Show "**100,000 of 3,545,538 customers loaded** (uniform random sample · headline KPIs computed on full base)" in the Active customer source card on `/data`, replacing the misleading "945 customers loaded".
-- Add a numeric input (default 100k, max 250k) in the MotherDuck connector card so an admin can tune the working-sample size for their machine.
-- Persist the chosen size on the `data_connections.config` row so it survives reloads.
+### 1b. Schema additions for rules
 
-### 4. Targeted single-customer lookup stays full-base
-The existing `/api/admin/connections/query-motherduck` endpoint already accepts `customerId` and queries MotherDuck live for any specific identifier. Surface a "Look up any customer (full 3.5M base)" search box on the Explainability page that calls this endpoint and injects the result into the in-memory store on demand — so even though the bulk drilldown is sampled, any individual customer in the full base can be inspected.
+Migration on `nba_rules`:
+```sql
+ALTER TABLE public.nba_rules
+  ADD COLUMN flat_credit_gbp numeric NOT NULL DEFAULT 0,
+  ADD COLUMN engineer_cost_gbp numeric NOT NULL DEFAULT 0;
+```
+Surface both fields in `nbaRulesStore.ts` and the `/nba-rules` editor so an operator can model the **£15 service credit** and the **engineer dispatch cost** the treatment matrix already references.
 
-## Technical details
+### 1c. Wire it in
 
-- **Files to edit**
-  - `src/routes/api.admin.connections.snapshot-motherduck.ts` — raise cap, switch to `USING SAMPLE`, stream NDJSON.
-  - `src/data/liveCustomerHydrator.ts` — request 100k, parse stream, read configured size from connection.
-  - `src/routes/api.admin.connections.aggregate-motherduck.ts` — new endpoint returning full-base aggregates.
-  - `src/routes/data.tsx` — fix the "Active customer source" line; add sample-size control.
-  - `src/routes/index.tsx` / `src/routes/strategy.tsx` / `src/components/RoiSimulator.tsx` — read headline KPIs from the new aggregate endpoint when source is MotherDuck.
-  - `src/routes/explainability.tsx` — add full-base customer lookup that hits `query-motherduck`.
+- **`CustomerDetail`** (Explainability inline + drawer): replace the current `ltv/dilution/cost` pills with the new breakdown — Gross retained, Discount dilution, Flat credit, Cost-to-serve, **Expected save (£)**.
+- **`TopImpactedCustomers`**: recompute `expected_save_gbp` on the fly using the same helper (rather than the stored placeholder), so the table is consistent with the customer drawer.
 
-- **Why ~945 specifically**: `mapCustomers` requires non-null `unique_customer_identifier`, `tenure_months`, `mrr` and a parseable `package`. On the 5,000-row alphabetical slice currently pulled, only ~945 rows satisfy all four. Switching to `USING SAMPLE` plus the larger N also raises the keep-rate because the sample is no longer biased to one corner of the table.
+---
 
-- **No database migrations required.** Connector config is stored in the existing `data_connections.config` JSONB column.
+## 2. Top-50 profile drawer
 
-- **No new secrets / connectors.** Uses the existing MotherDuck connection.
+In `src/components/TopImpactedCustomers.tsx`:
+- Add a "View profile" trigger on each row.
+- Open the same right-side `<Sheet>` used by the search list, rendering `CustomerDetail`.
+- Need to convert the `top_customers` row → `Customer` shape: lift the existing mapping logic out of `liveCustomerHydrator` into a small `topCustomerToCustomer()` helper, or fetch the live row from MotherDuck on demand using `/api/admin/connections/customer-detail-motherduck` (already exists) when MotherDuck is enabled, otherwise fall back to the persisted `features` JSON.
 
-## Out of scope (call out, do not implement)
+The drawer state and `CustomerDetail` are already exported in `explainability.tsx`; export `CustomerDetail` from there or move it to its own file (`src/components/CustomerDetail.tsx`) so both consumers share it.
 
-- Replacing the in-memory client store with a server-paged grid for the customer list — much larger refactor; the 100k working sample + full-base aggregates closes the credibility gap without it.
-- Caching aggregates in Postgres — MotherDuck is fast enough at this size; we can revisit if latency becomes a problem.
+---
+
+## 3. Customer search reliability
+
+### 3a. Loading indicator while results stale
+- Currently `liveBusy` only colours the Search button. Add a full overlay (semi-opaque + spinner) on the results list when `liveBusy && visibleCustomers.length>0` so the analyst clearly sees the previous results are out-of-date.
+- Disable row clicks while `liveBusy`.
+
+### 3b. Filter on churn probability & risk tier
+- `riskTiers` filter UI already exists in `CustomerFiltersBar` — but it's not wired into MotherDuck (server endpoint ignores `riskTiers`). Add a `churnProbability { min, max }` (0–1) filter to `CustomerFilters` + UI slider.
+- Server `search-motherduck`: derive risk tier and churn probability live using the same scoring formula used elsewhere (or, if the table has a `risk_score`/`churn_prob` column, pick it via the same `pick(...)` helper). Add `addRange(churnProbCol, f.churnProbability)` and a tier WHERE clause that maps tiers → score bands (High ≥0.7, Medium 0.4–0.7, Low <0.4).
+
+### 3c. Exact-ID lookup fallback to MotherDuck
+
+Today, in non-MotherDuck mode the search is only the in-memory store; in MotherDuck mode it hits the live table but the analyst gets nothing if the ID isn't found.
+- When the local search returns 0 rows and the input *looks like* a customer ID (UUID/long alphanumeric), call the existing `/api/admin/connections/customer-detail-motherduck` endpoint as a fallback.
+- If found: prepend the result with a yellow "Live lookup · data limited (no behavioural enrichment)" badge.
+- If not found: call a new `/api/admin/connections/search-motherduck` request with `q=input` (already supports ILIKE) and surface the top 5 closest matches under a "Did you mean…" header.
+- All while showing the spinner (§3a).
+
+---
+
+## 4. Correct feature importance
+
+The shipped `out/feature_importance.csv` (XGBoost gain) doesn't match the hard-coded list in `src/data/nba.ts`. The screenshot the user sent matches the CSV exactly.
+
+Replace `featureImportance` and add labels in `src/data/nba.ts`:
+```ts
+export const featureImportance = [
+  { feature: "tenure_days",         importance: 0.314 },
+  { feature: "contract_dd_cancels", importance: 0.195 },
+  { feature: "dd_cancel_60_day",    importance: 0.136 },
+  { feature: "ooc_days",            importance: 0.086 },
+  { feature: "avg_talk_seconds",    importance: 0.078 },
+  { feature: "avg_hold_seconds",    importance: 0.066 },
+  { feature: "speed",               importance: 0.040 },
+  { feature: "line_speed",          importance: 0.030 },
+  { feature: "avg_upload_mbs",      importance: 0.023 },
+  { feature: "avg_download_mbs",    importance: 0.019 },
+  { feature: "loyalty_calls_90d",   importance: 0.014 },
+  // The four zero-importance categoricals are intentionally omitted from the chart.
+];
+```
+Update `featureLabels` to add `avg_talk_seconds`, `avg_hold_seconds`, `speed`, `line_speed`, `avg_upload_mbs`, `loyalty_calls_90d`. Update the section subtitle ("9 features" → "11 active features · 4 zero-gain") and AUC chip (keep 0.85 from `model_training_stats.json` — currently shows 0.87).
+
+---
+
+## Files touched
+
+- `src/data/nba.ts` — corrected feature importance + labels.
+- `src/data/financials.ts` — `computeCustomerExpectedSave()`, accepts new rule fields.
+- `src/data/products.ts` — `arpuFromLineSpeed()` helper.
+- `src/data/nbaRulesStore.ts` — load/save `flatCreditGbp`, `engineerCostGbp`.
+- `src/routes/nba-rules.tsx` — editor inputs for the two new fields.
+- DB migration adding the two columns to `nba_rules`.
+- `src/components/CustomerDetail.tsx` (extracted) — new shared component using the helper.
+- `src/routes/explainability.tsx` — uses extracted component, adds search loading overlay, churn-prob filter, MotherDuck ID fallback.
+- `src/components/CustomerFiltersBar.tsx` — add churn-probability slider, ensure risk-tier filter applies.
+- `src/routes/api.admin.connections.search-motherduck.ts` — handle `riskTiers` and `churnProbability` filters.
+- `src/components/TopImpactedCustomers.tsx` — profile drawer + recompute expected save with shared helper.
+
+No changes to the Python notebooks themselves — the fix lives in the app, where the live data is. The notebook-side placeholder remains documented as such.

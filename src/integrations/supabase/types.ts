@@ -324,6 +324,8 @@ export type Database = {
           discount_pct: number
           display_order: number
           eligible_packages: string[]
+          engineer_cost_gbp: number
+          flat_credit_gbp: number
           id: string
           is_active: boolean
           label: string
@@ -344,6 +346,8 @@ export type Database = {
           discount_pct?: number
           display_order?: number
           eligible_packages?: string[]
+          engineer_cost_gbp?: number
+          flat_credit_gbp?: number
           id?: string
           is_active?: boolean
           label: string
@@ -364,6 +368,8 @@ export type Database = {
           discount_pct?: number
           display_order?: number
           eligible_packages?: string[]
+          engineer_cost_gbp?: number
+          flat_credit_gbp?: number
           id?: string
           is_active?: boolean
           label?: string

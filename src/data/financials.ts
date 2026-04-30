@@ -12,7 +12,8 @@
 
 import type { RiskTier } from "./nba";
 import type { NbaRule } from "./nbaRulesStore";
-import type { NbaTriggerKey } from "./customers";
+import type { Customer, NbaTriggerKey } from "./customers";
+import { arpuFromLineSpeed, TALKTALK_PRODUCTS, type Product } from "./products";
 
 // Annualised churn rates inferred from segment_risk_summary average scores.
 // (Tuned so total expected losses ≈ revenue at risk in the dashboard.)
@@ -148,5 +149,111 @@ export function summariseRuleFinancials(rows: RuleFinancials[], avgLtvPerSave: n
     totalLtvGbp: Math.round(totalLtv),
     ltvBudgetUsedPct:
       totalLtv > 0 ? Number((((totals.dilutionGbp + totals.costToServeGbp) / totalLtv) * 100).toFixed(1)) : 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-customer expected save
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The Top-50 placeholder formula (`prob × £25 ARPU × 12 × 0.5`) and the old
+// `CustomerDetail` formula (LTV − dilution − cost, no probability) both gave
+// the wrong answer for an *individual* customer:
+//
+//   - The 50% success rate is a *campaign-level* conversion rate, not the
+//     probability that a particular customer's account survives. At the
+//     individual level the relevant probability is `customer.riskScore`
+//     (the model's predicted churn probability — i.e. what we save by
+//     contacting them at all).
+//   - £25 was a flat ARPU. We can do better: pick the live TalkTalk product
+//     whose headline speed is closest to the customer's measured line speed
+//     and use its monthly price.
+//   - The old formula ignored flat credits (e.g. £15 service credit) and
+//     engineer dispatch costs that are intrinsic to certain rules.
+//
+// All four come from the rule the customer is matched to, so an operator
+// editing /nba-rules immediately changes every customer's projected save.
+
+export type CustomerExpectedSave = {
+  arpuMonthly: number;
+  arpuSource: "line-speed-match" | "customer-record";
+  matchedProduct: Product | null;
+  horizonMonths: number;
+  churnProb: number;
+  discountPct: number;
+  flatCreditGbp: number;
+  costPerContactGbp: number;
+  engineerCostGbp: number;
+  // £ amounts. All weighted by churnProb where appropriate.
+  grossRetainedGbp: number;
+  discountDilutionGbp: number;
+  flatCreditWeightedGbp: number;
+  costToServeGbp: number;
+  expectedSaveGbp: number;
+};
+
+export function computeCustomerExpectedSave(
+  customer: Pick<
+    Customer,
+    "riskScore" | "monthlyArpu" | "nbaTrigger" | "signals"
+  >,
+  rules: NbaRule[],
+  products: Product[] = TALKTALK_PRODUCTS,
+): CustomerExpectedSave {
+  const triggerKey = (customer.nbaTrigger ?? "nurture") as NbaTriggerKey;
+  const rule = rules.find((r) => r.triggerKey === triggerKey) ?? null;
+
+  // 1. ARPU — closest TalkTalk product to the customer's actual line speed.
+  const lineSpeed = customer.signals?.lineSpeedMbps ?? 0;
+  const match = arpuFromLineSpeed(lineSpeed, products);
+  const arpuMonthly = match ? match.arpu : customer.monthlyArpu;
+  const arpuSource: CustomerExpectedSave["arpuSource"] = match
+    ? "line-speed-match"
+    : "customer-record";
+
+  // 2. Horizon — re-contract length the rule offers, fallback 24 months
+  //    (same default we use everywhere else in the app).
+  const horizonMonths =
+    rule && rule.contractMonths > 0 ? rule.contractMonths : 24;
+
+  // 3. Discounts, credits, costs.
+  const churnProb = Math.max(0, Math.min(1, customer.riskScore));
+  const discountPct = rule?.discountPct ?? 0;
+  const flatCreditGbp = rule?.flatCreditGbp ?? 0;
+  const costPerContactGbp = rule?.costPerContactGbp ?? 0;
+  const engineerCostGbp = rule?.engineerCostGbp ?? 0;
+
+  // 4. Build the breakdown.
+  // grossRetained = expected revenue we'd lose if the customer churned, over
+  // the proposed re-contract horizon. Equivalent to "saved revenue at the
+  // *individual* level" weighted by their churn probability.
+  const grossRetainedGbp = churnProb * arpuMonthly * horizonMonths;
+  const discountDilutionGbp =
+    churnProb * arpuMonthly * horizonMonths * (discountPct / 100);
+  // Credit and engineer cost are one-offs. The credit is paid only if the
+  // customer engages (probability of churn approximates probability of
+  // hitting the save desk / accepting); engineer dispatch is incurred per
+  // contact regardless.
+  const flatCreditWeightedGbp = churnProb * flatCreditGbp;
+  const costToServeGbp = costPerContactGbp + engineerCostGbp;
+
+  const expectedSaveGbp =
+    grossRetainedGbp - discountDilutionGbp - flatCreditWeightedGbp - costToServeGbp;
+
+  return {
+    arpuMonthly,
+    arpuSource,
+    matchedProduct: match?.product ?? null,
+    horizonMonths,
+    churnProb,
+    discountPct,
+    flatCreditGbp,
+    costPerContactGbp,
+    engineerCostGbp,
+    grossRetainedGbp: Math.round(grossRetainedGbp),
+    discountDilutionGbp: Math.round(discountDilutionGbp),
+    flatCreditWeightedGbp: Math.round(flatCreditWeightedGbp),
+    costToServeGbp: Math.round(costToServeGbp),
+    expectedSaveGbp: Math.round(expectedSaveGbp),
   };
 }

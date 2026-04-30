@@ -51,6 +51,7 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
             speedDeficitPct?: { min?: number; max?: number };
             loyaltyCalls90d?: { min?: number; max?: number };
             holdSeconds?: { min?: number; max?: number };
+            churnProbability?: { min?: number; max?: number };
           };
         } = {};
         try {
@@ -121,6 +122,7 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
           const speedDeficitCol = pick("speed_deficit_pct");
           const loyaltyCol = pick("loyalty_calls_90d", "calls_90d");
           const holdCol = pick("total_hold_seconds", "hold_seconds");
+          const churnCol = pick("risk_score", "churn_prob", "churn_probability");
 
           // Build WHERE clauses & values defensively. Each clause is wrapped
           // in TRY_CAST so a bad cell never aborts the whole query.
@@ -161,6 +163,29 @@ export const Route = createFileRoute("/api/admin/connections/search-motherduck")
           addRange(speedDeficitCol, f.speedDeficitPct);
           addRange(loyaltyCol, f.loyaltyCalls90d);
           addRange(holdCol, f.holdSeconds);
+          addRange(churnCol, f.churnProbability);
+
+          // Risk-tier filter — convert tiers to score bands when the table
+          // exposes a churn-probability column. If no column is available we
+          // simply skip the clause (the in-memory filter still applies on
+          // client-side after the rows arrive).
+          if (churnCol && f.riskTiers && f.riskTiers.length > 0) {
+            const bandClauses: string[] = [];
+            for (const tier of f.riskTiers) {
+              if (tier === "High") {
+                bandClauses.push(`TRY_CAST(${churnCol} AS DOUBLE) >= 0.7`);
+              } else if (tier === "Medium") {
+                bandClauses.push(
+                  `TRY_CAST(${churnCol} AS DOUBLE) >= 0.4 AND TRY_CAST(${churnCol} AS DOUBLE) < 0.7`,
+                );
+              } else if (tier === "Low") {
+                bandClauses.push(`TRY_CAST(${churnCol} AS DOUBLE) < 0.4`);
+              }
+            }
+            if (bandClauses.length > 0) {
+              whereParts.push(`(${bandClauses.map((c) => `(${c})`).join(" OR ")})`);
+            }
+          }
 
           if (id) {
             whereParts.push(`unique_customer_identifier = $${p++}`);
