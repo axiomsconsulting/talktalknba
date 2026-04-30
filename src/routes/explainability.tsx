@@ -292,7 +292,12 @@ function ExplainabilityPage() {
 
   // Pool of customers we can pick "selected" from — live rows in MotherDuck
   // mode, otherwise the in-memory store.
-  const pool = mdLiveEnabled ? liveRows : allCustomers;
+  const pool = useMemo(() => {
+    const base = mdLiveEnabled ? liveRows : allCustomers;
+    return fallbackRow && !base.some((c) => c.id === fallbackRow.id)
+      ? [...base, fallbackRow]
+      : base;
+  }, [mdLiveEnabled, liveRows, allCustomers, fallbackRow]);
   // Auto-select the first real customer once live data lands so the detail
   // panel mirrors the active dataset rather than a stale persona.
   useEffect(() => {
