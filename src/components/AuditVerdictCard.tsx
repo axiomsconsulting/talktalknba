@@ -18,7 +18,7 @@ export function AuditVerdictCard({
   verdict: Verdict;
   title: string;
   finding: string;
-  recommendation: string;
+  recommendation?: string;
 }) {
   const m = meta[verdict];
   const Icon = m.icon;
@@ -31,7 +31,7 @@ export function AuditVerdictCard({
           <span className="text-sm font-semibold text-foreground">{title}</span>
         </div>
         <p className="text-[12.5px] text-foreground/80 leading-snug"><span className="font-medium">Finding:</span> {finding}</p>
-        <p className="text-[12.5px] text-foreground/80 leading-snug"><span className="font-medium">Recommendation:</span> {recommendation}</p>
+        {recommendation && <p className="text-[12.5px] text-foreground/80 leading-snug"><span className="font-medium">Recommendation:</span> {recommendation}</p>}
       </div>
     </div>
   );

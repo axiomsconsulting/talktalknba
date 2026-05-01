@@ -18,6 +18,7 @@ import { Route as ModelRouteImport } from './routes/model'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExplainabilityRouteImport } from './routes/explainability'
 import { Route as DataRouteImport } from './routes/data'
+import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiScoreCustomerRouteImport } from './routes/api.score-customer'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -83,6 +84,11 @@ const ExplainabilityRoute = ExplainabilityRouteImport.update({
 const DataRoute = DataRouteImport.update({
   id: '/data',
   path: '/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalysisRoute = AnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -206,6 +212,7 @@ const ApiAdminConnectionsAggregateMotherduckRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analysis': typeof AnalysisRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analysis': typeof AnalysisRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analysis': typeof AnalysisRoute
   '/data': typeof DataRoute
   '/explainability': typeof ExplainabilityRoute
   '/login': typeof LoginRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analysis'
     | '/data'
     | '/explainability'
     | '/login'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analysis'
     | '/data'
     | '/explainability'
     | '/login'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analysis'
     | '/data'
     | '/explainability'
     | '/login'
@@ -402,6 +414,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalysisRoute: typeof AnalysisRoute
   DataRoute: typeof DataRoute
   ExplainabilityRoute: typeof ExplainabilityRoute
   LoginRoute: typeof LoginRoute
@@ -496,6 +509,13 @@ declare module '@tanstack/react-router' {
       path: '/data'
       fullPath: '/data'
       preLoaderRoute: typeof DataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analysis': {
+      id: '/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AnalysisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -650,6 +670,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalysisRoute: AnalysisRoute,
   DataRoute: DataRoute,
   ExplainabilityRoute: ExplainabilityRoute,
   LoginRoute: LoginRoute,
