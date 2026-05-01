@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-05-01",
+  "sampleSize": { "customers": 50, "customer_info_rows": 1157, "usage_rows": 29302, "calls_rows": 191, "cease_rows": 31 },
+  "dateCoverage": [
+    { "table": "customer_info", "min": "2022-08-01", "max": "2024-09-01", "grain": "monthly snapshot" },
+    { "table": "usage",         "min": "2022-08-01", "max": "2024-09-01", "grain": "daily" },
+    { "table": "calls",         "min": "2022-08-06", "max": "2024-08-06", "grain": "event" },
+    { "table": "cease",         "min": "2022-09-12", "max": "2024-08-17", "grain": "event" }
+  ],
+  "nullRates": [
+    { "table": "customer_info", "column": "line_speed (=0)", "pct": 4.84 },
+    { "table": "customer_info", "column": "tenure_days",      "pct": 0 },
+    { "table": "customer_info", "column": "crm_package_name", "pct": 0 },
+    { "table": "customer_info", "column": "contract_status",  "pct": 0 },
+    { "table": "calls",         "column": "call_type",        "pct": 3.14 },
+    { "table": "usage",         "column": "usage_download_mbs", "pct": 0 },
+    { "table": "cease",         "column": "reason_description_insight", "pct": 0 }
+  ],
+  "typeDrift": [
+    { "column": "usage_download_mbs", "snapshot": "DOUBLE",   "live (MotherDuck)": "VARCHAR" },
+    { "column": "usage_upload_mbs",   "snapshot": "DOUBLE",   "live (MotherDuck)": "VARCHAR" },
+    { "column": "cease_completed_date","snapshot": "DATE",    "live (MotherDuck)": "VARCHAR" },
+    { "column": "dd_cancel_60_day",   "snapshot": "INTEGER", "live (MotherDuck)": "BIGINT" }
+  ],
+  "callTypes": [
+    { "type": "Tech",             "n": 79 },
+    { "type": "CS&B",             "n": 52 },
+    { "type": "Loyalty",          "n": 34 },
+    { "type": "Customer Finance", "n": 14 },
+    { "type": "(null)",           "n": 6 },
+    { "type": "FTTP",             "n": 5 },
+    { "type": "Complaints",       "n": 1 }
+  ],
+  "ceaseReasons": [
+    { "reason": "VagueReason",     "n": 22 },
+    { "reason": "CompetitorDeals", "n": 8 },
+    { "reason": "HomeMove",        "n": 1 }
+  ],
+  "contractStatus": [
+    { "status": "02 In Contract",     "n": 552 },
+    { "status": "06 OOC",             "n": 313 },
+    { "status": "01 Early Contract",  "n": 117 },
+    { "status": "03 Soon to be OOC",  "n": 89 },
+    { "status": "05 Newly OOC",       "n": 48 },
+    { "status": "04 Coming OOC",      "n": 38 }
+  ],
+  "featureImportance": [
+    { "feature": "tenure_days",          "importance": 0.314 },
+    { "feature": "contract_dd_cancels",  "importance": 0.195 },
+    { "feature": "dd_cancel_60_day",     "importance": 0.136 },
+    { "feature": "ooc_days",             "importance": 0.086 },
+    { "feature": "avg_talk_seconds",     "importance": 0.078 },
+    { "feature": "avg_hold_seconds",     "importance": 0.066 },
+    { "feature": "speed",                "importance": 0.040 },
+    { "feature": "line_speed",           "importance": 0.030 },
+    { "feature": "avg_upload_mbs",       "importance": 0.023 },
+    { "feature": "avg_download_mbs",     "importance": 0.019 },
+    { "feature": "loyalty_calls_90d",    "importance": 0.014 },
+    { "feature": "technology",           "importance": 0.000 },
+    { "feature": "sales_channel",        "importance": 0.000 },
+    { "feature": "crm_package_name",     "importance": 0.000 },
+    { "feature": "contract_status",      "importance": 0.000 }
+  ],
+  "segmentRecall": [
+    { "segment": "0-12m",  "precision": 0.84, "recall": 0.999, "n": 84724 },
+    { "segment": "12-24m", "precision": 0.77, "recall": 0.976, "n": 125430 },
+    { "segment": "24-48m", "precision": 0.71, "recall": 0.900, "n": 187533 },
+    { "segment": "48m+",   "precision": 0.66, "recall": 0.654, "n": 488698 }
+  ],
+  "riskTiers": [
+    { "tier": "High",   "customers": 1043449, "avgScore": 0.82, "avgTenureDays": 836 },
+    { "tier": "Medium", "customers": 1239063, "avgScore": 0.51, "avgTenureDays": 1944 },
+    { "tier": "Low",    "customers": 1263026, "avgScore": 0.16, "avgTenureDays": 3973 }
+  ]
+}
