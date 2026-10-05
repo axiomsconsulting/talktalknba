@@ -40,7 +40,7 @@ export const DEFAULT_MAPPING: FieldMapping = {
   technology: "technology",
 };
 
-// Heuristic ARPU by package — derived from typical TalkTalk price points.
+// Heuristic ARPU by package — derived from the configured retail price points.
 const PACKAGE_ARPU: Array<{ match: RegExp; arpu: number }> = [
   { match: /full fibre 9|g\.?fast/i, arpu: 50 },
   { match: /fibre 500/i, arpu: 47 },

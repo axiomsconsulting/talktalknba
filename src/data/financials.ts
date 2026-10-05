@@ -13,7 +13,7 @@
 import type { RiskTier } from "./nba";
 import type { NbaRule } from "./nbaRulesStore";
 import type { Customer, NbaTriggerKey } from "./customers";
-import { arpuFromLineSpeed, TALKTALK_PRODUCTS, type Product } from "./products";
+import { arpuFromLineSpeed, DEFAULT_PRODUCTS, type Product } from "./products";
 
 // Annualised churn rates inferred from segment_risk_summary average scores.
 // (Tuned so total expected losses ≈ revenue at risk in the dashboard.)
@@ -165,7 +165,7 @@ export function summariseRuleFinancials(rows: RuleFinancials[], avgLtvPerSave: n
 //     individual level the relevant probability is `customer.riskScore`
 //     (the model's predicted churn probability — i.e. what we save by
 //     contacting them at all).
-//   - £25 was a flat ARPU. We can do better: pick the live TalkTalk product
+//   - £25 was a flat ARPU. We can do better: pick the live product
 //     whose headline speed is closest to the customer's measured line speed
 //     and use its monthly price.
 //   - The old formula ignored flat credits (e.g. £15 service credit) and
@@ -198,12 +198,12 @@ export function computeCustomerExpectedSave(
     "riskScore" | "monthlyArpu" | "nbaTrigger" | "signals"
   >,
   rules: NbaRule[],
-  products: Product[] = TALKTALK_PRODUCTS,
+  products: Product[] = DEFAULT_PRODUCTS,
 ): CustomerExpectedSave {
   const triggerKey = (customer.nbaTrigger ?? "nurture") as NbaTriggerKey;
   const rule = rules.find((r) => r.triggerKey === triggerKey) ?? null;
 
-  // 1. ARPU — closest TalkTalk product to the customer's actual line speed.
+  // 1. ARPU — closest product to the customer's actual line speed.
   const lineSpeed = customer.signals?.lineSpeedMbps ?? 0;
   const match = arpuFromLineSpeed(lineSpeed, products);
   const arpuMonthly = match ? match.arpu : customer.monthlyArpu;

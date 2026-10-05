@@ -57,13 +57,13 @@ import {
 export const Route = createFileRoute("/explainability")({
   head: () => ({
     meta: [
-      { title: "Model Explainability — TalkTalk NBA" },
+      { title: "Model Explainability — Retention Decisioning" },
       {
         name: "description",
         content:
-          "Transparent AI: global feature importance and per-customer SHAP-style explanations for the TalkTalk churn-prevention model.",
+          "Transparent AI: global feature importance and per-customer SHAP-style explanations for the churn-prevention model.",
       },
-      { property: "og:title", content: "AI Transparency & Feature Drivers — TalkTalk NBA" },
+      { property: "og:title", content: "AI Transparency & Feature Drivers — Retention Decisioning" },
       {
         property: "og:description",
         content:

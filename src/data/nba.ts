@@ -1,4 +1,4 @@
-// Real summarised data from the TalkTalk model output.
+// Real summarised data from the churn model output.
 // Source: nba_roi_params.json, segment_risk_summary.csv, feature_importance.json
 
 export const roiParams = {
@@ -47,7 +47,7 @@ export const segmentSummary: Array<{
 export const featureLabels: Record<string, { label: string; description: string }> = {
   tenure_days: {
     label: "Customer Tenure",
-    description: "Days since the customer joined TalkTalk",
+    description: "Days since the customer joined the provider",
   },
   contract_dd_cancels: {
     label: "Direct Debit Cancellations",

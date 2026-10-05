@@ -38,22 +38,22 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TalkTalk NBA — Retention Decisioning" },
+      { title: "Retention Decisioning" },
       {
         name: "description",
         content:
-          "Enterprise Next Best Action churn-prevention platform for TalkTalk: ROI modelling, transparent AI explainability and end-to-end decisioning architecture.",
+          "Next Best Action churn-prevention platform with ROI modelling, transparent AI explainability and end-to-end decisioning architecture.",
       },
-      { name: "author", content: "TalkTalk · Data Science" },
-      { property: "og:title", content: "TalkTalk NBA — Retention Decisioning" },
+      { name: "author", content: "Retention Decisioning · Data Science" },
+      { property: "og:title", content: "Retention Decisioning" },
       {
         property: "og:description",
         content:
-          "Live ROI modelling, model explainability and the architecture behind TalkTalk's churn-prevention engine.",
+          "Live ROI modelling, model explainability and the architecture behind the churn-prevention engine.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "TalkTalk NBA — Retention Decisioning" },
+      { name: "twitter:title", content: "Retention Decisioning" },
       { name: "description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },
       { property: "og:description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },
       { name: "twitter:description", content: "An enterprise showcase for a Next Best Action (NBA) churn prevention tool." },

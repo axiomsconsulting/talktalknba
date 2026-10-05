@@ -11,7 +11,7 @@ import audit from "@/data/analysisAudit.json";
 export const Route = createFileRoute("/analysis")({
   head: () => ({
     meta: [
-      { title: "Data Quality Analysis — TalkTalk NBA" },
+      { title: "Data Quality Analysis — Retention Decisioning" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -52,7 +52,7 @@ function AnalysisPage() {
         description="An evidence-based audit of the data feeding the churn model and NBA engine: what's clean, what's missing, what to drop, and where real-time / feedback loops belong."
         actions={
           <a
-            href="/talktalk_data_quality.ipynb"
+            href="/retention_data_quality.ipynb"
             download
             className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-[12.5px] font-medium shadow-[var(--shadow-md)] hover:opacity-90"
           >
@@ -304,7 +304,7 @@ function AnalysisPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/talktalk_data_quality.ipynb" download className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-[12.5px] font-medium shadow-[var(--shadow-md)] hover:opacity-90">
+            <a href="/retention_data_quality.ipynb" download className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-[12.5px] font-medium shadow-[var(--shadow-md)] hover:opacity-90">
               <Download className="size-4" /> Download audit notebook
             </a>
             <span className="text-[11.5px] text-muted-foreground inline-flex items-center gap-1.5"><Trash2 className="size-3" /> Page hidden from sidebar — share the URL deliberately.</span>

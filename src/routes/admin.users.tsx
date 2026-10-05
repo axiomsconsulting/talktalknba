@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole, type AccountStatus } from "@/data/auth";
 
 export const Route = createFileRoute("/admin/users")({
-  head: () => ({ meta: [{ title: "User management — TalkTalk NBA" }] }),
+  head: () => ({ meta: [{ title: "User management — Retention Decisioning" }] }),
   component: UsersAdminPage,
 });
 

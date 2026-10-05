@@ -519,7 +519,7 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
               x={fpr}
               y={recall}
               r={6}
-              fill="var(--talktalk-lime, var(--primary))"
+              fill="var(--chart-3, var(--primary))"
               stroke="var(--foreground)"
               strokeWidth={1.5}
               label={{
@@ -557,7 +557,7 @@ function RocCurveSection({ auc, recall, fpr }: { auc: number; recall: number; fp
           <Crosshair className="size-3.5" /> Why this operating point is the best
         </div>
         <p className="text-[12.5px] text-foreground/90 leading-relaxed">
-          Every threshold trades wasted contact (FPR) against missed saves (1 − TPR). The lime dot is the threshold the trainer
+          Every threshold trades wasted contact (FPR) against missed saves (1 − TPR). The highlighted dot is the threshold the trainer
           picked by maximising <strong className="font-semibold">F1-score</strong>, the balance point between precision (don&apos;t
           waste agent time) and recall (don&apos;t miss churners). Visually it sits where the curve has bent furthest into the
           top-left corner — moving <em>up</em> from here would only catch a few extra churners while flagging many more loyal
@@ -676,7 +676,7 @@ function SegmentBreakdown() {
                   <Bar dataKey="precision" fill="var(--primary)" radius={[0, 2, 2, 0]} />
                   <Bar
                     dataKey="recall"
-                    fill="var(--talktalk-lime, var(--primary))"
+                    fill="var(--chart-3, var(--primary))"
                     radius={[0, 2, 2, 0]}
                   />
                 </BarChart>

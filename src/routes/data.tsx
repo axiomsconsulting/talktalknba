@@ -68,13 +68,13 @@ type ConnectionRow = {
 export const Route = createFileRoute("/data")({
   head: () => ({
     meta: [
-      { title: "Data Library — TalkTalk NBA" },
+      { title: "Data Library — Retention Decisioning" },
       {
         name: "description",
         content:
           "Pick a customer data source — Sample, Local upload, MotherDuck (live) or Databricks — and configure live integrations. Behavioural enrichment cards show what's currently powering the dashboards.",
       },
-      { property: "og:title", content: "Data Library — TalkTalk NBA" },
+      { property: "og:title", content: "Data Library — Retention Decisioning" },
       {
         property: "og:description",
         content:

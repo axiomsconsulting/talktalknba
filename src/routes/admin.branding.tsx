@@ -14,7 +14,7 @@ import { useBrandingStore, applyBrandingToDocument, type AppSettings } from "@/d
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/branding")({
-  head: () => ({ meta: [{ title: "Branding & settings — TalkTalk NBA" }] }),
+  head: () => ({ meta: [{ title: "Branding & settings — Retention Decisioning" }] }),
   component: BrandingPage,
 });
 
@@ -142,13 +142,13 @@ function BrandingPage() {
           <CardContent className="space-y-4">
             <div className="flex items-start gap-4">
               <div
-                className="size-16 rounded-xl border border-border flex items-center justify-center bg-talktalk-lime overflow-hidden shrink-0"
+                className="size-16 rounded-xl border border-border flex items-center justify-center bg-accent overflow-hidden shrink-0"
                 style={{ backgroundColor: form.accent_color }}
               >
                 {form.logo_url ? (
                   <img src={form.logo_url} alt="Logo preview" className="max-h-12 max-w-12" />
                 ) : (
-                  <span className="text-xs text-talktalk-ink/60">No logo</span>
+                  <span className="text-xs text-accent-foreground/60">No logo</span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -263,7 +263,7 @@ function BrandingPage() {
               <div className="flex items-center gap-2">
                 <Input
                   id="src"
-                  placeholder="https://www.talktalk.co.uk"
+                  placeholder="https://www.example.com"
                   value={form.source_url ?? ""}
                   onChange={(e) => update("source_url", e.target.value)}
                 />
@@ -295,7 +295,7 @@ function BrandingPage() {
               <Label htmlFor="sender">Sender name</Label>
               <Input
                 id="sender"
-                placeholder="TalkTalk NBA"
+                placeholder="Retention Decisioning"
                 value={form.email_sender_name ?? ""}
                 onChange={(e) => update("email_sender_name", e.target.value)}
               />
@@ -305,7 +305,7 @@ function BrandingPage() {
               <Input
                 id="reply"
                 type="email"
-                placeholder="nba-team@talktalk.co.uk"
+                placeholder="retention@company.com"
                 value={form.email_reply_to ?? ""}
                 onChange={(e) => update("email_reply_to", e.target.value)}
               />
