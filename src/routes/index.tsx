@@ -29,17 +29,17 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Retention Prioritisation Dashboard — TalkTalk NBA" },
+      { title: "Retention Prioritisation Dashboard — Retention Decisioning" },
       {
         name: "description",
         content:
-          "Executive ROI dashboard for the TalkTalk Next Best Action churn-prevention model. Live scenario modelling for retention spend, intervention success rate and outbound contact cost.",
+          "Executive ROI dashboard for the Next Best Action churn-prevention model. Live scenario modelling for retention spend, intervention success rate and outbound contact cost.",
       },
-      { property: "og:title", content: "Retention Prioritisation Dashboard — TalkTalk NBA" },
+      { property: "og:title", content: "Retention Prioritisation Dashboard — Retention Decisioning" },
       {
         property: "og:description",
         content:
-          "Live ROI modelling for the TalkTalk NBA churn-prevention engine — built for the CDO and Head of Finance.",
+          "Live ROI modelling for the churn-prevention engine — built for the CDO and Head of Finance.",
       },
     ],
   }),
@@ -97,7 +97,7 @@ function RoiPage() {
       <PageHeader
         eyebrow="Finance · Executive Summary"
         title="Retention Prioritisation Dashboard"
-        description="Live commercial view of the TalkTalk NBA churn-prevention model. KPIs reflect the trained scoring run on 3.5M customers; the simulator below lets Finance stress-test spend and conversion assumptions."
+        description="Live commercial view of the Next Best Action churn-prevention model. KPIs reflect the trained scoring run on 3.5M customers; the simulator below lets Finance stress-test spend and conversion assumptions."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-7">

@@ -12,7 +12,7 @@ import { useAuth } from "@/data/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Your profile — TalkTalk NBA" }] }),
+  head: () => ({ meta: [{ title: "Your profile — Retention Decisioning" }] }),
   component: ProfilePage,
 });
 

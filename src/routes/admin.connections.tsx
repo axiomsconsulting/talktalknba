@@ -33,7 +33,7 @@ import { useAuth } from "@/data/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/connections")({
-  head: () => ({ meta: [{ title: "Live data connections — TalkTalk NBA" }] }),
+  head: () => ({ meta: [{ title: "Live data connections — Retention Decisioning" }] }),
   component: ConnectionsAdminPage,
 });
 

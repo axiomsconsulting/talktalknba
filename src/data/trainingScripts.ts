@@ -1,6 +1,6 @@
 // Notebook source for the offline VS Code training + scoring workflow.
 // We ship .ipynb (JSON) files so the user can open them directly in
-// VS Code / Jupyter. Schema is bound to the TalkTalk data model:
+// VS Code / Jupyter. Schema is bound to the telecom data model:
 //
 //   customer_info(unique_customer_identifier, datevalue, contract_status,
 //                 contract_dd_cancels, dd_cancel_60_day, ooc_days, technology,
@@ -60,9 +60,9 @@ function notebook(cells: NbCell[]): string {
 // ============================================================
 export const TRAIN_IPYNB = notebook([
   md(
-    "# TalkTalk NBA — Offline training",
+    "# Retention Decisioning — Offline training",
     "",
-    "Trains **RandomForest** and **XGBoost** churn classifiers on the four TalkTalk tables pulled into Lovable, picks the better ROC AUC, and writes:",
+    "Trains **RandomForest** and **XGBoost** churn classifiers on the four telecom data tables pulled into Lovable, picks the better ROC AUC, and writes:",
     "",
     "- `model_metrics.json` — upload via *Import results* in Lovable",
     "- `model_artefact.pkl` — kept locally, consumed by `score_top50.ipynb`",
@@ -365,7 +365,7 @@ export const TRAIN_IPYNB = notebook([
 // ============================================================
 export const SCORE_IPYNB = notebook([
   md(
-    "# TalkTalk NBA — Top-50 most-impacted customers",
+    "# Retention Decisioning — Top-50 most-impacted customers",
     "",
     "Loads the artefact produced by `train.ipynb`, scores every customer, ranks by churn probability, attaches the strongest reason codes (SHAP if available, otherwise a fast feature-importance × normalised feature-value fallback), recommends an NBA, and writes:",
     "",
@@ -628,7 +628,7 @@ export const SCORE_IPYNB = notebook([
 // ============================================================
 export const OFFER_IPYNB = notebook([
   md(
-    "# TalkTalk NBA — Offline offer generator",
+    "# Retention Decisioning — Offline offer generator",
     "",
     "Reproduces the **exact same** scoring + NBA decision the Lovable app makes, then applies",
     "the configurable eligibility / discount rules from `public.nba_rules` to produce a",
@@ -1069,7 +1069,7 @@ export const OFFER_IPYNB = notebook([
 // ============================================================
 // README
 // ============================================================
-export const README_MD = `# TalkTalk NBA — Offline training kit
+export const README_MD = `# Retention Decisioning — Offline training kit
 
 Two Jupyter notebooks that run on your laptop in VS Code. Lovable provides the
 data and accepts the results back.
@@ -1108,7 +1108,7 @@ brew install libomp
 
 ## Schema
 
-Strictly the TalkTalk model:
+Model input schema:
 
 | Table | Columns used |
 |---|---|

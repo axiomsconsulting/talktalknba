@@ -33,7 +33,7 @@ import { formatGbp } from "@/data/nba";
 export const Route = createFileRoute("/nba-rules")({
   head: () => ({
     meta: [
-      { title: "NBA Rules — TalkTalk NBA" },
+      { title: "NBA Rules — Retention Decisioning" },
       {
         name: "description",
         content:
@@ -394,7 +394,7 @@ function RuleEditor({
         <Section title="Eligibility" icon={Filter}>
           <FieldRow
             label="Eligible packages"
-            hint="Restrict this rule to specific TalkTalk packages. Empty = all packages."
+            hint="Restrict this rule to specific packages. Empty = all packages."
           >
             {productOptions.length === 0 ? (
               <div className="text-xs text-muted-foreground italic">

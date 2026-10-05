@@ -1,5 +1,5 @@
-// TalkTalk consumer broadband packages — extracted from talktalk.co.uk
-// (April 2026 retail prices). These are the prices the ROI engine and the
+// Illustrative UK consumer broadband packages and retail prices.
+// These are the prices the ROI engine and the
 // "right-size" / "free tech upgrade" NBA actions reason about. The product
 // catalogue is editable from /products so an operator can adjust prices,
 // add new bundles, or hide retired SKUs without a code change.
@@ -7,7 +7,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type ProductCategory = "Broadband" | "TalkTalk U" | "Add-on" | "Voice" | "Legacy";
+export type ProductCategory = "Broadband" | "Adaptive Fibre" | "Add-on" | "Voice" | "Legacy";
 
 export type Product = {
   id: string;
@@ -26,8 +26,7 @@ export type Product = {
   active: boolean;
 };
 
-// Source: https://www.talktalk.co.uk (Spring 2026 pricing snapshot).
-export const TALKTALK_PRODUCTS: Product[] = [
+export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "fibre-35",
     name: "Fibre 35",
@@ -84,9 +83,9 @@ export const TALKTALK_PRODUCTS: Product[] = [
     active: true,
   },
   {
-    id: "talktalk-u-tier-1",
-    name: "TalkTalk U · Tier 1",
-    category: "TalkTalk U",
+    id: "adaptive-fibre-tier-1",
+    name: "Adaptive Fibre · Tier 1",
+    category: "Adaptive Fibre",
     technology: "FTTP (adaptive)",
     speedMbps: 150,
     monthlyPriceGbp: 28.0,
@@ -95,9 +94,9 @@ export const TALKTALK_PRODUCTS: Product[] = [
     active: true,
   },
   {
-    id: "talktalk-u-tier-2",
-    name: "TalkTalk U · Tier 2",
-    category: "TalkTalk U",
+    id: "adaptive-fibre-tier-2",
+    name: "Adaptive Fibre · Tier 2",
+    category: "Adaptive Fibre",
     technology: "FTTP (adaptive)",
     speedMbps: 500,
     monthlyPriceGbp: 31.0,
@@ -106,9 +105,9 @@ export const TALKTALK_PRODUCTS: Product[] = [
     active: true,
   },
   {
-    id: "talktalk-u-tier-3",
-    name: "TalkTalk U · Tier 3",
-    category: "TalkTalk U",
+    id: "adaptive-fibre-tier-3",
+    name: "Adaptive Fibre · Tier 3",
+    category: "Adaptive Fibre",
     technology: "FTTP (adaptive)",
     speedMbps: 900,
     monthlyPriceGbp: 34.0,
@@ -175,7 +174,7 @@ type ProductState = {
 export const useProductStore = create<ProductState>()(
   persist(
     (set) => ({
-      products: TALKTALK_PRODUCTS,
+      products: DEFAULT_PRODUCTS,
       updateProduct: (id, patch) =>
         set((s) => ({
           products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
@@ -183,9 +182,9 @@ export const useProductStore = create<ProductState>()(
       addProduct: (p) => set((s) => ({ products: [...s.products, p] })),
       removeProduct: (id) =>
         set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
-      resetCatalogue: () => set({ products: TALKTALK_PRODUCTS }),
+      resetCatalogue: () => set({ products: DEFAULT_PRODUCTS }),
     }),
-    { name: "talktalk-products-v1" },
+    { name: "retention-products-v2" },
   ),
 );
 
@@ -196,7 +195,7 @@ export function activeProducts(products: Product[]): Product[] {
 
 export function averageBroadbandArpu(products: Product[]): number {
   const broadband = products.filter(
-    (p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U"),
+    (p) => p.active && (p.category === "Broadband" || p.category === "Adaptive Fibre"),
   );
   if (broadband.length === 0) return 0;
   const sum = broadband.reduce((acc, p) => acc + p.monthlyPriceGbp, 0);
@@ -213,11 +212,11 @@ export function averageBroadbandArpu(products: Product[]): number {
  */
 export function arpuFromLineSpeed(
   speedMbps: number,
-  products: Product[] = TALKTALK_PRODUCTS,
+  products: Product[] = DEFAULT_PRODUCTS,
 ): { product: Product; arpu: number } | null {
   if (!Number.isFinite(speedMbps) || speedMbps <= 0) return null;
   const broadband = products.filter(
-    (p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U"),
+    (p) => p.active && (p.category === "Broadband" || p.category === "Adaptive Fibre"),
   );
   if (broadband.length === 0) return null;
   let best = broadband[0];

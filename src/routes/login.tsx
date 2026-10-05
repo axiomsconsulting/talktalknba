@@ -7,16 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/data/auth";
-import talktalkLogo from "@/assets/talktalk-logo.svg";
+import { BrandMark } from "@/components/BrandMark";
+import { useBrandingStore } from "@/data/brandingStore";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — TalkTalk NBA" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — Retention Decisioning" },
+      { name: "description", content: "Sign in to the retention decisioning workspace." },
+      { property: "og:title", content: "Sign in — Retention Decisioning" },
+      { property: "og:description", content: "Secure access to the retention decisioning workspace." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
   const { refresh } = useAuth();
+  const settings = useBrandingStore((state) => state.settings);
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,22 +90,22 @@ function LoginPage() {
       {/* Brand panel */}
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--gradient-hero)] relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10">
-          <div className="rounded-lg bg-talktalk-ink p-2">
-            <img src={talktalkLogo} alt="TalkTalk" className="h-5 w-auto invert" />
+          <BrandMark />
+          <div className="text-foreground font-semibold tracking-tight">
+            {settings?.app_name ?? "Retention Decisioning"}
           </div>
-          <div className="text-talktalk-ink font-semibold tracking-tight">NBA Decisioning</div>
         </div>
         <div className="relative z-10 max-w-md">
-          <h1 className="text-4xl font-semibold tracking-tight text-talktalk-ink leading-tight">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground leading-tight">
             Retention decisioning, built for accountable revenue.
           </h1>
-          <p className="mt-4 text-talktalk-ink/70 leading-relaxed">
+          <p className="mt-4 text-foreground/70 leading-relaxed">
             ROI modelling, transparent SHAP explainability and end-to-end Next Best Action
             orchestration — all in one console.
           </p>
         </div>
-        <div className="relative z-10 text-xs text-talktalk-ink/60">
-          © TalkTalk · Data Science · Model v2.4
+        <div className="relative z-10 text-xs text-foreground/60">
+          Data Science · Model v2.4
         </div>
       </div>
 
@@ -102,10 +113,10 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8 flex items-center gap-2.5">
-            <div className="rounded-lg bg-talktalk-lime p-1.5">
-              <img src={talktalkLogo} alt="TalkTalk" className="h-4 w-auto" />
-            </div>
-            <span className="font-semibold tracking-tight">NBA Decisioning</span>
+            <BrandMark />
+            <span className="font-semibold tracking-tight">
+              {settings?.app_name ?? "Retention Decisioning"}
+            </span>
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight">

@@ -15,17 +15,17 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/products")({
   head: () => ({
     meta: [
-      { title: "Product catalogue — TalkTalk NBA" },
+      { title: "Product catalogue — Retention Decisioning" },
       {
         name: "description",
         content:
-          "Editable TalkTalk product and pricing catalogue used by the churn-prevention ROI engine and Next Best Action treatments.",
+          "Editable product and pricing catalogue used by the churn-prevention ROI engine and Next Best Action treatments.",
       },
-      { property: "og:title", content: "TalkTalk Product Catalogue" },
+      { property: "og:title", content: "Retention Product Catalogue" },
       {
         property: "og:description",
         content:
-          "Operator-editable list of TalkTalk packages, prices and contract terms — drives downstream NBA scoring.",
+          "Operator-editable list of packages, prices and contract terms that drives downstream NBA scoring.",
       },
     ],
   }),
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/products")({
 
 const CATEGORIES: ProductCategory[] = [
   "Broadband",
-  "TalkTalk U",
+  "Adaptive Fibre",
   "Add-on",
   "Voice",
   "Legacy",
@@ -73,11 +73,11 @@ function ProductsPage() {
     active: products.filter((p) => p.active).length,
     total: products.length,
     avg:
-      products.filter((p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U")).length > 0
+      products.filter((p) => p.active && (p.category === "Broadband" || p.category === "Adaptive Fibre")).length > 0
         ? products
-            .filter((p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U"))
+            .filter((p) => p.active && (p.category === "Broadband" || p.category === "Adaptive Fibre"))
             .reduce((s, p) => s + p.monthlyPriceGbp, 0) /
-          products.filter((p) => p.active && (p.category === "Broadband" || p.category === "TalkTalk U")).length
+          products.filter((p) => p.active && (p.category === "Broadband" || p.category === "Adaptive Fibre")).length
         : 0,
   };
 
@@ -86,7 +86,7 @@ function ProductsPage() {
       <PageHeader
         eyebrow="Operator console · Pricing"
         title="Product catalogue"
-        description="The packages, prices and contract terms the NBA engine reasons about. Edit a row to override the live TalkTalk price; the change flows through to the ROI simulator and the right-size / free tech upgrade actions."
+        description="The packages, prices and contract terms the NBA engine reasons about. Edit a row to update the working price used by the ROI simulator and customer actions."
       />
 
       <div className="px-5 sm:px-8 lg:px-10 py-7 space-y-6">
@@ -96,7 +96,7 @@ function ProductsPage() {
           <SummaryCard
             label="Avg broadband price"
             value={formatGbp(totals.avg)}
-            sub="across active broadband + TalkTalk U"
+            sub="across active broadband tiers"
           />
           <SummaryCard
             label="Cheapest active"
@@ -137,7 +137,7 @@ function ProductsPage() {
               onClick={resetCatalogue}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border bg-card text-muted-foreground hover:text-foreground"
             >
-              <RotateCcw className="size-3.5" /> Reset to TalkTalk defaults
+              <RotateCcw className="size-3.5" /> Reset to defaults
             </button>
             <button
               onClick={handleAdd}
@@ -153,7 +153,7 @@ function ProductsPage() {
           <div className="px-5 py-4 border-b border-border flex items-center gap-2">
             <Package className="size-4 text-primary" />
             <div>
-              <h3 className="text-sm font-semibold text-foreground">TalkTalk packages</h3>
+              <h3 className="text-sm font-semibold text-foreground">Broadband packages</h3>
               <p className="text-xs text-muted-foreground">
                 Click a row to edit. Changes save automatically and persist locally.
               </p>
@@ -201,17 +201,8 @@ function ProductsPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Source: live extract from{" "}
-          <a
-            href="https://www.talktalk.co.uk/"
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-dotted hover:text-primary"
-          >
-            talktalk.co.uk
-          </a>{" "}
-          (Spring 2026). Annual increases shown on the home page are not applied
-          automatically — adjust the price column if you want to model them.
+          Illustrative UK broadband pricing snapshot (Spring 2026). Annual increases are not
+          applied automatically — adjust the price column to model them.
         </p>
       </div>
     </AppShell>

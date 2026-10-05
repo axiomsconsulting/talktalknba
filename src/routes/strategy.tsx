@@ -22,13 +22,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/strategy")({
   head: () => ({
     meta: [
-      { title: "NBA Strategy & Pipeline — TalkTalk" },
+      { title: "NBA Strategy & Pipeline — Retention Decisioning" },
       {
         name: "description",
         content:
-          "End-to-end architecture and treatment matrix for the TalkTalk Next Best Action churn-prevention pipeline.",
+          "End-to-end architecture and treatment matrix for the Next Best Action churn-prevention pipeline.",
       },
-      { property: "og:title", content: "Next Best Action Strategy & Pipeline — TalkTalk NBA" },
+      { property: "og:title", content: "Next Best Action Strategy & Pipeline — Retention Decisioning" },
       {
         property: "og:description",
         content:
