@@ -12,6 +12,11 @@ export const Route = createFileRoute("/analysis")({
   head: () => ({
     meta: [
       { title: "Data Quality Analysis — Retention Decisioning" },
+      { name: "description", content: "Evidence-based audit of the data feeding the churn model and decision engine." },
+      { property: "og:title", content: "Data Quality Analysis — Retention Decisioning" },
+      { property: "og:description", content: "Coverage, cleanliness, missing signals, time windows and model trust findings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

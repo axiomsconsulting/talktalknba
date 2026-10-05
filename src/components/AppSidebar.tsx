@@ -17,7 +17,7 @@ import {
   Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import talktalkLogo from "@/assets/talktalk-logo.svg";
+import { BrandMark } from "@/components/BrandMark";
 import { useAuth } from "@/data/auth";
 import { useBrandingStore } from "@/data/brandingStore";
 
@@ -33,17 +33,17 @@ const NAV_ITEMS = [
 
 function BrandLockup() {
   const { settings } = useBrandingStore();
-  const logo = settings?.logo_url ?? talktalkLogo;
   const name = settings?.app_name ?? "NBA Decisioning";
   const desc = settings?.app_description ?? "Churn prevention";
   return (
     <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-      <div
-        className="rounded-lg p-1.5 shadow-[var(--shadow-glow)] transition-transform group-hover:scale-105 flex items-center justify-center"
-        style={{ backgroundColor: settings?.accent_color ?? "var(--talktalk-lime)" }}
-      >
-        <img src={logo} alt={name} className="h-4 w-auto max-w-[80px] object-contain" />
-      </div>
+      {settings?.logo_url ? (
+        <span className="inline-flex h-8 min-w-8 items-center justify-center overflow-hidden rounded-md border border-border bg-card px-1.5 shadow-[var(--shadow-sm)]">
+          <img src={settings.logo_url} alt={name} className="h-5 w-auto max-w-[80px] object-contain" />
+        </span>
+      ) : (
+        <BrandMark className="shadow-[var(--shadow-glow)] transition-transform group-hover:scale-105" />
+      )}
       <div className="leading-tight hidden sm:block">
         <div className="text-[13px] font-semibold tracking-tight text-foreground">{name}</div>
         <div className="text-[10px] text-muted-foreground -mt-0.5">{desc}</div>

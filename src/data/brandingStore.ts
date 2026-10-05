@@ -52,13 +52,13 @@ export const useBrandingStore = create<State>((set, get) => ({
 
 /**
  * Apply branding tokens to :root so existing semantic tokens
- * (--primary, --talktalk-lime, --gradient-primary) get overridden live.
+ * (--primary, --brand-accent, --gradient-primary) get overridden live.
  */
 export function applyBrandingToDocument(s: AppSettings | null) {
   if (typeof document === "undefined" || !s) return;
   const root = document.documentElement;
   root.style.setProperty("--primary", s.primary_color);
   root.style.setProperty("--ring", s.primary_color);
-  root.style.setProperty("--talktalk-lime", s.accent_color);
+  root.style.setProperty("--brand-accent", s.accent_color);
   root.style.setProperty("--gradient-primary", s.gradient_css);
 }
